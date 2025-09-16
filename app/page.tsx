@@ -1,103 +1,167 @@
-import Image from "next/image";
+import { Button } from "@/components/ui/button"
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Sprout, Users, MapPin, TrendingUp, Shield, Globe } from "lucide-react"
+import Link from "next/link"
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div>
+      {/* Navigation */}
+      <nav className="sticky top-0 z-100 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between px-6 mx-auto">
+          <div className="flex items-center gap-2">
+            <Sprout className="h-8 w-8 text-primary" />
+            <span className="font-heading text-2xl font-bold text-primary">AgriReach</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/auth/login">
+              <Button variant="ghost" size="lg">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/auth/register">
+              <Button size="lg">Get Started</Button>
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="px-4 py-16 md:py-24">
+        <div className="mx-auto max-w-4xl text-center">
+          <Badge variant="secondary" className="mb-6 text-sm font-medium">
+            Supporting UN Sustainable Development Goals
+          </Badge>
+          <h1 className="font-heading text-4xl font-black leading-tight text-balance md:text-6xl lg:text-7xl">
+            Connecting Rural Workers with <span className="text-primary">Opportunities</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
+            Empowering farmers, fishers, and artisans to build sustainable livelihoods while preserving traditional
+            skills and boosting rural economies.
+          </p>
+          <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:justify-center">
+            <Link href="/auth/register">
+              <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-3">
+                Join AgriReach Today
+              </Button>
+            </Link>
+            <Link href="/opportunities">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-3 bg-transparent">
+                Browse Opportunities
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="px-4 py-16">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="font-heading text-3xl font-bold text-balance md:text-4xl">Empowering Rural Communities</h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Discover how AgriReach connects traditional skills with modern opportunities
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="border-2 hover:border-primary/20 transition-colors">
+              <CardHeader>
+                <Users className="h-12 w-12 text-primary mb-4" />
+                <CardTitle className="font-heading text-xl">Smart Matching</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Connect workers with opportunities based on skills, location, and seasonal demand patterns.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/20 transition-colors">
+              <CardHeader>
+                <MapPin className="h-12 w-12 text-primary mb-4" />
+                <CardTitle className="font-heading text-xl">Local Marketplace</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Direct sales platform for farmers, fishers, and artisans to reach buyers without intermediaries.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/20 transition-colors">
+              <CardHeader>
+                <TrendingUp className="h-12 w-12 text-primary mb-4" />
+                <CardTitle className="font-heading text-xl">Community Forums</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Share knowledge, discuss best practices, and build connections within rural communities.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/20 transition-colors">
+              <CardHeader>
+                <Shield className="h-12 w-12 text-primary mb-4" />
+                <CardTitle className="font-heading text-xl">Trust & Safety</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Rating system and verification process ensure reliable connections and fair transactions.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/20 transition-colors">
+              <CardHeader>
+                <Globe className="h-12 w-12 text-primary mb-4" />
+                <CardTitle className="font-heading text-xl">Skill Recognition</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Earn badges and build reputation for traditional and modern agricultural skills.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/20 transition-colors">
+              <CardHeader>
+                <Sprout className="h-12 w-12 text-primary mb-4" />
+                <CardTitle className="font-heading text-xl">Sustainable Impact</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Track your contribution to sustainable development goals and rural economic growth.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-card py-16">
+        <div className="px-4">
+          <div className="mx-auto max-w-4xl text-center">
+            <h2 className="font-heading text-3xl font-bold text-balance md:text-4xl">
+              Ready to Transform Rural Livelihoods?
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Join thousands of rural workers, businesses, and buyers creating sustainable opportunities together.
+            </p>
+            <div className="mt-8">
+              <Link href="/auth/register">
+                <Button size="lg" className="text-lg px-8 py-3">
+                  Start Your Journey
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t bg-background py-6">
+        <div className="px-6">
+          <div className="flex flex-col items-center gap-4 md:flex-row md:justify-between">
+            <div className="flex items-center gap-2">
+              <Sprout className="h-6 w-6 text-primary" />
+              <span className="font-heading text-lg font-bold text-primary">AgriReach</span>
+            </div>
+            <p className="text-sm text-muted-foreground">© 2024 AgriReach. Empowering rural communities worldwide.</p>
+          </div>
+        </div>
       </footer>
     </div>
-  );
+  )
 }
