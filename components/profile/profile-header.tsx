@@ -1,0 +1,148 @@
+"use client"
+
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { MapPin, Calendar, Star, Shield, Edit, Share, MessageSquare, ArrowLeft } from "lucide-react"
+import Link from "next/link"
+
+interface User {
+  id: string
+  name: string
+  email: string
+  role: "worker" | "recruiter" | "buyer"
+  avatar: string
+  location: string
+  joinDate: string
+  bio?: string
+  verified?: boolean
+  rating?: number
+  completedJobs?: number
+}
+
+interface ProfileHeaderProps {
+  user: User
+}
+
+export function ProfileHeader({ user }: ProfileHeaderProps) {
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "worker":
+        return (
+          <Badge variant="secondary" className="text-sm">
+            Rural Worker
+          </Badge>
+        )
+      case "recruiter":
+        return (
+          <Badge variant="outline" className="text-sm">
+            Recruiter
+          </Badge>
+        )
+      case "buyer":
+        return <Badge className="bg-accent text-accent-foreground text-sm">Buyer</Badge>
+      default:
+        return null
+    }
+  }
+
+  const formatJoinDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+    })
+  }
+
+  return (
+    <div className="bg-card border-b">
+      <div className="container px-4 py-8">
+        {/* Back Navigation */}
+        <div className="mb-6">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </div>
+
+        <Card>
+          <CardContent className="p-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start">
+              {/* Avatar and Basic Info */}
+              <div className="flex flex-col items-center md:items-start gap-4">
+                <Avatar className="h-32 w-32">
+                  <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                  <AvatarFallback className="text-2xl">
+                    {user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="text-center md:text-left">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h1 className="font-heading text-3xl font-bold">{user.name}</h1>
+                    {user.verified && <Shield className="h-6 w-6 text-primary" title="Verified Profile" />}
+                  </div>
+
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
+                    {getRoleBadge(user.role)}
+
+                    {user.rating && (
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="font-medium">{user.rating}</span>
+                        {user.completedJobs && (
+                          <span className="text-muted-foreground">({user.completedJobs} jobs)</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Details */}
+              <div className="flex-1 space-y-4">
+                {user.bio && <p className="text-muted-foreground leading-relaxed">{user.bio}</p>}
+
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    <span>{user.location}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span>Joined {formatJoinDate(user.joinDate)}</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3 pt-4 md:flex-row">
+                  <Button size="lg" className="flex-1 md:flex-none">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Profile
+                  </Button>
+
+                  <Button variant="outline" size="lg" className="flex-1 md:flex-none bg-transparent">
+                    <Share className="mr-2 h-4 w-4" />
+                    Share Profile
+                  </Button>
+
+                  <Button variant="outline" size="lg" className="flex-1 md:flex-none bg-transparent">
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Message
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
