@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react"
 
 export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false)
@@ -21,15 +20,18 @@ export function RegisterForm() {
     if (!agreedToTerms) return
     setIsLoading(true)
     // TODO: Implement registration logic
-    setTimeout(() => setIsLoading(false), 1000)
+    setTimeout(() => setIsLoading(false), 2000)
   }
 
   return (
     <div className="space-y-6">
-      {/* Social Registration Buttons */}
       <div className="space-y-3">
-        <Button variant="outline" className="w-full text-base py-3 bg-transparent" disabled={isLoading}>
-          <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+        <Button
+          variant="outline"
+          className="w-full h-12 text-sm font-medium bg-card hover:bg-accent/50 border-border/50 transition-all duration-200"
+          disabled={isLoading}
+        >
+          <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
             <path
               fill="currentColor"
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -50,8 +52,12 @@ export function RegisterForm() {
           Sign up with Google
         </Button>
 
-        <Button variant="outline" className="w-full text-base py-3 bg-transparent" disabled={isLoading}>
-          <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+        <Button
+          variant="outline"
+          className="w-full h-12 text-sm font-medium bg-card hover:bg-accent/50 border-border/50 transition-all duration-200"
+          disabled={isLoading}
+        >
+          <svg className="mr-3 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
           </svg>
           Sign up with Facebook
@@ -63,46 +69,61 @@ export function RegisterForm() {
           <Separator className="w-full" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Or create account with email</span>
+          <span className="bg-card px-3 text-muted-foreground font-medium">Or create account with email</span>
         </div>
       </div>
 
-      {/* Registration Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="firstName" className="text-base font-medium">
+            <Label htmlFor="firstName" className="text-sm font-medium text-foreground">
               First Name
             </Label>
             <div className="relative">
-              <User className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-              <Input id="firstName" placeholder="First name" className="pl-10 text-base py-3" required />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="firstName"
+                placeholder="First name"
+                className="pl-10 h-12 bg-input border-border/50 focus:border-primary/50 transition-colors"
+                required
+              />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="lastName" className="text-base font-medium">
+            <Label htmlFor="lastName" className="text-sm font-medium text-foreground">
               Last Name
             </Label>
-            <Input id="lastName" placeholder="Last name" className="text-base py-3" required />
+            <Input
+              id="lastName"
+              placeholder="Last name"
+              className="h-12 bg-input border-border/50 focus:border-primary/50 transition-colors"
+              required
+            />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email" className="text-base font-medium">
+          <Label htmlFor="email" className="text-sm font-medium text-foreground">
             Email Address
           </Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-            <Input id="email" type="email" placeholder="Enter your email" className="pl-10 text-base py-3" required />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email address"
+              className="pl-10 h-12 bg-input border-border/50 focus:border-primary/50 transition-colors"
+              required
+            />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="userType" className="text-base font-medium">
+          <Label htmlFor="userType" className="text-sm font-medium text-foreground">
             I am a...
           </Label>
           <Select required>
-            <SelectTrigger className="text-base py-3">
+            <SelectTrigger className="h-12 bg-input border-border/50 focus:border-primary/50 transition-colors">
               <SelectValue placeholder="Select your role" />
             </SelectTrigger>
             <SelectContent>
@@ -114,54 +135,66 @@ export function RegisterForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-base font-medium">
+          <Label htmlFor="password" className="text-sm font-medium text-foreground">
             Password
           </Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="Create a strong password"
-              className="pl-10 pr-10 text-base py-3"
+              className="pl-10 pr-10 h-12 bg-input border-border/50 focus:border-primary/50 transition-colors"
               required
             />
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
-                <EyeOff className="h-5 w-5 text-muted-foreground" />
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <Eye className="h-5 w-5 text-muted-foreground" />
+                <Eye className="h-4 w-4 text-muted-foreground" />
               )}
             </Button>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-start space-x-3 pt-2">
           <Checkbox
             id="terms"
             checked={agreedToTerms}
             onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+            className="mt-0.5"
           />
-          <Label htmlFor="terms" className="text-sm leading-relaxed">
+          <Label htmlFor="terms" className="text-sm leading-relaxed text-muted-foreground">
             I agree to the{" "}
-            <Button variant="link" className="px-0 text-sm text-primary h-auto">
+            <Button variant="link" className="px-0 text-sm text-primary h-auto font-medium">
               Terms of Service
             </Button>{" "}
             and{" "}
-            <Button variant="link" className="px-0 text-sm text-primary h-auto">
+            <Button variant="link" className="px-0 text-sm text-primary h-auto font-medium">
               Privacy Policy
             </Button>
           </Label>
         </div>
 
-        <Button type="submit" className="w-full text-base py-3" disabled={isLoading || !agreedToTerms}>
-          {isLoading ? "Creating account..." : "Create Account"}
+        <Button
+          type="submit"
+          className="w-full h-12 text-sm font-medium gradient-primary hover:opacity-90 transition-opacity"
+          disabled={isLoading || !agreedToTerms}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating account...
+            </>
+          ) : (
+            "Create your account"
+          )}
         </Button>
       </form>
     </div>

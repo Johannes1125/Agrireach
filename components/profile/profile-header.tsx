@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, Calendar, Star, Shield, Edit, Share, MessageSquare, ArrowLeft } from "lucide-react"
+import { MapPin, Calendar, Star, Shield, Edit, Share, MessageSquare, ArrowLeft, Settings } from "lucide-react"
 import Link from "next/link"
 
 interface User {
@@ -86,7 +86,11 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                 <div className="text-center md:text-left">
                   <div className="flex items-center gap-2 mb-2">
                     <h1 className="font-heading text-3xl font-bold">{user.name}</h1>
-                    {user.verified && <Shield className="h-6 w-6 text-primary" title="Verified Profile" />}
+                    {user.verified && (
+                      <Shield className="h-6 w-6 text-primary">
+                        <title>Verified Profile</title>
+                      </Shield>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
@@ -123,9 +127,18 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col gap-3 pt-4 md:flex-row">
-                  <Button size="lg" className="flex-1 md:flex-none">
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Profile
+                  <Button size="lg" className="flex-1 md:flex-none" asChild>
+                    <Link href="/settings">
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Profile
+                    </Link>
+                  </Button>
+
+                  <Button variant="outline" size="lg" className="flex-1 md:flex-none bg-transparent" asChild>
+                    <Link href="/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
                   </Button>
 
                   <Button variant="outline" size="lg" className="flex-1 md:flex-none bg-transparent">

@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation"
 import { ProfileHeader } from "@/components/profile/profile-header"
-import { WorkerProfile } from "@/components/profile/worker-profile"
-import { RecruiterProfile } from "@/components/profile/recruiter-profile"
-import { BuyerProfile } from "@/components/profile/buyer-profile"
+import { UnifiedProfile } from "@/components/profile/unified-profile"
 
 // TODO: Replace with actual auth check
 const getCurrentUser = async () => {
@@ -34,9 +32,7 @@ export default async function ProfilePage() {
       <ProfileHeader user={user} />
 
       <main className="container px-4 py-8">
-        {user.role === "worker" && <WorkerProfile user={user} />}
-        {user.role === "recruiter" && <RecruiterProfile user={user} />}
-        {user.role === "buyer" && <BuyerProfile user={user} />}
+        <UnifiedProfile user={user} />
       </main>
     </div>
   )
