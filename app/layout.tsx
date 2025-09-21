@@ -33,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans ${openSans.variable} ${montserrat.variable} ${GeistMono.variable}`}>
+      <body className={`font-sans ${openSans.variable} ${montserrat.variable} ${GeistMono?.variable ?? ""}`}>
         <Suspense fallback={null}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             {children}
