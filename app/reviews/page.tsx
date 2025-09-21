@@ -1,0 +1,352 @@
+"use client"
+
+import { useState } from "react"
+import { Star, Search, TrendingUp, Award, Shield } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Progress } from "@/components/ui/progress"
+import { SimpleHeader } from "@/components/layout/simple-header"
+import Link from "next/link"
+
+// Mock reviews data
+const reviews = [
+  {
+    id: 1,
+    reviewer: {
+      name: "Sarah Johnson",
+      avatar: "/placeholder.svg?key=sj123",
+      role: "Buyer",
+      trustScore: 4.8,
+    },
+    reviewee: {
+      name: "Green Valley Farm",
+      avatar: "/placeholder.svg?key=gvf456",
+      role: "Seller",
+      trustScore: 4.9,
+    },
+    rating: 5,
+    title: "Excellent organic tomatoes!",
+    content:
+      "The tomatoes were fresh, flavorful, and exactly as described. Delivery was prompt and packaging was excellent. Will definitely order again!",
+    date: "2 days ago",
+    verified: true,
+    helpful: 12,
+    category: "Product Quality",
+  },
+  {
+    id: 2,
+    reviewer: {
+      name: "Mike Thompson",
+      avatar: "/placeholder.svg?key=mt789",
+      role: "Recruiter",
+      trustScore: 4.6,
+    },
+    reviewee: {
+      name: "John Worker",
+      avatar: "/placeholder.svg?key=jw012",
+      role: "Worker",
+      trustScore: 4.7,
+    },
+    rating: 4,
+    title: "Reliable and hardworking",
+    content:
+      "John completed the harvesting job efficiently and on time. Good communication throughout the project. Minor issue with equipment handling but overall satisfied.",
+    date: "1 week ago",
+    verified: true,
+    helpful: 8,
+    category: "Work Quality",
+  },
+  {
+    id: 3,
+    reviewer: {
+      name: "Lisa Market",
+      avatar: "/placeholder.svg?key=lm345",
+      role: "Buyer",
+      trustScore: 4.5,
+    },
+    reviewee: {
+      name: "Artisan Crafts Co.",
+      avatar: "/placeholder.svg?key=acc678",
+      role: "Seller",
+      trustScore: 4.8,
+    },
+    rating: 5,
+    title: "Beautiful handwoven baskets",
+    content:
+      "The craftsmanship is outstanding! Each basket is unique and well-made. Perfect for our farmers market display. Highly recommend this seller.",
+    date: "3 days ago",
+    verified: true,
+    helpful: 15,
+    category: "Product Quality",
+  },
+]
+
+const categories = ["All", "Product Quality", "Work Quality", "Communication", "Delivery", "Value for Money"]
+const sortOptions = ["Most Recent", "Highest Rated", "Most Helpful", "Lowest Rated"]
+
+export default function ReviewsPage() {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("All")
+  const [sortBy, setSortBy] = useState("Most Recent")
+
+  const filteredReviews = reviews.filter(
+    (review) =>
+      (selectedCategory === "All" || review.category === selectedCategory) &&
+      (review.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        review.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        review.reviewee.name.toLowerCase().includes(searchTerm.toLowerCase())),
+  )
+
+  return (
+    <div className="min-h-screen bg-background">
+      <SimpleHeader />
+
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground font-sans">Reviews & Ratings</h1>
+              <p className="text-muted-foreground mt-1">Community feedback and trust scores</p>
+            </div>
+            <Link href="/reviews/write">
+              <Button className="bg-primary hover:bg-primary/90">Write Review</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+<div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Search and Filters */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search reviews..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Reviews List */}
+            <div className="space-y-4">
+              {filteredReviews.map((review) => (
+                <Card key={review.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={review.reviewer.avatar || "/placeholder.svg"} />
+                        <AvatarFallback>{review.reviewer.name[0]}</AvatarFallback>
+                      </Avatar>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold">{review.reviewer.name}</span>
+                              <Badge variant="outline">{review.reviewer.role}</Badge>
+                              {review.verified && (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  Verified
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Review for{" "}
+                              <Link href="#" className="font-medium hover:text-primary">
+                                {review.reviewee.name}
+                              </Link>
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="flex items-center gap-1 mb-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+}`}
+                                />
+                              ))}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{review.date}</p>
+                          </div>
+                        </div>
+
+                        <h3 className="font-semibold mb-2">{review.title}</h3>
+                        <p className="text-muted-foreground leading-relaxed mb-3">{review.content}</p>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Badge variant="outline">{review.category}</Badge>
+                            <Button variant="ghost" size="sm">
+                              Helpful ({review.helpful})
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>Trust Score:</span>
+                            <div className="flex items-center gap-1">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              <span className="font-medium">{review.reviewee.trustScore}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Trust System Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Trust System
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-2">How Trust Scores Work</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Based on verified reviews</li>
+                    <li>• Updated in real-time</li>
+                    <li>• Weighted by reviewer credibility</li>
+                    <li>• Includes transaction history</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-2">Trust Levels</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>New Member</span>
+                      <span className="text-muted-foreground">0-3.0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Trusted</span>
+                      <span className="text-muted-foreground">3.0-4.0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Highly Trusted</span>
+                      <span className="text-muted-foreground">4.0-4.5</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Elite</span>
+                      <span className="text-muted-foreground">4.5-5.0</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Top Rated Users */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Top Rated This Month
+                </CardTitle>
+              </CardHeader>
+<CardContent className="space-y-4">
+                {[
+                  { name: "Green Valley Farm", score: 4.9, reviews: 156 },
+                  { name: "John Expert Worker", score: 4.8, reviews: 89 },
+                  { name: "Artisan Crafts Co.", score: 4.8, reviews: 67 },
+                ].map((user, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">{user.reviews} reviews</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium">{user.score}</span>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Review Stats */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Review Statistics</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span>Total Reviews</span>
+                  <span className="font-medium">2,847</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Average Rating</span>
+                  <span className="font-medium">4.6</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Verified Reviews</span>
+                  <span className="font-medium">89%</span>
+                </div>
+
+                <div className="space-y-2 mt-4">
+                  <h4 className="font-medium text-sm">Rating Distribution</h4>
+                  {[5, 4, 3, 2, 1].map((rating) => (
+                    <div key={rating} className="flex items-center gap-2 text-sm">
+                      <span className="w-4">{rating}</span>
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Progress
+                        value={rating === 5 ? 65 : rating === 4 ? 25 : rating === 3 ? 8 : 2}
+                        className="flex-1 h-2"
+                      />
+                      <span className="text-muted-foreground w-8 text-right">
+                        {rating === 5 ? "65%" : rating === 4 ? "25%" : rating === 3 ? "8%" : "2%"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
