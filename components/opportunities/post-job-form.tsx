@@ -1,0 +1,313 @@
+"use client"
+
+import type React from "react"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { X, Plus, MapPin, DollarSign, Calendar, Users } from "lucide-react"
+import { useState } from "react"
+
+export function PostJobForm() {
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [customSkill, setCustomSkill] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const availableSkills = [
+    "Crop Harvesting",
+    "Organic Farming",
+    "Equipment Operation",
+    "Soil Management",
+    "Livestock Care",
+    "Greenhouse Management",
+    "Pest Control",
+    "Irrigation Systems",
+    "Team Leadership",
+    "Quality Control",
+    "Safety Protocols",
+    "Mechanical Skills",
+    "Plant Science",
+    "Animal Husbandry",
+    "Food Processing",
+    "Packaging",
+  ]
+
+  const addSkill = (skill: string) => {
+    if (skill && !selectedSkills.includes(skill)) {
+      setSelectedSkills([...selectedSkills, skill])
+    }
+  }
+
+  const removeSkill = (skill: string) => {
+    setSelectedSkills(selectedSkills.filter((s) => s !== skill))
+  }
+
+  const addCustomSkill = () => {
+    if (customSkill.trim()) {
+      addSkill(customSkill.trim())
+      setCustomSkill("")
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    // TODO: Implement actual job posting logic
+    setTimeout(() => {
+      setIsSubmitting(false)
+      // Redirect to job listing or success page
+    }, 2000)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {/* Basic Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-heading flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Basic Job Information
+          </CardTitle>
+          <CardDescription>Provide the essential details about your job opening</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="job-title">Job Title *</Label>
+              <Input id="job-title" placeholder="e.g., Seasonal Harvest Coordinator" required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="job-type">Job Type *</Label>
+              <Select required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select job type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full-time">Full-time</SelectItem>
+                  <SelectItem value="part-time">Part-time</SelectItem>
+                  <SelectItem value="seasonal">Seasonal</SelectItem>
+                  <SelectItem value="contract">Contract</SelectItem>
+                  <SelectItem value="temporary">Temporary</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="company-name">Company Name *</Label>
+            <Input id="company-name" placeholder="Your company or farm name" required />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Location *</Label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input id="location" placeholder="City, State" className="pl-10" required />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+{/* Job Description */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-heading">Job Description</CardTitle>
+          <CardDescription>Describe the role and what you're looking for</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="description">Job Description *</Label>
+            <Textarea
+              id="description"
+              placeholder="Provide a detailed description of the job responsibilities, work environment, and what makes this opportunity special..."
+              className="min-h-32"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="requirements">Requirements</Label>
+            <Textarea
+              id="requirements"
+              placeholder="List the required skills, experience, and qualifications for this position..."
+              className="min-h-24"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="benefits">Benefits & Perks</Label>
+            <Textarea
+              id="benefits"
+              placeholder="Describe the benefits, perks, and what makes working with you attractive..."
+              className="min-h-24"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Compensation & Schedule */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-heading flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Compensation & Schedule
+          </CardTitle>
+          <CardDescription>Set the pay range and work schedule details</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="pay-min">Minimum Pay ($/hour) *</Label>
+              <Input id="pay-min" type="number" placeholder="15" min="10" required />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pay-max">Maximum Pay ($/hour) *</Label>
+              <Input id="pay-max" type="number" placeholder="25" min="10" required />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="schedule">Work Schedule</Label>
+            <Textarea
+              id="schedule"
+              placeholder="Describe the work schedule, hours, and any flexibility..."
+              className="min-h-20"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Skills & Requirements */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-heading">Required Skills</CardTitle>
+          <CardDescription>Select the skills needed for this position</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-2 md:grid-cols-3">
+            {availableSkills.map((skill) => (
+              <div key={skill} className="flex items-center space-x-2">
+                <Checkbox
+                  id={skill}
+                  checked={selectedSkills.includes(skill)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      addSkill(skill)
+                    } else {
+                      removeSkill(skill)
+                    }
+                  }}
+                />
+                <Label htmlFor={skill} className="text-sm cursor-pointer">
+                  {skill}
+                </Label>
+              </div>
+            ))}
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label>Add Custom Skill</Label>
+            <div className="flex gap-2">
+              <Input
+placeholder="Enter a custom skill"
+                value={customSkill}
+                onChange={(e) => setCustomSkill(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addCustomSkill())}
+              />
+              <Button type="button" variant="outline" onClick={addCustomSkill}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {selectedSkills.length > 0 && (
+            <div className="space-y-2">
+              <Label>Selected Skills ({selectedSkills.length})</Label>
+              <div className="flex flex-wrap gap-2">
+                {selectedSkills.map((skill) => (
+                  <Badge key={skill} variant="secondary" className="flex items-center gap-1">
+                    {skill}
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => removeSkill(skill)} />
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Application Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-heading flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Application Settings
+          </CardTitle>
+          <CardDescription>Configure how applications are handled</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="deadline">Application Deadline</Label>
+              <Input id="deadline" type="date" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="urgency">Hiring Urgency</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select urgency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard Timeline</SelectItem>
+                  <SelectItem value="medium">Medium Priority</SelectItem>
+                  <SelectItem value="high">High Priority</SelectItem>
+                  <SelectItem value="urgent">Urgent Hiring</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contact-email">Contact Email</Label>
+            <Input id="contact-email" type="email" placeholder="hiring@yourcompany.com" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Submit */}
+      <div className="flex flex-col gap-4 pt-6">
+        <div className="flex items-center space-x-2">
+          <Checkbox id="terms" required />
+          <Label htmlFor="terms" className="text-sm">
+            I agree to the AgriReach Terms of Service and confirm that this job posting complies with all applicable
+            laws
+          </Label>
+        </div>
+
+        <div className="flex gap-4">
+          <Button type="button" variant="outline" className="flex-1 bg-transparent">
+            Save as Draft
+          </Button>
+          <Button type="submit" className="flex-1" disabled={isSubmitting}>
+            {isSubmitting ? "Publishing Job..." : "Publish Job"}
+          </Button>
+        </div>
+
+        <p className="text-xs text-muted-foreground text-center">
+          Your job will be reviewed and published within 24 hours. You'll receive email notifications for new
+          applications.
+        </p>
+      </div>
+    </form>
+  )
+}
