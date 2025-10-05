@@ -98,7 +98,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:scale-105 transition-transform duration-500 ease-in-out",
                   isActive
                     ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
                     : "text-sidebar-foreground",

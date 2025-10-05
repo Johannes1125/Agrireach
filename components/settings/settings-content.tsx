@@ -156,7 +156,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
   return (
     <Tabs defaultValue="profile" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-5">
+      <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="profile" className="flex items-center gap-2">
           <Bell className="h-4 w-4" />
           Profile
