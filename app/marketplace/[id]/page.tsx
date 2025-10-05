@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use as useParams } from "react"
 import { ArrowLeft, Star, MapPin, User, ShoppingCart, Heart, Share2, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,8 +44,9 @@ interface Review {
   created_at: string
 }
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
+  const { id } = useParams(params)
   const [product, setProduct] = useState<Product | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,7 +58,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/marketplace/products/${params.id}`)
+        const res = await fetch(`/api/marketplace/products/${id}`)
         if (!res.ok) {
           throw new Error("Product not found")
         }
@@ -79,7 +80,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     }
 
     fetchProduct()
-  }, [params.id, router])
+  }, [id, router])
 
   const handleAddToCart = async () => {
     if (!product) return
@@ -155,7 +156,6 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       </div>
     )
   }
-  const [isFavorite, setIsFavorite] = useState(false)
 
   return (
     <div className="min-h-screen bg-background">

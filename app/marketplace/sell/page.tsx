@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
+import { authFetch } from "@/lib/auth-client"
 
 const categories = [
   "Vegetables",
@@ -89,12 +90,24 @@ export default function SellProductPage() {
     setIsSubmitting(true)
 
     try {
-      const res = await fetch("/api/marketplace/products", {
+      const payload = {
+        title: formData.name.trim(),
+        description: formData.description.trim(),
+        category: formData.category as string,
+        price: Number(formData.price),
+        unit: formData.unit as string,
+        quantity_available: Number(formData.stockQuantity),
+        location: formData.location.trim(),
+        images: formData.images,
+        organic: Boolean(isOrganic),
+      }
+
+      const res = await authFetch("/api/marketplace/products", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
@@ -104,7 +117,10 @@ export default function SellProductPage() {
 
       const data = await res.json()
       toast.success("Product listed successfully!")
-      window.location.href = `/marketplace/${data.product._id}`
+      const productId = data?.data?.id || data?.id
+      if (productId) {
+        window.location.href = `/marketplace/${productId}`
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to create product listing")
     } finally {

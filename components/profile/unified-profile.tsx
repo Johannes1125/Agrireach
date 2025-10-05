@@ -1,3 +1,4 @@
+"use client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,7 @@ import {
   TrendingUp,
   Settings,
 } from "lucide-react"
+import { useUserProfile } from "@/hooks/use-user-profile"
 
 interface User {
   id: string
@@ -39,6 +41,7 @@ interface UnifiedProfileProps {
 }
 
 export function UnifiedProfile({ user }: UnifiedProfileProps) {
+  const { profile } = useUserProfile()
   const getProfileData = () => {
     switch (user.role) {
       case "worker":
@@ -201,15 +204,15 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profileData.companyInfo.name}</span>
+                    <span className="text-sm">{profile?.company_name || profileData.companyInfo.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profileData.companyInfo.size}</span>
+                    <span className="text-sm">{profile?.company_size || profileData.companyInfo.size}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profileData.companyInfo.website}</span>
+                    <span className="text-sm">{profile?.website || profileData.companyInfo.website}</span>
                   </div>
                 </div>
               </div>
@@ -221,15 +224,15 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profileData.businessInfo.name}</span>
+                    <span className="text-sm">{profile?.company_name || profileData.businessInfo.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profileData.businessInfo.type}</span>
+                    <span className="text-sm">{profile?.business_type || profileData.businessInfo.type}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profileData.businessInfo.website}</span>
+                    <span className="text-sm">{profile?.website || profileData.businessInfo.website}</span>
                   </div>
                 </div>
               </div>
@@ -439,35 +442,39 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label className="text-sm font-medium">Company Name</Label>
-                <p className="text-sm text-muted-foreground mt-1">Not specified</p>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.company_name || "Not specified"}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Industry</Label>
-                <p className="text-sm text-muted-foreground mt-1">Agriculture</p>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.industry || "Not specified"}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Business Type</Label>
-                <p className="text-sm text-muted-foreground mt-1">Farm</p>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.business_type || "Not specified"}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Years in Business</Label>
-                <p className="text-sm text-muted-foreground mt-1">5+ years</p>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.years_in_business ?? "Not specified"}</p>
               </div>
             </div>
 
             <div>
               <Label className="text-sm font-medium">Business Description</Label>
               <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                Add a description of your business, services, and what makes you unique in the agricultural sector.
+                {profile?.business_description || "Add a description of your business, services, and what makes you unique in the agricultural sector."}
               </p>
             </div>
 
             <div>
               <Label className="text-sm font-medium">Services Offered</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                <Badge variant="outline">Crop Production</Badge>
-                <Badge variant="outline">Organic Farming</Badge>
-                <Badge variant="outline">Equipment Rental</Badge>
+                {(profile?.services_offered && profile.services_offered.length > 0)
+                  ? profile.services_offered.map((svc, idx) => (
+                      <Badge key={idx} variant="outline">{svc}</Badge>
+                    ))
+                  : (
+                      <span className="text-sm text-muted-foreground">No services listed</span>
+                    )}
               </div>
             </div>
 

@@ -3,14 +3,20 @@ import { JobApplication } from "@/components/opportunities/job-application"
 import { SimilarJobs } from "@/components/opportunities/similar-jobs"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { headers } from "next/headers"
 
 interface JobPageProps { params: { id: string } }
 
 async function fetchJob(id: string) {
-  const res = await fetch(`${process.env.BASE_URL || ""}/api/opportunities/${id}`, { cache: "no-store" })
+  const h = headers()
+  const proto = h.get("x-forwarded-proto") || "http"
+  const host = h.get("host") || "localhost:3000"
+  const baseUrl = process.env.BASE_URL || `${proto}://${host}`
+
+  const res = await fetch(`${baseUrl}/api/opportunities/${id}`, { cache: "no-store" })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json?.message || "Failed to load job")
-  const j = json?.opportunity || {} // Fixed: API returns { opportunity } not { data }
+  const j = json?.opportunity || {}
   return {
     id: String(j._id || id),
     title: j.title,

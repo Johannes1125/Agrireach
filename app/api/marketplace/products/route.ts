@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const category = searchParams.get("category");
   const location = searchParams.get("location");
   const organic = searchParams.get("organic");
-  const status = searchParams.get("status") || "active";
+  const status = searchParams.get("status");
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
   const sortBy = searchParams.get("sortBy");
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
   const skip = (page - 1) * limit;
 
-  const filter: any = { status };
+  const filter: any = {};
   if (category) filter.category = category;
   if (location) filter.location = { $regex: location, $options: "i" };
   if (organic === "true") filter.organic = true;
@@ -53,6 +53,26 @@ export async function GET(req: NextRequest) {
       { title: { $regex: search, $options: "i" } },
       { description: { $regex: search, $options: "i" } }
     ];
+  }
+
+  // Determine visibility: default to only active for public; include seller's own products (any status) if authenticated and no explicit status provided
+  let decoded: any | null = null;
+  const token = getAuthToken(req, "access");
+  if (token) {
+    try {
+      decoded = verifyToken<any>(token, "access");
+    } catch {
+      decoded = null;
+    }
+  }
+
+  let visibilityFilter: any = {};
+  if (status) {
+    visibilityFilter = { status };
+  } else if (decoded?.sub) {
+    visibilityFilter = { $or: [ { status: "active" }, { seller_id: decoded.sub } ] };
+  } else {
+    visibilityFilter = { status: "active" };
   }
 
   // Sorting
@@ -76,13 +96,13 @@ export async function GET(req: NextRequest) {
   }
 
   const [products, total] = await Promise.all([
-    Product.find(filter)
+    Product.find({ ...filter, ...visibilityFilter })
       .populate('seller_id', 'full_name location verified trust_score')
       .sort(sort)
       .skip(skip)
       .limit(limit)
       .lean(),
-    Product.countDocuments(filter)
+    Product.countDocuments({ ...filter, ...visibilityFilter })
   ]);
 
   return jsonOk({ 

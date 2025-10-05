@@ -59,7 +59,7 @@ export function useMarketplaceData(filters: MarketplaceFilters = {}) {
         params.append('limit', (filters.limit || 20).toString())
 
         const [productsRes, categoriesRes] = await Promise.all([
-          fetch(`/api/marketplace/products?${params.toString()}`),
+          authFetch(`/api/marketplace/products?${params.toString()}`),
           fetch('/api/marketplace/categories')
         ])
 
@@ -68,12 +68,14 @@ export function useMarketplaceData(filters: MarketplaceFilters = {}) {
         }
 
         const productsData = await productsRes.json()
-        const categoriesData = categoriesRes.ok ? await categoriesRes.json() : { data: { categories: [] } }
+        const categoriesData = categoriesRes.ok ? await categoriesRes.json() : { categories: [] }
 
-        setProducts(productsData.data.products)
-        setTotal(productsData.data.total)
-        setPages(productsData.data.pages)
-        setCategories(categoriesData.data.categories)
+        // API returns { success, data: { products, total, page, pages } }
+        const p = productsData?.data || productsData
+        setProducts(p.products || [])
+        setTotal(p.total || 0)
+        setPages(p.pages || 0)
+        setCategories((categoriesData.data?.categories || categoriesData.categories) || [])
       } catch (err: any) {
         setError(err.message)
         console.error("Marketplace data fetch error:", err)

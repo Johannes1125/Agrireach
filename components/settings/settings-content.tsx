@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useNotifications } from "@/components/notifications/notification-provider"
+import { useUserProfile } from "@/hooks/use-user-profile"
 import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
 import {
   Bell,
@@ -76,6 +77,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
   const [activeRole, setActiveRole] = useState(user.role)
   const notifications = useNotifications()
   const [darkMode, setDarkMode] = useState(false)
+  const { profile, saveProfile } = useUserProfile()
 
   // Initialize dark mode from localStorage
   useEffect(() => {
@@ -96,7 +98,26 @@ export function SettingsContent({ user }: SettingsContentProps) {
     }
   }, [])
 
-  const handleSave = (section: string) => {
+  const handleSave = async (section: string) => {
+    if (section === "business") {
+      try {
+        await saveProfile({
+          company_name: formData.business?.name || "",
+          industry: formData.business?.industry || "",
+          business_type: formData.business?.type || "",
+          company_size: formData.business?.size || "",
+          business_description: formData.business?.description || "",
+          website: formData.business?.website || "",
+          business_logo: formData.business?.logo || "",
+          years_in_business: (formData as any)?.business?.years ?? (profile?.years_in_business ?? undefined),
+          services_offered: (formData as any)?.business?.services ?? (profile?.services_offered ?? undefined),
+        })
+        notifications.showSuccess("Business Saved", "Your business information has been updated.")
+      } catch (e: any) {
+        notifications.showError("Save Failed", e.message || "Unable to save business info")
+      }
+      return
+    }
     notifications.showSuccess("Settings Saved", `Your ${section} settings have been updated successfully.`)
   }
 
@@ -617,7 +638,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <Input
                   id="company-name"
                   placeholder="Enter your company name"
-                  value={formData.business?.name || ""}
+                  value={formData.business?.name || profile?.company_name || ""}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -629,7 +650,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               <div>
                 <Label htmlFor="industry">Industry</Label>
                 <Select
-                  value={formData.business?.industry || ""}
+                  value={formData.business?.industry || profile?.industry || ""}
                   onValueChange={(value) =>
                     setFormData({
                       ...formData,
@@ -658,7 +679,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               <div>
                 <Label htmlFor="business-type">Business Type</Label>
                 <Select
-                  value={formData.business?.type || ""}
+                  value={formData.business?.type || profile?.business_type || ""}
                   onValueChange={(value) =>
                     setFormData({
                       ...formData,
@@ -681,7 +702,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               <div>
                 <Label htmlFor="company-size">Company Size</Label>
                 <Select
-                  value={formData.business?.size || ""}
+                  value={formData.business?.size || profile?.company_size || ""}
                   onValueChange={(value) =>
                     setFormData({
                       ...formData,
@@ -701,6 +722,46 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label htmlFor="years-in-business">Years in Business</Label>
+                <Input
+                  id="years-in-business"
+                  type="number"
+                  min={0}
+                  placeholder="e.g., 5"
+                  value={(formData as any)?.business?.years ?? (profile?.years_in_business ?? "")}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      business: { ...formData.business, years: e.target.value === "" ? undefined : Number(e.target.value) },
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="services-offered">Services Offered</Label>
+                <Input
+                  id="services-offered"
+                  placeholder="Comma-separated services"
+                  value={
+                    Array.isArray((formData as any)?.business?.services)
+                      ? (formData as any).business.services.join(", ")
+                      : (profile?.services_offered?.join(", ") || "")
+                  }
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      business: {
+                        ...formData.business,
+                        services: e.target.value
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter((s) => s.length > 0),
+                      },
+                    })
+                  }
+                />
+              </div>
             </div>
 
             <div>
@@ -708,7 +769,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               <Textarea
                 id="business-description"
                 placeholder="Describe your business, services, and what makes you unique..."
-                value={formData.business?.description || ""}
+                value={formData.business?.description || profile?.business_description || ""}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
@@ -725,7 +786,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 id="website"
                 type="url"
                 placeholder="https://www.yourcompany.com"
-                value={formData.business?.website || ""}
+                value={formData.business?.website || profile?.website || ""}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
@@ -760,6 +821,8 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     business: { ...formData.business, logo: images[0].url },
                   })
                   notifications.showSuccess("Business Logo Updated", "Your business logo has been updated successfully.")
+                  // Persist logo immediately
+                  saveProfile({ business_logo: images[0].url }).catch(() => {})
                 }
               }}
               onUploadError={(error) => {

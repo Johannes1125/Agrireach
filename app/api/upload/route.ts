@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { z } from "zod"
-import { jsonOk, jsonError, requireAuth } from "@/server/utils/api"
+import { jsonOk, jsonError, getAuthToken } from "@/server/utils/api"
+import { verifyToken } from "@/server/utils/auth"
 import { 
   uploadToCloudinary, 
   uploadProfileAvatar, 
@@ -17,7 +18,15 @@ const uploadSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await requireAuth(req)
+    const token = getAuthToken(req, "access")
+    if (!token) return jsonError("Unauthorized", 401)
+    let decoded: any
+    try {
+      decoded = verifyToken<any>(token, "access")
+    } catch {
+      return jsonError("Unauthorized", 401)
+    }
+    const user = { id: decoded.sub, role: decoded.role }
     
     const formData = await req.formData()
     const file = formData.get('file') as File
