@@ -208,7 +208,7 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
             }
             ${
               defaultPositionClass === "bottom-left"
-                ? "bottom-5 left-4 sm:bottom-20 sm:left-6"
+                ? "bottom-5 left-4 sm:bottom-30 sm:left-6"
                 : ""
             }
             ${

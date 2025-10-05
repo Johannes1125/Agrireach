@@ -149,3 +149,69 @@
     background: oklch(0.8 0.04 80);
   }
 }
+
+/* Accessibility: Focus visible styles */
+  *:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Remove focus outline when focus-visible is disabled */
+  .no-focus-visible *:focus-visible {
+    outline: none;
+  }
+
+  /* High contrast mode */
+  .high-contrast {
+    --background: #000000;
+    --foreground: #ffffff;
+    --card: #0d0d0d;
+    --card-foreground: #ffffff;
+    --popover: #0d0d0d;
+    --popover-foreground: #ffffff;
+    --primary: #ffff00;
+    --primary-foreground: #000000;
+    --secondary: #00ffff;
+    --secondary-foreground: #000000;
+    --muted: #262626;
+    --muted-foreground: #d1d5db;
+    --accent: #ffff00;
+    --accent-foreground: #000000;
+    --destructive: #ff0000;
+    --destructive-foreground: #ffffff;
+    --border: #525252;
+    --input: #0d0d0d;
+    --ring: #ffff00;
+  }
+
+  /* Custom animation for accessibility button */
+  @keyframes pulse-slow {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse-slow 3s ease-in-out infinite;
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  .reduced-motion * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
