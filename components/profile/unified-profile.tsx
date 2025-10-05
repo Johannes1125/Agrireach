@@ -42,6 +42,11 @@ interface UnifiedProfileProps {
 
 export function UnifiedProfile({ user }: UnifiedProfileProps) {
   const { profile } = useUserProfile()
+  const hasBusiness = !!(profile && (
+    profile.company_name || profile.business_type || profile.industry || profile.company_size ||
+    profile.website || profile.business_description || (Array.isArray(profile.services_offered) && profile.services_offered.length > 0) ||
+    typeof profile.years_in_business === 'number'
+  ))
   const getProfileData = () => {
     switch (user.role) {
       case "worker":
@@ -218,21 +223,21 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
               </div>
             )}
 
-            {user.role === "buyer" && profileData.businessInfo && (
+            {user.role === "buyer" && hasBusiness && (
               <div className="pt-4 border-t">
                 <h4 className="font-medium mb-3">Business Information</h4>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profile?.company_name || profileData.businessInfo.name}</span>
+                    <span className="text-sm">{profile?.company_name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profile?.business_type || profileData.businessInfo.type}</span>
+                    <span className="text-sm">{profile?.business_type}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profile?.website || profileData.businessInfo.website}</span>
+                    <span className="text-sm">{profile?.website}</span>
                   </div>
                 </div>
               </div>
@@ -433,6 +438,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
         </Card>
 
         {/* Business Profile Section */}
+        {hasBusiness && (
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Business Profile</CardTitle>
@@ -442,39 +448,39 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <Label className="text-sm font-medium">Company Name</Label>
-                <p className="text-sm text-muted-foreground mt-1">{profile?.company_name || "Not specified"}</p>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.company_name}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Industry</Label>
-                <p className="text-sm text-muted-foreground mt-1">{profile?.industry || "Not specified"}</p>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.industry}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Business Type</Label>
-                <p className="text-sm text-muted-foreground mt-1">{profile?.business_type || "Not specified"}</p>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.business_type}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Years in Business</Label>
-                <p className="text-sm text-muted-foreground mt-1">{profile?.years_in_business ?? "Not specified"}</p>
+                <p className="text-sm text-muted-foreground mt-1">{typeof profile?.years_in_business === 'number' ? profile?.years_in_business : ''}</p>
               </div>
             </div>
 
             <div>
               <Label className="text-sm font-medium">Business Description</Label>
-              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                {profile?.business_description || "Add a description of your business, services, and what makes you unique in the agricultural sector."}
-              </p>
+              {profile?.business_description && (
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                  {profile.business_description}
+                </p>
+              )}
             </div>
 
             <div>
               <Label className="text-sm font-medium">Services Offered</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {(profile?.services_offered && profile.services_offered.length > 0)
-                  ? profile.services_offered.map((svc, idx) => (
-                      <Badge key={idx} variant="outline">{svc}</Badge>
-                    ))
-                  : (
-                      <span className="text-sm text-muted-foreground">No services listed</span>
-                    )}
+                {Array.isArray(profile?.services_offered) && profile!.services_offered.length > 0 && (
+                  profile!.services_offered.map((svc, idx) => (
+                    <Badge key={idx} variant="outline">{svc}</Badge>
+                  ))
+                )}
               </div>
             </div>
 
@@ -488,6 +494,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             </div>
           </CardContent>
         </Card>
+        )}
       </div>
     </div>
   )

@@ -14,6 +14,9 @@ import {
 import { NotificationCenter } from "@/components/notifications/notification-center"
 import { Settings, User, LogOut } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/hooks/use-auth"
+import { useEffect, useState } from "react"
+import { authFetch } from "@/lib/auth-client"
 
 interface SimpleHeaderProps {
   user?: {
@@ -27,15 +30,43 @@ interface SimpleHeaderProps {
 }
 
 export function SimpleHeader({ user }: SimpleHeaderProps) {
-  // Mock user data if not provided
-  const currentUser = user || {
-    id: "1",
-    name: "John Farmer",
-    email: "john@example.com",
-    role: "worker" as const,
-    avatar: "/farmer-avatar.png",
-    location: "Davao City, Philippines",
-  }
+  const { user: authUser, loading } = useAuth()
+  const [me, setMe] = useState<SimpleHeaderProps["user"] | undefined>(undefined)
+
+  useEffect(() => {
+    let mounted = true
+    const load = async () => {
+      try {
+        const res = await authFetch("/api/auth/me")
+        if (!res.ok) return
+        const json = await res.json()
+        const u = json?.user || json?.data?.user
+        if (u && mounted) {
+          setMe({
+            id: u._id || u.id,
+            name: u.full_name || u.name || "",
+            email: u.email || "",
+            role: (u.role || "worker") as any,
+            avatar: u.avatar_url || u.avatar || "",
+            location: u.location || "",
+          })
+        }
+      } catch {}
+    }
+    load()
+    return () => { mounted = false }
+  }, [])
+
+  const currentUser = user || me || (authUser
+    ? {
+        id: authUser.id,
+        name: authUser.name,
+        email: authUser.email,
+        role: authUser.role as "worker" | "recruiter" | "buyer",
+        avatar: authUser.avatar || "",
+        location: authUser.location || "",
+      }
+    : undefined)
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -50,6 +81,22 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
     }
   }
 
+  // If not authenticated and not loading, show a minimal header with Sign In
+  if (!currentUser && !loading) {
+    return (
+      <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-end px-4 lg:px-4">
+          <div className="flex items-center gap-2 md:gap-4">
+            <NotificationCenter />
+            <Link href="/auth/login">
+              <Button variant="outline" className="bg-transparent">Sign In</Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+    )
+  }
+
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-end px-4 lg:px-4">
@@ -62,24 +109,24 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 px-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={currentUser.avatar || "/placeholder.svg"} alt={currentUser.name} />
+                  <AvatarImage src={(currentUser?.avatar || "/placeholder.svg")} alt={(currentUser?.name || "User")} />
                   <AvatarFallback>
-                    {currentUser.name
+                    {(currentUser?.name
                       ? currentUser.name.split(" ").map((n) => n[0]).join("")
-                      : "U"}
+                      : "U")}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:flex flex-col items-start">
-                  <span className="text-sm font-medium">{currentUser.name || "User"}</span>
-                  {getRoleBadge(currentUser.role)}
+                  <span className="text-sm font-medium">{currentUser?.name || ""}</span>
+                  {currentUser?.role ? getRoleBadge(currentUser.role) : null}
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{currentUser.name}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{currentUser.email}</p>
+                  <p className="text-sm font-medium leading-none">{currentUser?.name || "User"}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{currentUser?.email || ""}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

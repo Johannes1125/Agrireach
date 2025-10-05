@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Heart, Share2, Flag, Send, CheckCircle, AlertCircle } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
+import { authFetch } from "@/lib/auth-client"
 
 interface Job {
   id: string
@@ -33,7 +34,7 @@ export function JobApplication({ job }: JobApplicationProps) {
 
   const handleApply = async () => {
     try {
-      const res = await fetch(`/api/opportunities/${job.id}/apply`, {
+      const res = await authFetch(`/api/opportunities/${job.id}/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cover_letter: coverLetter }),

@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { MapPin, Clock, DollarSign, Users, Star, Building } from "lucide-react"
+import Link from "next/link"
 
 interface Job {
   id: string
@@ -12,12 +13,15 @@ interface Job {
   type: string
   payRange: string
   description: string
+  companyLogo?: string
+  images?: string[]
   requirements: string[]
   benefits: string[]
   postedDate: string
   deadline: string
   urgency: string
   skills: string[]
+  poster?: { id: string; name: string; location?: string }
   companyInfo: {
     name: string
     size: string
@@ -60,7 +64,7 @@ export function JobDetails({ job }: JobDetailsProps) {
         <CardHeader>
           <div className="flex items-start gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src="/placeholder.svg?key=company-logo" alt={job.company} />
+              <AvatarImage src={job.companyLogo || "/placeholder.svg?key=company-logo"} alt={job.company} />
               <AvatarFallback>
                 {job.company
                   ? job.company.split(" ").map((n) => n[0]).join("")
@@ -109,6 +113,43 @@ export function JobDetails({ job }: JobDetailsProps) {
           </div>
         </CardHeader>
       </Card>
+      {/* Posted by */}
+      {job.poster && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading">Posted by</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center gap-3">
+            <Avatar>
+              <AvatarImage src={job.companyLogo || "/placeholder.svg"} />
+              <AvatarFallback>{job.poster.name.split(' ').map(n=>n[0]).join('')}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <div className="font-medium">{job.poster.name}</div>
+              {job.poster.location && (
+                <div className="text-sm text-muted-foreground">{job.poster.location}</div>
+              )}
+            </div>
+            <Link href={`/profile?user=${job.poster.id}`} className="text-sm text-primary">View profile</Link>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Gallery */}
+      {Array.isArray(job.images) && job.images.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading">Job Gallery</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {job.images.map((img, idx) => (
+                <img key={idx} src={img} alt={`Job image ${idx + 1}`} className="w-full h-40 object-cover rounded-md" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Job Description */}
       <Card>

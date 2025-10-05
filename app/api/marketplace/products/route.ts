@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
   const product = await Product.create({
     ...result.data,
     seller_id: decoded.sub,
-    status: "pending_approval" // All products need approval
+    status: "active"
   });
 
   return jsonOk({ 
