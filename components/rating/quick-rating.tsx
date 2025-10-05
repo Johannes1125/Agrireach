@@ -31,15 +31,14 @@ export function QuickRating({ targetName, onSubmit, onCancel }: QuickRatingProps
       <CardContent className="space-y-4">
         <div className="flex items-center justify-center gap-1">
           {[1, 2, 3, 4, 5].map((star) => (
-            <button 
+            <button
               key={star}
               type="button"
               className="focus:outline-none"
+              title={`Rate ${star} star${star > 1 ? "s" : ""}`}
               onMouseEnter={() => setHoverRating(star)}
               onMouseLeave={() => setHoverRating(0)}
               onClick={() => setRating(star)}
-              title={`Rate ${star} star${star > 1 ? "s" : ""}`}
-              aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
             >
               <Star
                 className={`h-8 w-8 transition-colors ${

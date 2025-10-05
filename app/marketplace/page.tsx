@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Grid, List, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,125 +8,77 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SimpleHeader } from "@/components/layout/simple-header"
+import { useMarketplaceData } from "@/hooks/use-marketplace-data"
+import { useAuth } from "@/hooks/use-auth"
 import Link from "next/link"
 
-// Mock product data
-const products = [
-  {
-    id: 1,
-    name: "Organic Tomatoes",
-    price: 4.99,
-    unit: "per kg",
-    seller: "Green Valley Farm",
-    location: "Nairobi, Kenya",
-    category: "Vegetables",
-    image: "/fresh-organic-tomatoes.png",
-    rating: 4.8,
-    inStock: true,
-    description: "Fresh organic tomatoes grown without pesticides",
-  },
-  {
-    id: 2,
-    name: "Fresh Tilapia Fish",
-    price: 8.5,
-    unit: "per kg",
-    seller: "Lake Victoria Fishers",
-    location: "Kisumu, Kenya",
-    category: "Fish & Seafood",
-    image: "/fresh-tilapia-fish.jpg",
-    rating: 4.6,
-    inStock: true,
-    description: "Freshly caught tilapia from Lake Victoria",
-  },
-  {
-    id: 3,
-    name: "Handwoven Baskets",
-    price: 15.0,
-    unit: "each",
-    seller: "Artisan Crafts Co.",
-    location: "Nakuru, Kenya",
-    category: "Crafts",
-    image: "/handwoven-traditional-baskets.jpg",
-    rating: 4.9,
-    inStock: true,
-    description: "Traditional handwoven baskets made from local materials",
-  },
-  {
-    id: 4,
-    name: "Organic Maize",
-    price: 2.3,
-    unit: "per kg",
-    seller: "Sunrise Farm",
-    location: "Eldoret, Kenya",
-    category: "Grains",
-    image: "/organic-maize-corn.jpg",
-    rating: 4.7,
-    inStock: true,
-    description: "Premium organic maize, perfect for various uses",
-  },
-  {
-    id: 5,
-    name: "Fresh Milk",
-    price: 1.2,
-    unit: "per liter",
-    seller: "Highland Dairy",
-    location: "Meru, Kenya",
-    category: "Dairy",
-    image: "/fresh-dairy-milk.jpg",
-    rating: 4.5,
-    inStock: false,
-    description: "Fresh cow milk from grass-fed cattle",
-  },
-  {
-    id: 6,
-    name: "Pottery Collection",
-    price: 25.0,
-    unit: "per set",
-    seller: "Clay Masters",
-    location: "Machakos, Kenya",
-    category: "Crafts",
-    image: "/traditional-pottery-ceramics.jpg",
-    rating: 4.8,
-    inStock: true,
-    description: "Beautiful handcrafted pottery set",
-  },
-]
 
-const categories = ["All", "Vegetables", "Fruits", "Grains", "Fish & Seafood", "Dairy", "Crafts", "Livestock"]
 
 export default function MarketplacePage() {
+  const { user, loading: authLoading } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("All")
-  const [sortBy, setSortBy] = useState("name")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [sortBy, setSortBy] = useState("newest")
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [cartItems, setCartItems] = useState<number[]>([])
+  const [cartItems, setCartItems] = useState<string[]>([])
 
-  const filteredProducts = products
-    .filter(
-      (product) =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        (selectedCategory === "All" || product.category === selectedCategory),
-    )
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "price-low":
-          return a.price - b.price
-        case "price-high":
-          return b.price - a.price
-        case "rating":
-          return b.rating - a.rating
-        default:
-          return a.name.localeCompare(b.name)
-      }
-    })
+  const { products, categories, loading, error, total } = useMarketplaceData({
+    search: searchTerm || undefined,
+    category: selectedCategory || undefined,
+    sortBy,
+    limit: 20
+  })
 
-  const addToCart = (productId: number) => {
+  if (authLoading) {
+    return <div>Loading...</div>
+  }
+
+  const addToCart = (productId: string) => {
     setCartItems((prev) => [...prev, productId])
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SimpleHeader />
+        <div className="container mx-auto px-4 py-12">
+          <div className="flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground">Loading marketplace...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SimpleHeader />
+        <div className="container mx-auto px-4 py-12">
+          <div className="flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <p className="text-destructive">Error loading marketplace: {error}</p>
+              <Button onClick={() => window.location.reload()}>Retry</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader />
+      <SimpleHeader user={user ? {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar || "",
+        location: user.location || "Not specified",
+      } : undefined} />
 
       {/* Header */}
       <div className="bg-white border-b">
@@ -170,9 +122,10 @@ export default function MarketplacePage() {
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
+                  <SelectItem key={category._id || category} value={category.name || category}>
+                    {category.name || category}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -183,10 +136,10 @@ export default function MarketplacePage() {
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="newest">Newest First</SelectItem>
                 <SelectItem value="price-low">Price: Low to High</SelectItem>
                 <SelectItem value="price-high">Price: High to Low</SelectItem>
-                <SelectItem value="rating">Rating</SelectItem>
+                <SelectItem value="name">Name A-Z</SelectItem>
               </SelectContent>
             </Select>
 
@@ -217,25 +170,30 @@ export default function MarketplacePage() {
             viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"
           }
         >
-          {filteredProducts.map((product) => (
-            <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+          {products.map((product) => (
+            <Card key={product._id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <CardHeader className="p-0">
                 <div className="relative">
                   <img
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
+                    src={product.images?.[0] || "/placeholder.svg"}
+                    alt={product.title}
                     className="w-full h-48 object-cover"
                   />
-                  {!product.inStock && (
+                  {product.quantity_available <= 0 && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                       <Badge variant="destructive">Out of Stock</Badge>
+                    </div>
+                  )}
+                  {product.organic && (
+                    <div className="absolute top-2 left-2">
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">Organic</Badge>
                     </div>
                   )}
                 </div>
               </CardHeader>
 <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <CardTitle className="text-lg font-semibold">{product.name}</CardTitle>
+                  <CardTitle className="text-lg font-semibold">{product.title}</CardTitle>
                   <Badge variant="secondary">{product.category}</Badge>
                 </div>
 
@@ -243,28 +201,27 @@ export default function MarketplacePage() {
 
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-2xl font-bold text-primary">
-                    ${product.price}
+                    ₱{product.price}
                     <span className="text-sm font-normal text-muted-foreground ml-1">{product.unit}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-yellow-500">★</span>
-                    <span className="text-sm">{product.rating}</span>
+                  <div className="text-sm text-muted-foreground">
+                    {product.quantity_available} available
                   </div>
                 </div>
 
                 <div className="text-sm text-muted-foreground">
-                  <p className="font-medium">{product.seller}</p>
-                  <p>{product.location}</p>
+                  <p className="font-medium">{product.seller_id?.full_name}</p>
+                  <p>{product.seller_id?.location}</p>
                 </div>
               </CardContent>
 
               <CardFooter className="p-4 pt-0 flex gap-2">
-                <Link href={'/marketplace/${product.id}'} className="flex-1">
+                <Link href={`/marketplace/${product._id}`} className="flex-1">
                   <Button variant="outline" className="w-full bg-transparent">
                     View Details
                   </Button>
                 </Link>
-                <Button onClick={() => addToCart(product.id)} disabled={!product.inStock} className="flex-1">
+                <Button onClick={() => addToCart(product._id)} disabled={product.quantity_available <= 0} className="flex-1">
                   Add to Cart
                 </Button>
               </CardFooter>
@@ -272,7 +229,7 @@ export default function MarketplacePage() {
           ))}
         </div>
 
-        {filteredProducts.length === 0 && (
+        {products.length === 0 && !loading && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No products found matching your criteria.</p>
           </div>

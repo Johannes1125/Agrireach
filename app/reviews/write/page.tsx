@@ -13,6 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { authFetch } from "@/lib/auth-client"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 // Mock data for users to review
@@ -49,9 +52,11 @@ const reviewCategories = {
 }
 
 export default function WriteReviewPage() {
+  const router = useRouter()
   const [selectedUser, setSelectedUser] = useState("")
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -66,14 +71,48 @@ export default function WriteReviewPage() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log("Review submission:", {
-      userId: selectedUser,
-      rating,
-      ...formData,
-    })
+
+    if (!selectedUser) {
+      toast.error("Please select a user to review")
+      return
+    }
+
+    if (rating === 0) {
+      toast.error("Please provide a rating")
+      return
+    }
+
+    try {
+      setSubmitting(true)
+
+      const res = await authFetch("/api/reviews", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reviewee_id: selectedUser,
+          rating,
+          title: formData.title || undefined,
+          comment: formData.content || undefined,
+          category: formData.category || undefined,
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || "Failed to submit review")
+      }
+
+      toast.success("Review submitted successfully!")
+      router.push("/reviews")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit review")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -119,7 +158,7 @@ export default function WriteReviewPage() {
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold">{user.name}</h3>
+                          <h3 className="font-semibold">{user.name || "User"}</h3>
                           <Badge variant="outline">{user.role}</Badge>
                           {user.type === "product" ? (
                             <Package className="h-4 w-4 text-muted-foreground" />
@@ -150,6 +189,7 @@ export default function WriteReviewPage() {
                         key={star}
                         type="button"
                         className="focus:outline-none"
+                        title={`Rate ${star} star${star > 1 ? "s" : ""}`}
                         onMouseEnter={() => setHoverRating(star)}
                         onMouseLeave={() => setHoverRating(0)}
                         onClick={() => setRating(star)}
@@ -274,9 +314,9 @@ export default function WriteReviewPage() {
                 <Button
                   type="submit"
                   className="flex-1"
-                  disabled={!rating || !formData.title || !formData.content || !formData.category}
+                  disabled={!rating || !formData.title || !formData.content || !formData.category || submitting}
                 >
-                  Submit Review
+                  {submitting ? "Submitting..." : "Submit Review"}
                 </Button>
                 <Button type="button" variant="outline">
                   Save as Draft

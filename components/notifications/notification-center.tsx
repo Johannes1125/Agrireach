@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Bell, Briefcase, ShoppingCart, MessageSquare, Star, Info, X } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
+import { authFetch } from "@/lib/auth-client"
 
 interface Notification {
   id: string
@@ -21,60 +22,42 @@ interface Notification {
 }
 
 export function NotificationCenter() {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      type: "job",
-      title: "New Job Application",
-      message: "Maria Rodriguez applied for Seasonal Harvest Workers position",
-      timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
-      read: false,
-      priority: "high",
-      actionUrl: "/dashboard?tab=recruiter",
-    },
-    {
-      id: "2",
-      type: "order",
-      title: "Order Shipped",
-      message: "Your organic tomatoes order has been shipped and will arrive tomorrow",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-      read: false,
-      priority: "medium",
-      actionUrl: "/dashboard?tab=buyer",
-    },
-    {
-      id: "3",
-      type: "message",
-      title: "New Message",
-      message: "Green Valley Farms sent you a message about the harvest job",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
-      read: true,
-      priority: "medium",
-      actionUrl: "/community",
-    },
-    {
-      id: "4",
-      type: "review",
-      title: "New Review",
-      message: "You received a 5-star review from Sustainable Acres",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-      read: true,
-      priority: "low",
-      actionUrl: "/reviews",
-    },
-    {
-      id: "5",
-      type: "system",
-      title: "Profile Update",
-      message: "Complete your profile to get 50% more job matches",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48), // 2 days ago
-      read: false,
-      priority: "low",
-      actionUrl: "/profile",
-    },
-  ])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(true)
+  const [unreadCount, setUnreadCount] = useState(0)
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const res = await authFetch("/api/notifications?limit=10")
+      if (res.ok) {
+        const data = await res.json()
+        const formattedNotifications = data.notifications.map((n: any) => ({
+          id: n._id,
+          type: n.type,
+          title: n.title,
+          message: n.message,
+          timestamp: new Date(n.created_at),
+          read: n.read,
+          priority: n.priority,
+          actionUrl: n.action_url,
+        }))
+        setNotifications(formattedNotifications)
+        setUnreadCount(data.unreadCount || 0)
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+
+  // unreadCount is now managed by state from API
 
   const getNotificationIcon = (type: string, priority: string) => {
     const iconClass = `h-4 w-4 ${
@@ -97,12 +80,28 @@ export function NotificationCenter() {
     }
   }
 
-  const markAsRead = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+  const markAsRead = async (id: string) => {
+    try {
+      const res = await authFetch(`/api/notifications/${id}/read`, { method: "PUT" })
+      if (res.ok) {
+        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+        setUnreadCount((prev) => Math.max(0, prev - 1))
+      }
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error)
+    }
   }
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+  const markAllAsRead = async () => {
+    try {
+      const res = await authFetch("/api/notifications/read-all", { method: "PUT" })
+      if (res.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+        setUnreadCount(0)
+      }
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error)
+    }
   }
 
   const removeNotification = (id: string) => {

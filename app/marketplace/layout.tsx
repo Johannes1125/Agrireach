@@ -8,3 +8,4 @@ export default function MarketplaceLayout({
 }) {
   return <AppLayout>{children}</AppLayout>
 }
+

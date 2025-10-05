@@ -34,7 +34,7 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
     email: "john@example.com",
     role: "worker" as const,
     avatar: "/farmer-avatar.png",
-    location: "Rural Valley, CA",
+    location: "Davao City, Philippines",
   }
 
   const getRoleBadge = (role: string) => {
@@ -51,10 +51,10 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-end px-4 w-full">
+    <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-end px-4 lg:px-4">
         {/* User Actions - Right Side Only */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <NotificationCenter />
 
           {/* User Menu */}
@@ -65,13 +65,12 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
                   <AvatarImage src={currentUser.avatar || "/placeholder.svg"} alt={currentUser.name} />
                   <AvatarFallback>
                     {currentUser.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
+                      ? currentUser.name.split(" ").map((n) => n[0]).join("")
+                      : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:flex flex-col items-start">
-                  <span className="text-sm font-medium">{currentUser.name}</span>
+                  <span className="text-sm font-medium">{currentUser.name || "User"}</span>
                   {getRoleBadge(currentUser.role)}
                 </div>
               </Button>

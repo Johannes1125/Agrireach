@@ -1,20 +1,7 @@
 import { redirect } from "next/navigation"
 import { SimpleHeader } from "@/components/layout/simple-header"
 import { UnifiedDashboard } from "@/components/dashboard/unified-dashboard"
-
-// TODO: Replace with actual auth check
-const getCurrentUser = async () => {
-  // Mock user data - replace with actual authentication
-  return {
-    id: "1",
-    name: "John Farmer",
-    email: "john@example.com",
-    role: "worker" as const,
-    avatar: "/farmer-avatar.png",
-    location: "Rural Valley, CA",
-    joinDate: "2024-01-15",
-  }
-}
+import { getCurrentUser } from "@/lib/auth-server"
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
@@ -24,11 +11,24 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background w-full">
-      <SimpleHeader />
+    <div className="min-h-screen bg-background">
+      <SimpleHeader user={{
+        id: user.id,
+        name: user.full_name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar_url || "",
+        location: user.location || "Not specified",
+      }} />
 
-      <main className="container px-4 py-8 w-full">
-        <UnifiedDashboard user={user} />
+      <main className="container px-4 py-8">
+        <UnifiedDashboard user={{
+          id: user.id,
+          name: user.full_name,
+          role: user.role,
+          location: user.location || "Not specified",
+          joinDate: new Date(user.created_at).toISOString().split('T')[0],
+        }} />
       </main>
     </div>
   )

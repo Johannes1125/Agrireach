@@ -13,32 +13,41 @@ interface NotificationContextType {
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
+
   const showSuccess = useCallback(
     (title: string, description?: string) => {
-      toast.success(title, { description })
+      toast.success(title, {
+        description,
+      })
     },
-    [],
+    [toast],
   )
 
   const showError = useCallback(
     (title: string, description?: string) => {
-      toast.error(title, { description })
+      toast.error(title, {
+        description,
+      })
     },
-    [],
+    [toast],
   )
 
   const showInfo = useCallback(
     (title: string, description?: string) => {
-      toast.info(title, { description })
+      toast.info(title, {
+        description,
+      })
     },
-    [],
+    [toast],
   )
 
   const showWarning = useCallback(
     (title: string, description?: string) => {
-      toast.warning(title, { description })
+      toast.warning(title, {
+        description,
+      })
     },
-    [],
+    [toast],
   )
 
   return (

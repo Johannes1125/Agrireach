@@ -77,19 +77,19 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                   <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
                   <AvatarFallback className="text-2xl">
                     {user.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
+                      ? user.name.split(" ").map((n) => n[0]).join("")
+                      : "U"}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="text-center md:text-left">
                   <div className="flex items-center gap-2 mb-2">
-                    <h1 className="font-heading text-3xl font-bold">{user.name}</h1>
+                    <h1 className="font-heading text-3xl font-bold">{user.name || "User"}</h1>
                     {user.verified && (
-                      <Shield className="h-6 w-6 text-primary">
-                        <title>Verified Profile</title>
-                      </Shield>
+                      <>
+                        <Shield className="h-6 w-6 text-primary" />
+                        <span className="sr-only">Verified Profile</span>
+                      </>
                     )}
                   </div>
 

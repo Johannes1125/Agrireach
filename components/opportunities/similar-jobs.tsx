@@ -1,37 +1,38 @@
+"use client"
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { MapPin, Clock, Star } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useState } from "react"
+
+interface SimilarJobsProps {
+  currentJobId: string
+}
+
 export function SimilarJobs({ currentJobId }: SimilarJobsProps) {
-  // Mock similar jobs data - replace with actual data fetching
-  const similarJobs = [
-    {
-      id: "2",
-      title: "Organic Farm Specialist",
-      company: "Sustainable Acres",
-      location: "Salinas, CA",
-      type: "Full-time",
-      payRange: "$20-25/hour",
-      rating: 4.9,
-      matchScore: 88,
-    },
-    {
-      id: "5",
-      title: "Greenhouse Manager",
-      company: "Coastal Growing",
-      location: "Ventura, CA",
-      type: "Full-time",
-      payRange: "$25-32/hour",
-      rating: 4.8,
-      matchScore: 91,
-    },
-    {
-      id: "3",
-      title: "Equipment Operator",
-      company: "Valley Equipment",
-      location: "Bakersfield, CA",
-      type: "Contract",
-      payRange: "$22-28/hour",
-      rating: 4.5,
-      matchScore: 82,
-    },
-  ].filter((job) => job.id !== currentJobId)
+  const [similarJobs, setSimilarJobs] = useState<any[]>([])
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetch(`/api/opportunities/${currentJobId}/similar`)
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) return
+      const items = (json?.data?.items || []).map((j: any) => ({
+        id: String(j._id),
+        title: j.title,
+        company: "",
+        location: j.location,
+        type: j.duration || j.pay_type,
+        payRange: `₱${j.pay_rate}/${j.pay_type}`,
+        rating: 0,
+        matchScore: 0,
+      }))
+      setSimilarJobs(items)
+    }
+    load()
+  }, [currentJobId])
 
   return (
     <Card>
@@ -44,7 +45,7 @@ export function SimilarJobs({ currentJobId }: SimilarJobsProps) {
           <div key={job.id} className="p-3 border rounded-lg space-y-2">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <Link href={/opportunities/${job.id}}>
+                <Link href={`/opportunities/${job.id}`}>
                   <h4 className="font-medium hover:text-primary transition-colors cursor-pointer">{job.title}</h4>
                 </Link>
                 <p className="text-sm text-muted-foreground">{job.company}</p>
@@ -76,7 +77,7 @@ export function SimilarJobs({ currentJobId }: SimilarJobsProps) {
 
             <div className="flex items-center justify-between pt-2">
               <span className="text-sm font-medium text-primary">{job.payRange}</span>
-              <Link href={/opportunities/${job.id}}>
+              <Link href={`/opportunities/${job.id}`}>
                 <Button size="sm" variant="outline">
                   View Job
                 </Button>

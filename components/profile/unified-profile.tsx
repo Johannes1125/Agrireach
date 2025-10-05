@@ -2,6 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Label } from "@/components/ui/label"
+import Link from "next/link"
 import {
   MapPin,
   Calendar,
@@ -16,6 +18,7 @@ import {
   Clock,
   DollarSign,
   TrendingUp,
+  Settings,
 } from "lucide-react"
 
 interface User {
@@ -36,14 +39,13 @@ interface UnifiedProfileProps {
 }
 
 export function UnifiedProfile({ user }: UnifiedProfileProps) {
-  // Mock data that adapts based on role
   const getProfileData = () => {
     switch (user.role) {
       case "worker":
         return {
           stats: {
             primary: { label: "Completed Jobs", value: user.completedJobs || 47, icon: Briefcase },
-            secondary: { label: "Total Earnings", value: "$45,600", icon: DollarSign },
+            secondary: { label: "Total Earnings", value: "₱1,250,000", icon: DollarSign },
             tertiary: { label: "Hours Worked", value: "1,240", icon: Clock },
             quaternary: { label: "Rating", value: user.rating || 4.8, icon: Star },
           },
@@ -57,7 +59,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {
               title: "Seasonal Fruit Harvesting",
               company: "Green Valley Farms",
-              location: "Fresno, CA",
+              location: "Davao City, Philippines",
               status: "completed",
               date: "2024-02-20",
               rating: 4.9,
@@ -65,7 +67,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {
               title: "Organic Vegetable Planting",
               company: "Sustainable Acres",
-              location: "Salinas, CA",
+              location: "Baguio City, Philippines",
               status: "active",
               date: "2024-02-15",
               rating: null,
@@ -91,7 +93,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {
               title: "Seasonal Harvest Coordinator",
               company: "Posted Job",
-              location: "Fresno, CA",
+              location: "Davao City, Philippines",
               status: "active",
               date: "2024-02-15",
               applicants: 24,
@@ -99,7 +101,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {
               title: "Organic Farm Supervisor",
               company: "Posted Job",
-              location: "Salinas, CA",
+              location: "Baguio City, Philippines",
               status: "active",
               date: "2024-02-10",
               applicants: 12,
@@ -111,7 +113,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
         return {
           stats: {
             primary: { label: "Total Orders", value: 234, icon: Package },
-            secondary: { label: "Total Spent", value: "$125,600", icon: DollarSign },
+            secondary: { label: "Total Spent", value: "₱3,450,000", icon: DollarSign },
             tertiary: { label: "Active Orders", value: "12", icon: Clock },
             quaternary: { label: "Rating", value: 4.9, icon: Star },
           },
@@ -125,18 +127,18 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {
               title: "Organic Tomatoes",
               company: "Green Valley Farms",
-              location: "500 lbs",
+              location: "500 kg",
               status: "delivered",
               date: "2024-02-20",
-              amount: "$1,250",
+              amount: "₱60,000",
             },
             {
               title: "Fresh Strawberries",
               company: "Berry Best Farm",
-              location: "200 lbs",
+              location: "200 kg",
               status: "delivered",
               date: "2024-02-18",
-              amount: "$800",
+              amount: "₱40,000",
             },
           ],
         }
@@ -350,10 +352,12 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
           <CardContent className="space-y-3">
             {user.role === "worker" && (
               <>
-                <Button className="w-full" size="sm">
-                  <Briefcase className="mr-2 h-4 w-4" />
-                  Find Jobs
-                </Button>
+                <Link href="/opportunities">
+                  <Button className="w-full" size="sm">
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    Find Jobs
+                  </Button>
+                </Link>
                 <Button variant="outline" className="w-full bg-transparent" size="sm">
                   <Award className="mr-2 h-4 w-4" />
                   View Certificates
@@ -363,10 +367,12 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
 
             {user.role === "recruiter" && (
               <>
-                <Button className="w-full" size="sm">
-                  <Users className="mr-2 h-4 w-4" />
-                  Post New Job
-                </Button>
+                <Link href="/opportunities/create">
+                  <Button className="w-full" size="sm">
+                    <Users className="mr-2 h-4 w-4" />
+                    Post New Job
+                  </Button>
+                </Link>
                 <Button variant="outline" className="w-full bg-transparent" size="sm">
                   <TrendingUp className="mr-2 h-4 w-4" />
                   View Analytics
@@ -376,10 +382,12 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
 
             {user.role === "buyer" && (
               <>
-                <Button className="w-full" size="sm">
-                  <Package className="mr-2 h-4 w-4" />
-                  Browse Products
-                </Button>
+                <Link href="/marketplace">
+                  <Button className="w-full" size="sm">
+                    <Package className="mr-2 h-4 w-4" />
+                    Browse Products
+                  </Button>
+                </Link>
                 <Button variant="outline" className="w-full bg-transparent" size="sm">
                   <Star className="mr-2 h-4 w-4" />
                   Favorite Suppliers
@@ -387,9 +395,11 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
               </>
             )}
 
-            <Button variant="outline" className="w-full bg-transparent" size="sm">
-              Edit Profile
-            </Button>
+            <Link href="/settings">
+              <Button variant="outline" className="w-full bg-transparent" size="sm">
+                Edit Profile
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
@@ -416,6 +426,59 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
                 </Badge>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Business Profile Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading">Business Profile</CardTitle>
+            <CardDescription>Showcase your business and services</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label className="text-sm font-medium">Company Name</Label>
+                <p className="text-sm text-muted-foreground mt-1">Not specified</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Industry</Label>
+                <p className="text-sm text-muted-foreground mt-1">Agriculture</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Business Type</Label>
+                <p className="text-sm text-muted-foreground mt-1">Farm</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Years in Business</Label>
+                <p className="text-sm text-muted-foreground mt-1">5+ years</p>
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Business Description</Label>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                Add a description of your business, services, and what makes you unique in the agricultural sector.
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Services Offered</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Badge variant="outline">Crop Production</Badge>
+                <Badge variant="outline">Organic Farming</Badge>
+                <Badge variant="outline">Equipment Rental</Badge>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t">
+              <Link href="/settings?tab=business">
+                <Button variant="outline" className="w-full">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Edit Business Profile
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

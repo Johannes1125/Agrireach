@@ -43,9 +43,8 @@ export function SettingsHeader({ user }: SettingsHeaderProps) {
                   <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
                   <AvatarFallback className="text-lg">
                     {user.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
+                      ? user.name.split(" ").map((n) => n[0]).join("")
+                      : "U"}
                   </AvatarFallback>
                 </Avatar>
 

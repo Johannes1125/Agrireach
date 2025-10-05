@@ -11,62 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Link from "next/link"
-
-// Mock user data
-const users = [
-  {
-    id: 1,
-    name: "John Farmer",
-    email: "john@example.com",
-    role: "Worker",
-    status: "active",
-    trustScore: 4.8,
-    joinDate: "2023-01-15",
-    lastActive: "2 hours ago",
-    avatar: "/placeholder.svg?key=jf123",
-    verified: true,
-    reports: 0,
-  },
-  {
-    id: 2,
-    name: "Sarah Market",
-    email: "sarah@example.com",
-    role: "Buyer",
-    status: "active",
-    trustScore: 4.6,
-    joinDate: "2023-02-20",
-    lastActive: "1 day ago",
-    avatar: "/placeholder.svg?key=sm456",
-    verified: true,
-    reports: 0,
-  },
-  {
-    id: 3,
-    name: "Mike Recruiter",
-    email: "mike@example.com",
-    role: "Recruiter",
-    status: "suspended",
-    trustScore: 3.2,
-    joinDate: "2023-03-10",
-    lastActive: "1 week ago",
-    avatar: "/placeholder.svg?key=mr789",
-    verified: false,
-    reports: 3,
-  },
-  {
-    id: 4,
-    name: "Lisa Green",
-    email: "lisa@example.com",
-    role: "Worker",
-    status: "pending",
-    trustScore: 0,
-    joinDate: "2024-01-08",
-    lastActive: "5 minutes ago",
-    avatar: "/placeholder.svg?key=lg012",
-    verified: false,
-    reports: 0,
-  },
-]
+import { toast } from "sonner"
+import { useAdminUsers } from "@/hooks/use-admin-data"
 
 const statusColors = {
   active: "bg-green-500",
@@ -80,16 +26,17 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [roleFilter, setRoleFilter] = useState("all")
 
-  const filteredUsers = users.filter(
-    (user) =>
-      (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (statusFilter === "all" || user.status === statusFilter) &&
-      (roleFilter === "all" || user.role === roleFilter),
-  )
+  const { users, loading, error } = useAdminUsers({
+    status: statusFilter,
+    role: roleFilter,
+    search: searchTerm,
+  })
 
-  const handleUserAction = (userId: number, action: string) => {
-    console.log(`Action ${action} for user ${userId}`)
+  const filteredUsers = users
+
+  const handleUserAction = (userId: string, action: string) => {
+    // TODO: Implement user action handling
+    toast.info(`${action} action for user ${userId} - Feature coming soon`)
   }
 
   return (
@@ -225,16 +172,37 @@ export default function AdminUsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      Loading users...
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-red-500">
+                      Error: {error}
+                    </TableCell>
+                  </TableRow>
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      No users found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <TableRow key={user._id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.avatar || "/placeholder.svg"} />
-                          <AvatarFallback>{user.name[0]}</AvatarFallback>
+                          <AvatarImage src={user.avatar_url || "/placeholder.svg"} />
+                          <AvatarFallback>
+                            {user.full_name ? user.full_name.split(" ").map((n) => n[0]).join("") : "U"}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{user.name}</p>
+                          <p className="font-medium">{user.full_name || "User"}</p>
                           <p className="text-sm text-muted-foreground">{user.email}</p>
                           {user.verified && (
                             <Badge variant="outline" className="text-xs mt-1">
@@ -257,22 +225,20 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {user.trustScore > 0 ? (
+                      {user.trust_score > 0 ? (
                         <div className="flex items-center gap-1">
-                          <span>{user.trustScore}</span>
+                          <span>{user.trust_score}</span>
                           <span className="text-yellow-500">★</span>
                         </div>
                       ) : (
                         <span className="text-muted-foreground">New</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{user.lastActive}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {user.last_login ? new Date(user.last_login).toLocaleDateString() : "Never"}
+                    </TableCell>
                     <TableCell>
-                      {user.reports > 0 ? (
-                        <Badge variant="destructive">{user.reports}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">None</span>
-                      )}
+                      <span className="text-muted-foreground">-</span>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -282,17 +248,17 @@ export default function AdminUsersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => handleUserAction(user.id, "view")}>
+                          <DropdownMenuItem onClick={() => handleUserAction(user._id, "view")}>
                             View Profile
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUserAction(user.id, "verify")}>
+                          <DropdownMenuItem onClick={() => handleUserAction(user._id, "verify")}>
                             {user.verified ? "Remove Verification" : "Verify User"}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUserAction(user.id, "suspend")}>
+                          <DropdownMenuItem onClick={() => handleUserAction(user._id, "suspend")}>
                             {user.status === "suspended" ? "Unsuspend" : "Suspend"}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleUserAction(user.id, "ban")}
+                            onClick={() => handleUserAction(user._id, "ban")}
                             className="text-destructive"
                           >
                             Ban User
@@ -301,7 +267,8 @@ export default function AdminUsersPage() {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                ))}
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

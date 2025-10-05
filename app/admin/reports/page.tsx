@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import Link from "next/link"
+import { toast } from "sonner"
 
 // Mock reports data
 const reports = [
@@ -111,7 +112,8 @@ export default function AdminReportsPage() {
   )
 
   const handleReportAction = (reportId: number, action: string, resolution?: string) => {
-    console.log(`Action ${action} for report ${reportId}`, resolution)
+    // TODO: Implement report action handling
+    toast.info(`${action} action for report ${reportId} - Feature coming soon`)
     setSelectedReport(null)
   }
 

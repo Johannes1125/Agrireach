@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState, use as usePromise } from "react"
 import { ArrowLeft, MessageSquare, Eye, ThumbsUp, Pin, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,124 +10,51 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
 
-// Mock category data
-const categoryData = {
-  1: {
-    name: "Farming Tips & Techniques",
-    description: "Share knowledge about crop cultivation, soil management, and farming best practices",
-    icon: "🌱",
-  },
-}
+interface ThreadItem { _id: string; title: string; tags?: string[]; replies_count?: number; views?: number; likes_count?: number; author_id?: string; created_at?: string; pinned?: boolean }
 
-// Mock threads data
-const threads = [
-  {
-    id: 1,
-    title: "Organic pest control methods that actually work",
-    author: {
-      name: "John Farmer",
-      avatar: "/placeholder.svg?key=jf123",
-      role: "Experienced Farmer",
-    },
-    createdAt: "2 hours ago",
-    replies: 23,
-    views: 156,
-    likes: 12,
-    isPinned: true,
-    lastReply: {
-      author: "Sarah Green",
-      time: "30 minutes ago",
-    },
-    tags: ["organic", "pest-control", "natural-methods"],
-  },
-  {
-    id: 2,
-    title: "Best soil preparation techniques for the rainy season",
-    author: {
-      name: "Mike Soil",
-      avatar: "/placeholder.svg?key=ms456",
-      role: "Soil Expert",
-    },
-    createdAt: "5 hours ago",
-    replies: 18,
-    views: 89,
-    likes: 8,
-    isPinned: false,
-    lastReply: {
-      author: "David Farm",
-      time: "1 hour ago",
-    },
-    tags: ["soil", "preparation", "rainy-season"],
-  },
-  {
-    id: 3,
-    title: "Companion planting guide for vegetables",
-    author: {
-      name: "Lisa Garden",
-      avatar: "/placeholder.svg?key=lg789",
-      role: "Garden Specialist",
-    },
-    createdAt: "1 day ago",
-    replies: 31,
-    views: 234,
-    likes: 19,
-    isPinned: false,
-    lastReply: {
-      author: "Tom Plant",
-      time: "3 hours ago",
-    },
-    tags: ["companion-planting", "vegetables", "garden"],
-  },
-  {
-    id: 4,
-    title: "Water conservation techniques for dry regions",
-    author: {
-      name: "Ahmed Water",
-      avatar: "/placeholder.svg?key=aw012",
-      role: "Water Management",
-    },
-    createdAt: "2 days ago",
-    replies: 15,
-    views: 167,
-    likes: 14,
-    isPinned: false,
-    lastReply: {
-      author: "Maria Save",
-      time: "5 hours ago",
-    },
-    tags: ["water-conservation", "drought", "irrigation"],
-  },
-]
-
-export default function CategoryPage({ params }: { params: { id: string } }) {
+export default function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = usePromise(params)
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("recent")
+  const [category, setCategory] = useState<any>(null)
+  const [threads, setThreads] = useState<ThreadItem[]>([])
 
-  const categoryId = Number.parseInt(params.id)
-  const category = categoryData[categoryId as keyof typeof categoryData] || categoryData[1]
+  useEffect(() => {
+    const load = async () => {
+      const [cres, tres] = await Promise.all([
+        fetch(`/api/community/categories/${id}`),
+        fetch(`/api/community/threads?category_id=${encodeURIComponent(id)}`),
+      ])
+      const cjson = await cres.json().catch(() => ({}))
+      const tjson = await tres.json().catch(() => ({}))
+      if (cres.ok) setCategory(cjson?.data)
+      if (tres.ok) setThreads(tjson?.data?.items || [])
+    }
+    load()
+  }, [id])
 
-  const filteredThreads = threads
+  const filteredThreads = (threads || [])
     .filter(
-      (thread) =>
-        thread.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        thread.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase())),
+      (thread: any) =>
+        (thread.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (thread.tags || []).some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase())),
     )
     .sort((a, b) => {
       switch (sortBy) {
         case "popular":
-          return b.likes - a.likes
+          return (b.likes_count || 0) - (a.likes_count || 0)
         case "replies":
-          return b.replies - a.replies
+          return (b.replies_count || 0) - (a.replies_count || 0)
         case "views":
-          return b.views - a.views
+          return (b.views || 0) - (a.views || 0)
         default:
           return 0 // recent - would use actual dates
       }
     })
 
   // Separate pinned and regular threads
-  const pinnedThreads = filteredThreads.filter((thread) => thread.isPinned)
-  const regularThreads = filteredThreads.filter((thread) => !thread.isPinned)
+  const pinnedThreads = filteredThreads.filter((thread: any) => thread.pinned)
+  const regularThreads = filteredThreads.filter((thread: any) => !thread.pinned)
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,11 +67,11 @@ export default function CategoryPage({ params }: { params: { id: string } }) {
           </Link>
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="text-3xl">{category.icon}</div>
+              <div className="flex items-center gap-3">
+              <div className="text-3xl">{category?.icon || "💬"}</div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground font-sans">{category.name}</h1>
-                <p className="text-muted-foreground">{category.description}</p>
+                <h1 className="text-2xl font-bold text-foreground font-sans">{category?.name || "Category"}</h1>
+                <p className="text-muted-foreground">{category?.description}</p>
               </div>
             </div>
             <Link href="/community/new-thread">
@@ -189,7 +116,7 @@ export default function CategoryPage({ params }: { params: { id: string } }) {
             </h2>
             <div className="space-y-3">
               {pinnedThreads.map((thread) => (
-                <ThreadCard key={thread.id} thread={thread} isPinned />
+                <ThreadCard key={thread._id} thread={thread} isPinned />
               ))}
             </div>
           </div>
@@ -198,7 +125,7 @@ export default function CategoryPage({ params }: { params: { id: string } }) {
         {/* Regular Threads */}
         <div className="space-y-3">
           {regularThreads.map((thread) => (
-            <ThreadCard key={thread.id} thread={thread} />
+            <ThreadCard key={thread._id} thread={thread} />
           ))}
         </div>
 
@@ -218,13 +145,13 @@ function ThreadCard({ thread, isPinned = false }: { thread: any; isPinned?: bool
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={thread.author.avatar || "/placeholder.svg"} />
-            <AvatarFallback>{thread.author.name[0]}</AvatarFallback>
+            <AvatarImage src={thread.author?.avatar || "/placeholder.svg"} />
+            <AvatarFallback>{(thread.author?.name || "")[0] || "?"}</AvatarFallback>
           </Avatar>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between mb-2">
-              <Link href={`/community/thread/${thread.id}`}>
+              <Link href={`/community/thread/${thread._id || thread.id}`}>
                 <h3 className="text-lg font-semibold hover:text-primary cursor-pointer line-clamp-2">
                   {isPinned && <Pin className="inline h-4 w-4 mr-1 text-primary" />}
                   {thread.title}
@@ -234,16 +161,16 @@ function ThreadCard({ thread, isPinned = false }: { thread: any; isPinned?: bool
 
             <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
               <span>
-                by <span className="font-medium">{thread.author.name}</span>
+                by <span className="font-medium">{thread.author?.name || "User"}</span>
               </span>
               <Badge variant="outline" className="text-xs">
-                {thread.author.role}
+                {thread.author?.role || "Member"}
               </Badge>
-              <span>{thread.createdAt}</span>
+              <span>{thread.created_at || ""}</span>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-3">
-              {thread.tags.map((tag: string, index: number) => (
+              {(thread.tags || []).map((tag: string, index: number) => (
                 <Badge key={index} variant="secondary" className="text-xs">
                   {tag}
                 </Badge>
@@ -254,23 +181,25 @@ function ThreadCard({ thread, isPinned = false }: { thread: any; isPinned?: bool
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <MessageSquare className="h-4 w-4" />
-                  <span>{thread.replies} replies</span>
+                  <span>{thread.replies_count || 0} replies</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Eye className="h-4 w-4" />
-                  <span>{thread.views} views</span>
+                  <span>{thread.views || 0} views</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <ThumbsUp className="h-4 w-4" />
-                  <span>{thread.likes} likes</span>
+                  <span>{thread.likes_count || 0} likes</span>
                 </div>
               </div>
 
-              <div className="text-sm text-muted-foreground">
-                <span>Last reply by </span>
-                <span className="font-medium">{thread.lastReply.author}</span>
-                <span> {thread.lastReply.time}</span>
-              </div>
+              {thread.lastReply && (
+                <div className="text-sm text-muted-foreground">
+                  <span>Last reply by </span>
+                  <span className="font-medium">{thread.lastReply.author}</span>
+                  <span> {thread.lastReply.time}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -278,4 +207,3 @@ function ThreadCard({ thread, isPinned = false }: { thread: any; isPinned?: bool
     </Card>
   )
 }
-s

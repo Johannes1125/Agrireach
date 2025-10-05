@@ -10,100 +10,52 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
 import { SimpleHeader } from "@/components/layout/simple-header"
+import { useAuth } from "@/hooks/use-auth"
+import { useReviewsData } from "@/hooks/use-reviews-data"
 import Link from "next/link"
 
-// Mock reviews data
-const reviews = [
-  {
-    id: 1,
-    reviewer: {
-      name: "Sarah Johnson",
-      avatar: "/placeholder.svg?key=sj123",
-      role: "Buyer",
-      trustScore: 4.8,
-    },
-    reviewee: {
-      name: "Green Valley Farm",
-      avatar: "/placeholder.svg?key=gvf456",
-      role: "Seller",
-      trustScore: 4.9,
-    },
-    rating: 5,
-    title: "Excellent organic tomatoes!",
-    content:
-      "The tomatoes were fresh, flavorful, and exactly as described. Delivery was prompt and packaging was excellent. Will definitely order again!",
-    date: "2 days ago",
-    verified: true,
-    helpful: 12,
-    category: "Product Quality",
-  },
-  {
-    id: 2,
-    reviewer: {
-      name: "Mike Thompson",
-      avatar: "/placeholder.svg?key=mt789",
-      role: "Recruiter",
-      trustScore: 4.6,
-    },
-    reviewee: {
-      name: "John Worker",
-      avatar: "/placeholder.svg?key=jw012",
-      role: "Worker",
-      trustScore: 4.7,
-    },
-    rating: 4,
-    title: "Reliable and hardworking",
-    content:
-      "John completed the harvesting job efficiently and on time. Good communication throughout the project. Minor issue with equipment handling but overall satisfied.",
-    date: "1 week ago",
-    verified: true,
-    helpful: 8,
-    category: "Work Quality",
-  },
-  {
-    id: 3,
-    reviewer: {
-      name: "Lisa Market",
-      avatar: "/placeholder.svg?key=lm345",
-      role: "Buyer",
-      trustScore: 4.5,
-    },
-    reviewee: {
-      name: "Artisan Crafts Co.",
-      avatar: "/placeholder.svg?key=acc678",
-      role: "Seller",
-      trustScore: 4.8,
-    },
-    rating: 5,
-    title: "Beautiful handwoven baskets",
-    content:
-      "The craftsmanship is outstanding! Each basket is unique and well-made. Perfect for our farmers market display. Highly recommend this seller.",
-    date: "3 days ago",
-    verified: true,
-    helpful: 15,
-    category: "Product Quality",
-  },
-]
+
 
 const categories = ["All", "Product Quality", "Work Quality", "Communication", "Delivery", "Value for Money"]
 const sortOptions = ["Most Recent", "Highest Rated", "Most Helpful", "Lowest Rated"]
 
 export default function ReviewsPage() {
+  const { user, loading: authLoading } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [sortBy, setSortBy] = useState("Most Recent")
 
+  const { reviews, loading: reviewsLoading, error } = useReviewsData({
+    status: "active",
+    limit: 20
+  })
+
+  if (authLoading || reviewsLoading) {
+    return <div>Loading...</div>
+  }
+
+  if (error) {
+    return <div>Error loading reviews: {error}</div>
+  }
+
   const filteredReviews = reviews.filter(
     (review) =>
       (selectedCategory === "All" || review.category === selectedCategory) &&
-      (review.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.reviewee.name.toLowerCase().includes(searchTerm.toLowerCase())),
+      ((review.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (review.comment?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        review.reviewee_id.full_name.toLowerCase().includes(searchTerm.toLowerCase())),
   )
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader />
+      <SimpleHeader user={user ? {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar || "",
+        location: user.location || "Not specified",
+      } : undefined} />
 
       {/* Header */}
       <div className="bg-white border-b">
@@ -119,7 +71,8 @@ export default function ReviewsPage() {
           </div>
         </div>
       </div>
-<div className="container mx-auto px-4 py-6">
+
+      <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
@@ -164,73 +117,77 @@ export default function ReviewsPage() {
 
             {/* Reviews List */}
             <div className="space-y-4">
-              {filteredReviews.map((review) => (
-                <Card key={review.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={review.reviewer.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>{review.reviewer.name[0]}</AvatarFallback>
-                      </Avatar>
+              {filteredReviews.length === 0 ? (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-muted-foreground">No reviews found matching your criteria.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                filteredReviews.map((review) => (
+                  <Card key={review._id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={review.reviewer_id.avatar_url || "/placeholder.svg"} />
+                          <AvatarFallback>
+                            {review.reviewer_id.full_name ? review.reviewer_id.full_name.split(" ").map((n) => n[0]).join("") : "U"}
+                          </AvatarFallback>
+                        </Avatar>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold">{review.reviewer.name}</span>
-                              <Badge variant="outline">{review.reviewer.role}</Badge>
-                              {review.verified && (
-                                <Badge variant="secondary" className="text-xs">
-                                  <Shield className="h-3 w-3 mr-1" />
-                                  Verified
-                                </Badge>
-                              )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-2">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold">{review.reviewer_id.full_name}</span>
+                                {review.verified_purchase && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    <Shield className="h-3 w-3 mr-1" />
+                                    Verified Purchase
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Review for{" "}
+                                <span className="font-medium">
+                                  {review.reviewee_id.full_name}
+                                </span>
+                              </p>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              Review for{" "}
-                              <Link href="#" className="font-medium hover:text-primary">
-                                {review.reviewee.name}
-                              </Link>
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center gap-1 mb-1">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-4 w-4 ${
-                                    i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-}`}
-                                />
-                              ))}
+                            <div className="text-right">
+                              <div className="flex items-center gap-1 mb-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(review.created_at).toLocaleDateString()}
+                              </p>
                             </div>
-                            <p className="text-sm text-muted-foreground">{review.date}</p>
                           </div>
-                        </div>
 
-                        <h3 className="font-semibold mb-2">{review.title}</h3>
-                        <p className="text-muted-foreground leading-relaxed mb-3">{review.content}</p>
+                          {review.title && <h3 className="font-semibold mb-2">{review.title}</h3>}
+                          {review.comment && <p className="text-muted-foreground leading-relaxed mb-3">{review.comment}</p>}
 
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <Badge variant="outline">{review.category}</Badge>
-                            <Button variant="ghost" size="sm">
-                              Helpful ({review.helpful})
-                            </Button>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>Trust Score:</span>
-                            <div className="flex items-center gap-1">
-                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              <span className="font-medium">{review.reviewee.trustScore}</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              {review.category && <Badge variant="outline">{review.category}</Badge>}
+                              <Button variant="ghost" size="sm">
+                                Helpful ({review.helpful_count || 0})
+                              </Button>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
 
@@ -287,7 +244,7 @@ export default function ReviewsPage() {
                   Top Rated This Month
                 </CardTitle>
               </CardHeader>
-<CardContent className="space-y-4">
+              <CardContent className="space-y-4">
                 {[
                   { name: "Green Valley Farm", score: 4.9, reviews: 156 },
                   { name: "John Expert Worker", score: 4.8, reviews: 89 },

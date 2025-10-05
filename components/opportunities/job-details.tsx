@@ -63,9 +63,8 @@ export function JobDetails({ job }: JobDetailsProps) {
               <AvatarImage src="/placeholder.svg?key=company-logo" alt={job.company} />
               <AvatarFallback>
                 {job.company
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
+                  ? job.company.split(" ").map((n) => n[0]).join("")
+                  : "C"}
               </AvatarFallback>
             </Avatar>
 
@@ -125,7 +124,7 @@ export function JobDetails({ job }: JobDetailsProps) {
       <Card>
         <CardHeader>
           <CardTitle className="font-heading">Requirements</CardTitle>
-</CardHeader>
+        </CardHeader>
         <CardContent>
           <ul className="space-y-2">
             {job.requirements.map((requirement, index) => (

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Heart, Share2, Flag, Send, CheckCircle, AlertCircle } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 
 interface Job {
   id: string
@@ -30,9 +31,22 @@ export function JobApplication({ job }: JobApplicationProps) {
   const matchingSkills = job.skills.filter((skill) => userSkills.includes(skill))
   const matchPercentage = Math.round((matchingSkills.length / job.skills.length) * 100)
 
-  const handleApply = () => {
-    // TODO: Implement actual application logic
-    setIsApplied(true)
+  const handleApply = async () => {
+    try {
+      const res = await fetch(`/api/opportunities/${job.id}/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cover_letter: coverLetter }),
+      })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json?.message || "Failed to apply")
+      }
+      setIsApplied(true)
+      toast.success("Application submitted successfully!")
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to apply")
+    }
   }
 
   if (isApplied) {
@@ -104,7 +118,7 @@ export function JobApplication({ job }: JobApplicationProps) {
           <CardDescription>Submit your application with a personalized message</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-<div className="space-y-2">
+          <div className="space-y-2">
             <Label htmlFor="cover-letter">Cover Letter (Optional)</Label>
             <Textarea
               id="cover-letter"

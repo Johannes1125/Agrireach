@@ -1,0 +1,42 @@
+import { NextRequest } from "next/server";
+import { connectToDatabase } from "@/server/lib/mongodb";
+import { Thread, ThreadReply } from "@/server/models/Thread";
+import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/api";
+import { verifyToken } from "@/server/utils/auth";
+import { validateBody } from "@/server/middleware/validate";
+import { CreatePostSchema } from "@/server/validators/threadSchemas";
+
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const mm = requireMethod(_req, ["GET"]);
+  if (mm) return mm;
+  await connectToDatabase();
+
+  const { id } = await params;
+
+  const thr = await Thread.findById(id);
+  if (!thr) return jsonError("Not found", 404);
+  const posts = await ThreadReply.find({ thread_id: id, status: { $ne: "hidden" } }).sort({ created_at: 1 }).lean();
+  return jsonOk({ items: posts });
+}
+
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const mm = requireMethod(req, ["POST"]);
+  if (mm) return mm;
+  const token = getAuthToken(req, "access");
+  if (!token) return jsonError("Unauthorized", 401);
+  let decoded: any; try { decoded = verifyToken<any>(token, "access"); } catch { return jsonError("Unauthorized", 401); }
+  await connectToDatabase();
+
+  const { id } = await params;
+
+  const thr = await Thread.findById(id);
+  if (!thr) return jsonError("Not found", 404);
+  const validate = validateBody(CreatePostSchema);
+  const result = await validate(req);
+  if (!result.ok) return result.res;
+  const post = await ThreadReply.create({ thread_id: thr._id, author_id: decoded.sub, content: result.data.content, parent_reply_id: result.data.parent_reply_id });
+  await Thread.findByIdAndUpdate(thr._id, { $inc: { replies_count: 1 }, $set: { last_activity: new Date() } });
+  return jsonOk({ id: post._id });
+}
+
+

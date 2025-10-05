@@ -4,55 +4,33 @@ import { SimilarJobs } from "@/components/opportunities/similar-jobs"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
-interface JobPageProps {
-  params: {
-    id: string
-  }
-}
+interface JobPageProps { params: { id: string } }
 
-// Mock function to get job data - replace with actual data fetching
-const getJobById = async (id: string) => {
-  // Mock job data
+async function fetchJob(id: string) {
+  const res = await fetch(`${process.env.BASE_URL || ""}/api/opportunities/${id}`, { cache: "no-store" })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json?.message || "Failed to load job")
+  const j = json?.opportunity || {} // Fixed: API returns { opportunity } not { data }
   return {
-    id,
-    title: "Seasonal Harvest Coordinator",
-    company: "Green Valley Farms",
-    location: "Fresno, CA",
-    type: "Seasonal",
-    payRange: "$18-22/hour",
-    description:
-      "Lead a team of harvest workers during peak season. Ensure quality standards and safety protocols are maintained throughout the harvesting process.",
-    requirements: [
-      "3+ years of agricultural experience",
-      "Leadership and team management skills",
-      "Knowledge of harvest techniques and equipment",
-      "Physical ability to work outdoors in various weather conditions",
-      "Valid driver's license",
-    ],
-    benefits: [
-      "Competitive hourly wage",
-      "Performance bonuses",
-      "Health insurance coverage",
-      "Flexible scheduling",
-      "Professional development opportunities",
-    ],
-    postedDate: "2024-02-15",
-    deadline: "2024-03-15",
-    urgency: "high",
-    skills: ["Crop Harvesting", "Team Leadership", "Equipment Operation"],
-    companyInfo: {
-      name: "Green Valley Farms",
-      size: "50-200 employees",
-      industry: "Organic Agriculture",
-      rating: 4.7,
-      description:
-        "Leading organic farm in Central California, committed to sustainable farming practices and fair worker treatment.",
-    },
+    id: String(j._id || id),
+    title: j.title,
+    company: j.company_name || (j.recruiter_id?.full_name ? `${j.recruiter_id.full_name}'s Company` : "Company"),
+    location: j.location,
+    type: j.duration || j.pay_type,
+    payRange: `₱${j.pay_rate}/${j.pay_type}`,
+    description: j.description,
+    requirements: Array.isArray(j.requirements) ? j.requirements : [],
+    benefits: Array.isArray(j.benefits) ? j.benefits : [],
+    postedDate: j.created_at,
+    deadline: j.start_date || j.created_at,
+    urgency: j.urgency,
+    skills: Array.isArray(j.required_skills) ? j.required_skills : [],
+    companyInfo: { name: j.company_name || "", size: j.contact_email || "", industry: j.company_name || "", rating: 0, description: "" },
   }
 }
 
 export default async function JobPage({ params }: JobPageProps) {
-  const job = await getJobById(params.id)
+  const job = await fetchJob(params.id)
 
   return (
     <div className="min-h-screen bg-background">

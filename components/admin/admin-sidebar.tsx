@@ -1,0 +1,221 @@
+"use client"
+import { useState } from "react"
+import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/hooks/use-toast"
+import {
+  Users,
+  MessageSquare,
+  Package,
+  AlertTriangle,
+  Settings,
+  BarChart3,
+  Menu,
+  ChevronLeft,
+  LogOut,
+  ShieldCheck,
+} from "lucide-react"
+
+const navigation = [
+  {
+    name: "Overview",
+    href: "/admin",
+    icon: BarChart3,
+    badge: null,
+  },
+  {
+    name: "User Management",
+    href: "/admin/users",
+    icon: Users,
+    badge: null,
+  },
+  {
+    name: "Community Content",
+    href: "/admin/content/community",
+    icon: MessageSquare,
+    badge: 12,
+  },
+  {
+    name: "Marketplace Content",
+    href: "/admin/content/marketplace",
+    icon: Package,
+    badge: 5,
+  },
+  {
+    name: "Reports",
+    href: "/admin/reports",
+    icon: AlertTriangle,
+    badge: 8,
+  },
+]
+
+interface AdminSidebarProps {
+  className?: string
+}
+
+export function AdminSidebar({ className }: AdminSidebarProps) {
+  const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
+  const pathname = usePathname()
+  const router = useRouter()
+  const { toast } = useToast()
+
+  const handleLogout = () => {
+    toast({
+      title: "Logged out successfully",
+      description: "You have been logged out of the admin panel.",
+    })
+    router.push("/admin/login")
+  }
+
+  const SidebarContent = () => (
+    <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border">
+      {/* Header */}
+      <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
+        <Link href="/admin" className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <ShieldCheck className="h-4 w-4" />
+          </div>
+          {!collapsed && (
+            <div className="flex flex-col">
+              <span className="font-heading font-bold text-sm text-sidebar-foreground">AgriReach</span>
+              <span className="text-xs text-sidebar-foreground/60">Admin Panel</span>
+            </div>
+          )}
+        </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setCollapsed(!collapsed)}
+          className="hidden lg:flex h-8 w-8 p-0 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <ChevronLeft className={cn("h-4 w-4 transition-transform", collapsed && "rotate-180")} />
+        </Button>
+      </div>
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1 px-3 py-4 sidebar-scroll">
+        <nav className="space-y-2">
+          {navigation.map((item) => {
+            const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                  "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  isActive ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm" : "text-sidebar-foreground",
+                  collapsed && "justify-center px-2",
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className="h-4 w-4 flex-shrink-0" />
+                  {!collapsed && <span>{item.name}</span>}
+                </div>
+                {!collapsed && item.badge && (
+                  <Badge variant={isActive ? "secondary" : "default"} className="text-xs">
+                    {item.badge}
+                  </Badge>
+                )}
+              </Link>
+            )
+          })}
+        </nav>
+      </ScrollArea>
+
+      {/* Footer */}
+      <div className="border-t border-sidebar-border p-4 space-y-2">
+        <Link
+          href="/admin/settings"
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground",
+            pathname === "/admin/settings" && "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm",
+            collapsed && "justify-center px-2",
+          )}
+        >
+          <Settings className="h-4 w-4 flex-shrink-0" />
+          {!collapsed && <span>Settings</span>}
+        </Link>
+
+        <Button
+          variant="ghost"
+          onClick={() => setShowLogoutDialog(true)}
+          className={cn(
+            "w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground",
+            collapsed && "justify-center px-2",
+          )}
+        >
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          {!collapsed && <span>Logout</span>}
+        </Button>
+      </div>
+    </div>
+  )
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <div className={cn("hidden lg:block", collapsed ? "w-16" : "w-64", className)}>
+        <div className="fixed inset-y-0 left-0 z-50" style={{ width: collapsed ? "4rem" : "16rem" }}>
+          <SidebarContent />
+        </div>
+      </div>
+
+      {/* Mobile Sidebar */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="lg:hidden fixed top-4 left-4 z-50 h-10 w-10 p-0 bg-background/95 backdrop-blur-sm border border-border shadow-md hover:bg-accent"
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle menu</span>
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 w-64">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Logout from Admin Panel</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to logout? You will need to login again to access the admin panel.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground">
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}

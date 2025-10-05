@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useNotifications } from "@/components/notifications/notification-provider"
+import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
 import {
   Bell,
   Shield,
@@ -23,6 +24,7 @@ import {
   Save,
   Trash2,
   AlertTriangle,
+  Moon,
 } from "lucide-react"
 
 interface SettingsUser {
@@ -34,6 +36,15 @@ interface SettingsUser {
   location: string
   bio?: string
   phone?: string
+  business?: {
+    name?: string
+    industry?: string
+    type?: string
+    size?: string
+    description?: string
+    website?: string
+    logo?: string
+  }
   preferences: {
     notifications: {
       email: boolean
@@ -50,7 +61,6 @@ interface SettingsUser {
       showRating: boolean
     }
     account: {
-      twoFactorEnabled: boolean
       sessionTimeout: number
       dataRetention: number
     }
@@ -65,6 +75,26 @@ export function SettingsContent({ user }: SettingsContentProps) {
   const [formData, setFormData] = useState(user)
   const [activeRole, setActiveRole] = useState(user.role)
   const notifications = useNotifications()
+  const [darkMode, setDarkMode] = useState(false)
+
+  // Initialize dark mode from localStorage
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem("darkMode")
+    if (savedDarkMode === "true") {
+      setDarkMode(true)
+      document.documentElement.classList.add("dark")
+    } else if (savedDarkMode === "false") {
+      setDarkMode(false)
+      document.documentElement.classList.remove("dark")
+    } else {
+      // Default to system preference
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+      setDarkMode(prefersDark)
+      if (prefersDark) {
+        document.documentElement.classList.add("dark")
+      }
+    }
+  }, [])
 
   const handleSave = (section: string) => {
     notifications.showSuccess("Settings Saved", `Your ${section} settings have been updated successfully.`)
@@ -117,8 +147,12 @@ export function SettingsContent({ user }: SettingsContentProps) {
           <CreditCard className="h-4 w-4" />
           Privacy
         </TabsTrigger>
-        <TabsTrigger value="billing" className="flex items-center gap-2">
+        <TabsTrigger value="business" className="flex items-center gap-2">
           <Briefcase className="h-4 w-4" />
+          Business
+        </TabsTrigger>
+        <TabsTrigger value="billing" className="flex items-center gap-2">
+          <CreditCard className="h-4 w-4" />
           Billing
         </TabsTrigger>
         <TabsTrigger value="account" className="flex items-center gap-2">
@@ -247,25 +281,30 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     <AvatarImage src={formData.avatar || "/placeholder.svg"} alt={formData.name} />
                     <AvatarFallback className="text-2xl">
                       {formData.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+                        ? formData.name.split(" ").map((n) => n[0]).join("")
+                        : "U"}
                     </AvatarFallback>
                   </Avatar>
 
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Camera className="mr-2 h-4 w-4" />
-                      Upload
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Remove
-                    </Button>
-                  </div>
+                  <ImageUpload
+                    type="avatar"
+                    maxFiles={1}
+                    maxSizeMB={5}
+                    acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
+                    onUploadComplete={(images) => {
+                      if (images.length > 0) {
+                        setFormData({ ...formData, avatar: images[0].url })
+                        notifications.showSuccess("Profile Picture Updated", "Your profile picture has been updated successfully.")
+                      }
+                    }}
+                    onUploadError={(error) => {
+                      notifications.showError("Upload Failed", error)
+                    }}
+                    className="w-full max-w-md"
+                  />
 
                   <p className="text-xs text-muted-foreground text-center">
-                    Recommended: Square image, at least 400x400px
+                    Recommended: Square image, at least 400x400px. Max 5MB.
                   </p>
                 </div>
               </CardContent>
@@ -564,8 +603,211 @@ export function SettingsContent({ user }: SettingsContentProps) {
         </Card>
       </TabsContent>
 
+      {/* Business Settings */}
+      <TabsContent value="business" className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading">Business Information</CardTitle>
+            <CardDescription>Manage your business profile and company details</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="company-name">Company Name</Label>
+                <Input
+                  id="company-name"
+                  placeholder="Enter your company name"
+                  value={formData.business?.name || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      business: { ...formData.business, name: e.target.value },
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="industry">Industry</Label>
+                <Select
+                  value={formData.business?.industry || ""}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      business: { ...formData.business, industry: value },
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select industry" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="crop-production">Crop Production</SelectItem>
+                    <SelectItem value="livestock">Livestock</SelectItem>
+                    <SelectItem value="organic-farming">Organic Farming</SelectItem>
+                    <SelectItem value="equipment-rental">Equipment Rental</SelectItem>
+                    <SelectItem value="food-processing">Food Processing</SelectItem>
+                    <SelectItem value="distribution">Distribution</SelectItem>
+                    <SelectItem value="consulting">Agricultural Consulting</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="business-type">Business Type</Label>
+                <Select
+                  value={formData.business?.type || ""}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      business: { ...formData.business, type: value },
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select business type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="farm">Farm</SelectItem>
+                    <SelectItem value="cooperative">Cooperative</SelectItem>
+                    <SelectItem value="corporation">Corporation</SelectItem>
+                    <SelectItem value="partnership">Partnership</SelectItem>
+                    <SelectItem value="sole-proprietorship">Sole Proprietorship</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="company-size">Company Size</Label>
+                <Select
+                  value={formData.business?.size || ""}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      business: { ...formData.business, size: value },
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1-10">1-10 employees</SelectItem>
+                    <SelectItem value="11-50">11-50 employees</SelectItem>
+                    <SelectItem value="51-200">51-200 employees</SelectItem>
+                    <SelectItem value="201-500">201-500 employees</SelectItem>
+                    <SelectItem value="500+">500+ employees</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="business-description">Business Description</Label>
+              <Textarea
+                id="business-description"
+                placeholder="Describe your business, services, and what makes you unique..."
+                value={formData.business?.description || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    business: { ...formData.business, description: e.target.value },
+                  })
+                }
+                rows={4}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                type="url"
+                placeholder="https://www.yourcompany.com"
+                value={formData.business?.website || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    business: { ...formData.business, website: e.target.value },
+                  })
+                }
+              />
+            </div>
+
+            <Button onClick={() => handleSave("business")} className="w-fit">
+              <Save className="mr-2 h-4 w-4" />
+              Save Business Information
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading">Business Logo</CardTitle>
+            <CardDescription>Upload your company logo for professional branding</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ImageUpload
+              type="business"
+              maxFiles={1}
+              maxSizeMB={5}
+              acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
+              onUploadComplete={(images) => {
+                if (images.length > 0) {
+                  setFormData({
+                    ...formData,
+                    business: { ...formData.business, logo: images[0].url },
+                  })
+                  notifications.showSuccess("Business Logo Updated", "Your business logo has been updated successfully.")
+                }
+              }}
+              onUploadError={(error) => {
+                notifications.showError("Upload Failed", error)
+              }}
+              className="w-full max-w-md"
+            />
+          </CardContent>
+        </Card>
+      </TabsContent>
+
       {/* Account Settings */}
       <TabsContent value="account" className="space-y-6">
+        {/* Appearance/Dark Mode card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading flex items-center gap-2">
+              <Moon className="h-5 w-5" />
+              Appearance
+            </CardTitle>
+            <CardDescription>Customize how AgriReach looks on your device</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="dark-mode">Dark Mode</Label>
+                <p className="text-sm text-muted-foreground">Switch to a darker color scheme</p>
+              </div>
+              <Switch
+                id="dark-mode"
+                checked={darkMode}
+                onCheckedChange={(checked) => {
+                  setDarkMode(checked)
+                  // Apply dark mode to document
+                  if (checked) {
+                    document.documentElement.classList.add("dark")
+                    localStorage.setItem("darkMode", "true")
+                  } else {
+                    document.documentElement.classList.remove("dark")
+                    localStorage.setItem("darkMode", "false")
+                  }
+                  notifications.showSuccess("Appearance Updated", `Dark mode ${checked ? "enabled" : "disabled"}`)
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Account Security</CardTitle>
@@ -574,23 +816,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="two-factor">Two-Factor Authentication</Label>
-                  <p className="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
-                </div>
-                <Switch
-                  id="two-factor"
-                  checked={formData.preferences.account.twoFactorEnabled}
-                  onCheckedChange={(checked) =>
-                    setFormData({
-                      ...formData,
-                      preferences: {
-                        ...formData.preferences,
-                        account: { ...formData.preferences.account, twoFactorEnabled: checked },
-                      },
-                    })
-                  }
-                />
+                {/* Two-Factor Authentication removed */}
               </div>
 
               <div className="space-y-2">

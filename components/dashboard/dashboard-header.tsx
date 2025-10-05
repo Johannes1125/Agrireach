@@ -80,13 +80,12 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
                   <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
                   <AvatarFallback>
                     {user.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
+                      ? user.name.split(" ").map((n) => n[0]).join("")
+                      : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:flex flex-col items-start">
-                  <span className="text-sm font-medium">{user.name}</span>
+                  <span className="text-sm font-medium">{user.name || "User"}</span>
                   {getRoleBadge(user.role)}
                 </div>
               </Button>
@@ -94,7 +93,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.name}</p>
+                  <p className="text-sm font-medium leading-none">{user.name || "User"}</p>
                   <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                 </div>
               </DropdownMenuLabel>
