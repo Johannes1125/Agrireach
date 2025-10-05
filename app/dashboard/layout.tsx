@@ -1,15 +1,15 @@
-import type React from "react"
-import { AppLayout } from "@/components/layout/app-layout"
-import { NotificationProvider } from "@/components/notifications/notification-provider"
+import type React from "react";
+import { AccessibleAppLayout } from "@/components/layout/accessible-app-layout";
+import { NotificationProvider } from "@/components/notifications/notification-provider";
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <NotificationProvider>
-      <AppLayout>{children}</AppLayout>
+      <AccessibleAppLayout>{children}</AccessibleAppLayout>
     </NotificationProvider>
-  )
+  );
 }

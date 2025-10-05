@@ -1,10 +1,10 @@
-import type React from "react"
-import { AppLayout } from "@/components/layout/app-layout"
+import type React from "react";
+import { AccessibleAppLayout } from "@/components/layout/accessible-app-layout";
 
 export default function MarketplaceLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  return <AppLayout>{children}</AppLayout>
+  return <AccessibleAppLayout>{children}</AccessibleAppLayout>;
 }
