@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useNotifications } from "@/components/notifications/notification-provider"
 import { useUserProfile } from "@/hooks/use-user-profile"
+import { authFetch } from "@/lib/auth-client"
 import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
 import {
   Bell,
@@ -316,6 +317,12 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       if (images.length > 0) {
                         setFormData({ ...formData, avatar: images[0].url })
                         notifications.showSuccess("Profile Picture Updated", "Your profile picture has been updated successfully.")
+                        // Persist avatar to user
+                        authFetch(`/api/users/${user.id}`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ avatar_url: images[0].url })
+                        }).catch(() => {})
                       }
                     }}
                     onUploadError={(error) => {

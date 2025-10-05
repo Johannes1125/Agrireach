@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -8,6 +8,12 @@ import { Badge } from "@/components/ui/badge"
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { authFetch } from "@/lib/auth-client"
+
+declare global {
+  interface Window {
+    cloudinary?: any
+  }
+}
 
 export interface UploadedImage {
   url: string
@@ -65,25 +71,100 @@ export function ImageUpload({
     return null
   }
 
-  const uploadFile = async (file: File, index: number = 0) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('type', type)
-    if (entityId) formData.append('entityId', entityId)
-    formData.append('imageIndex', (imageIndex + index).toString())
+  // Cloudinary Upload Widget integration
+  const loadCloudinaryScript = () => {
+    if (typeof window === 'undefined') return
+    if (window.cloudinary) return
+    const id = 'cloudinary-upload-widget'
+    if (document.getElementById(id)) return
+    const script = document.createElement('script')
+    script.src = 'https://upload-widget.cloudinary.com/global/all.js'
+    script.id = id
+    script.async = true
+    document.body.appendChild(script)
+  }
 
-    const response = await authFetch('/api/upload', {
-      method: 'POST',
-      body: formData
-    })
+  useEffect(() => {
+    loadCloudinaryScript()
+  }, [])
 
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Upload failed')
+  const openCloudinaryWidget = () => {
+    if (disabled) return
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+    if (!window.cloudinary || !cloudName || !uploadPreset) {
+      const msg = "Cloudinary widget not configured"
+      onUploadError?.(msg)
+      toast.error(msg)
+      return
     }
 
-    const data = await response.json()
-    return data.upload as UploadedImage
+    const folderByType: Record<string, string> = {
+      avatar: 'agrireach/avatars',
+      product: 'agrireach/products',
+      business: 'agrireach/business',
+      community: 'agrireach/community',
+      general: 'agrireach/general',
+    }
+
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: cloudName,
+        uploadPreset: uploadPreset,
+        multiple: maxFiles > 1,
+        maxFiles: maxFiles,
+        folder: folderByType[type] || 'agrireach/general',
+        sources: ['local', 'camera', 'url'],
+        clientAllowedFormats: acceptedTypes.map(t => t.split('/')[1]).filter(Boolean),
+        maxImageFileSize: maxSizeMB * 1024 * 1024,
+        cropping: false,
+        tags: [type, ...(entityId ? [entityId] : [])],
+      },
+      (error: any, result: any) => {
+        if (error) {
+          onUploadError?.(error.message || 'Upload failed')
+          toast.error(error.message || 'Upload failed')
+          setUploading(false)
+          setUploadProgress(0)
+          return
+        }
+        if (result?.event === 'queues-start') {
+          setUploading(true)
+          setUploadProgress(0)
+          onUploadStart?.()
+        }
+        if (result?.event === 'upload-added') {
+          // optional: could update UI
+        }
+        if (result?.event === 'upload-progress') {
+          const bytes = result?.info?.bytes || 0
+          const total = result?.info?.total_bytes || 0
+          if (total > 0) setUploadProgress((bytes / total) * 100)
+        }
+        if (result?.event === 'success') {
+          const info = result.info
+          const uploaded: UploadedImage = {
+            url: info.secure_url,
+            publicId: info.public_id,
+            width: info.width,
+            height: info.height,
+            format: info.format,
+            bytes: info.bytes,
+          }
+          const newImages = [...images, uploaded]
+          setImages(newImages)
+          onUploadComplete?.(newImages)
+        }
+        if (result?.event === 'queues-end') {
+          setUploading(false)
+          setUploadProgress(100)
+          toast.success('Upload completed')
+          setTimeout(() => setUploadProgress(0), 500)
+        }
+      }
+    )
+
+    widget.open()
   }
 
   const handleFiles = useCallback(async (files: FileList) => {
@@ -172,7 +253,7 @@ export function ImageUpload({
   }
 
   const openFileDialog = () => {
-    fileInputRef.current?.click()
+    openCloudinaryWidget()
   }
 
   const canUploadMore = images.length < maxFiles
@@ -221,16 +302,7 @@ export function ImageUpload({
         </Card>
       )}
 
-      {/* Hidden File Input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple={maxFiles > 1}
-        accept={acceptedTypes.join(',')}
-        onChange={handleFileInput}
-        className="hidden"
-        disabled={disabled}
-      />
+      {/* Hidden File Input removed in favor of Cloudinary Upload Widget */}
 
       {/* Uploaded Images Preview */}
       {images.length > 0 && (
