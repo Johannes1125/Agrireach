@@ -1,72 +1,108 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Star, Search, TrendingUp, Award, Shield } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Progress } from "@/components/ui/progress"
-import { SimpleHeader } from "@/components/layout/simple-header"
-import { useAuth } from "@/hooks/use-auth"
-import { useReviewsData } from "@/hooks/use-reviews-data"
-import Link from "next/link"
+import { useState } from "react";
+import { Star, Search, TrendingUp, Award, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { SimpleHeader } from "@/components/layout/simple-header";
+import { useAuth } from "@/hooks/use-auth";
+import { useReviewsData } from "@/hooks/use-reviews-data";
+import Link from "next/link";
 
-
-
-const categories = ["All", "Product Quality", "Work Quality", "Communication", "Delivery", "Value for Money"]
-const sortOptions = ["Most Recent", "Highest Rated", "Most Helpful", "Lowest Rated"]
+const categories = [
+  "All",
+  "Product Quality",
+  "Work Quality",
+  "Communication",
+  "Delivery",
+  "Value for Money",
+];
+const sortOptions = [
+  "Most Recent",
+  "Highest Rated",
+  "Most Helpful",
+  "Lowest Rated",
+];
 
 export default function ReviewsPage() {
-  const { user, loading: authLoading } = useAuth()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("All")
-  const [sortBy, setSortBy] = useState("Most Recent")
+  const { user, loading: authLoading } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [sortBy, setSortBy] = useState("Most Recent");
 
-  const { reviews, loading: reviewsLoading, error } = useReviewsData({
+  const {
+    reviews,
+    loading: reviewsLoading,
+    error,
+  } = useReviewsData({
     status: "active",
-    limit: 20
-  })
+    limit: 20,
+  });
 
   if (authLoading || reviewsLoading) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
   if (error) {
-    return <div>Error loading reviews: {error}</div>
+    return <div>Error loading reviews: {error}</div>;
   }
 
   const filteredReviews = (Array.isArray(reviews) ? reviews : []).filter(
     (review) =>
       (selectedCategory === "All" || review.category === selectedCategory) &&
-      ((review.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (review.comment?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        review.reviewee_id.full_name.toLowerCase().includes(searchTerm.toLowerCase())),
-  )
+      (review.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        false ||
+        review.comment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        false ||
+        review.reviewee_id.full_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader user={user ? {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar || "",
-        location: user.location || "Not specified",
-      } : undefined} />
+      <SimpleHeader
+        user={
+          user
+            ? {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatar: user.avatar || "",
+                location: user.location || "Not specified",
+              }
+            : undefined
+        }
+      />
 
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-background border-b">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground font-sans">Reviews & Ratings</h1>
-              <p className="text-muted-foreground mt-1">Community feedback and trust scores</p>
+              <h1 className="text-3xl font-bold text-foreground font-sans">
+                Reviews & Ratings
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Community feedback and trust scores
+              </p>
             </div>
             <Link href="/reviews/write">
-              <Button className="bg-primary hover:bg-primary/90">Write Review</Button>
+              <Button className="bg-primary hover:bg-primary/90">
+                Write Review
+              </Button>
             </Link>
           </div>
         </div>
@@ -88,7 +124,10 @@ export default function ReviewsPage() {
                 />
               </div>
 
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
@@ -120,18 +159,33 @@ export default function ReviewsPage() {
               {filteredReviews.length === 0 ? (
                 <Card>
                   <CardContent className="p-6 text-center">
-                    <p className="text-muted-foreground">No reviews found matching your criteria.</p>
+                    <p className="text-muted-foreground">
+                      No reviews found matching your criteria.
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
                 filteredReviews.map((review) => (
-                  <Card key={review._id} className="hover:shadow-md transition-shadow">
+                  <Card
+                    key={review._id}
+                    className="hover:shadow-md transition-shadow"
+                  >
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
                         <Avatar className="h-12 w-12">
-                          <AvatarImage src={review.reviewer_id.avatar_url || "/placeholder.svg"} />
+                          <AvatarImage
+                            src={
+                              review.reviewer_id.avatar_url ||
+                              "/placeholder.svg"
+                            }
+                          />
                           <AvatarFallback>
-                            {review.reviewer_id.full_name ? review.reviewer_id.full_name.split(" ").map((n) => n[0]).join("") : "U"}
+                            {review.reviewer_id.full_name
+                              ? review.reviewer_id.full_name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                              : "U"}
                           </AvatarFallback>
                         </Avatar>
 
@@ -139,9 +193,14 @@ export default function ReviewsPage() {
                           <div className="flex items-start justify-between mb-2">
                             <div>
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold">{review.reviewer_id.full_name}</span>
+                                <span className="font-semibold">
+                                  {review.reviewer_id.full_name}
+                                </span>
                                 {review.verified_purchase && (
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
                                     <Shield className="h-3 w-3 mr-1" />
                                     Verified Purchase
                                   </Badge>
@@ -160,23 +219,39 @@ export default function ReviewsPage() {
                                   <Star
                                     key={i}
                                     className={`h-4 w-4 ${
-                                      i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                      i < review.rating
+                                        ? "fill-yellow-400 text-yellow-400"
+                                        : "text-gray-300"
                                     }`}
                                   />
                                 ))}
                               </div>
                               <p className="text-sm text-muted-foreground">
-                                {new Date(review.created_at).toLocaleDateString()}
+                                {new Date(
+                                  review.created_at
+                                ).toLocaleDateString()}
                               </p>
                             </div>
                           </div>
 
-                          {review.title && <h3 className="font-semibold mb-2">{review.title}</h3>}
-                          {review.comment && <p className="text-muted-foreground leading-relaxed mb-3">{review.comment}</p>}
+                          {review.title && (
+                            <h3 className="font-semibold mb-2">
+                              {review.title}
+                            </h3>
+                          )}
+                          {review.comment && (
+                            <p className="text-muted-foreground leading-relaxed mb-3">
+                              {review.comment}
+                            </p>
+                          )}
 
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                              {review.category && <Badge variant="outline">{review.category}</Badge>}
+                              {review.category && (
+                                <Badge variant="outline">
+                                  {review.category}
+                                </Badge>
+                              )}
                               <Button variant="ghost" size="sm">
                                 Helpful ({review.helpful_count || 0})
                               </Button>
@@ -250,10 +325,15 @@ export default function ReviewsPage() {
                   { name: "John Expert Worker", score: 4.8, reviews: 89 },
                   { name: "Artisan Crafts Co.", score: 4.8, reviews: 67 },
                 ].map((user, index) => (
-                  <div key={index} className="flex items-center justify-between">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between"
+                  >
                     <div>
                       <p className="font-medium text-sm">{user.name}</p>
-                      <p className="text-xs text-muted-foreground">{user.reviews} reviews</p>
+                      <p className="text-xs text-muted-foreground">
+                        {user.reviews} reviews
+                      </p>
                     </div>
                     <div className="flex items-center gap-1">
                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -286,15 +366,32 @@ export default function ReviewsPage() {
                 <div className="space-y-2 mt-4">
                   <h4 className="font-medium text-sm">Rating Distribution</h4>
                   {[5, 4, 3, 2, 1].map((rating) => (
-                    <div key={rating} className="flex items-center gap-2 text-sm">
+                    <div
+                      key={rating}
+                      className="flex items-center gap-2 text-sm"
+                    >
                       <span className="w-4">{rating}</span>
                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                       <Progress
-                        value={rating === 5 ? 65 : rating === 4 ? 25 : rating === 3 ? 8 : 2}
+                        value={
+                          rating === 5
+                            ? 65
+                            : rating === 4
+                            ? 25
+                            : rating === 3
+                            ? 8
+                            : 2
+                        }
                         className="flex-1 h-2"
                       />
                       <span className="text-muted-foreground w-8 text-right">
-                        {rating === 5 ? "65%" : rating === 4 ? "25%" : rating === 3 ? "8%" : "2%"}
+                        {rating === 5
+                          ? "65%"
+                          : rating === 4
+                          ? "25%"
+                          : rating === 3
+                          ? "8%"
+                          : "2%"}
                       </span>
                     </div>
                   ))}
@@ -305,5 +402,5 @@ export default function ReviewsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
