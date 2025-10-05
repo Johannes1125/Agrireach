@@ -6,18 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { useAdminOverview } from "@/hooks/use-admin-data"
 
-// Mock admin data
-const adminStats = {
-  totalUsers: 2847,
-  activeUsers: 1923,
-  newUsersToday: 47,
-  totalListings: 1256,
-  pendingReviews: 23,
-  reportedContent: 8,
-  totalRevenue: 45678,
-  platformHealth: 94,
-}
+// Real admin data via hook
 
 const recentActivity = [
   {
@@ -76,6 +67,7 @@ const pendingActions = [
 
 export default function AdminDashboard() {
   const [selectedTimeframe, setSelectedTimeframe] = useState("7d")
+  const { stats, loading } = useAdminOverview()
 
   return (
     <div className="min-h-screen bg-background">
@@ -107,8 +99,8 @@ export default function AdminDashboard() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{adminStats.totalUsers.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">+{adminStats.newUsersToday} new today</p>
+                <div className="text-2xl font-bold">{(stats?.totalUsers || 0).toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">+{stats?.newUsersToday || 0} new today</p>
               </CardContent>
             </Card>
 
@@ -118,9 +110,9 @@ export default function AdminDashboard() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{adminStats.activeUsers.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{(stats?.activeUsers || 0).toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">
-                  {Math.round((adminStats.activeUsers / adminStats.totalUsers) * 100)}% of total
+                  {stats && stats.totalUsers ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}% of total
                 </p>
               </CardContent>
             </Card>
@@ -131,7 +123,7 @@ export default function AdminDashboard() {
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{adminStats.totalListings.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{(stats?.totalListings || 0).toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">Marketplace + Jobs</p>
               </CardContent>
             </Card>
@@ -142,8 +134,8 @@ export default function AdminDashboard() {
                 <Shield className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{adminStats.platformHealth}%</div>
-                <Progress value={adminStats.platformHealth} className="mt-2" />
+                <div className="text-2xl font-bold">{stats?.platformHealth || 0}%</div>
+                <Progress value={stats?.platformHealth || 0} className="mt-2" />
               </CardContent>
             </Card>
           </div>

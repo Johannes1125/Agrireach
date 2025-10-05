@@ -7,17 +7,17 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  Dialog,
+  DialogAction,
+  DialogCancel,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import {
   Users,
   MessageSquare,
@@ -74,13 +74,8 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const { toast } = useToast()
-
   const handleLogout = () => {
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of the admin panel.",
-    })
+    toast.success("Logged out successfully")
     router.push("/admin/login")
   }
 
@@ -200,22 +195,22 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
       </Sheet>
 
       {/* Logout Confirmation Dialog */}
-      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Logout from Admin Panel</AlertDialogTitle>
-            <AlertDialogDescription>
+      <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Logout from Admin Panel</DialogTitle>
+            <DialogDescription>
               Are you sure you want to logout? You will need to login again to access the admin panel.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground">
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogCancel>Cancel</DialogCancel>
+            <DialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground">
               Logout
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </DialogAction>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

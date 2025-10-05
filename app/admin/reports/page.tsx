@@ -11,80 +11,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import Link from "next/link"
 import { toast } from "sonner"
+import { useAdminReports, adminReportAction } from "@/hooks/use-admin-data"
 
-// Mock reports data
-const reports = [
-  {
-    id: 1,
-    type: "inappropriate_content",
-    status: "pending",
-    priority: "high",
-    reportedBy: {
-      name: "Sarah Johnson",
-      avatar: "/placeholder.svg?key=sj123",
-    },
-    reportedUser: {
-      name: "Mike Problem",
-      avatar: "/placeholder.svg?key=mp456",
-    },
-    content: {
-      type: "forum_post",
-      title: "Inappropriate language in farming discussion",
-      excerpt: "This post contains offensive language and personal attacks...",
-    },
-    reason: "Inappropriate language and harassment",
-    description: "User is using offensive language and making personal attacks against other community members.",
-    createdAt: "2 hours ago",
-    evidence: ["Screenshot of offensive post", "Multiple user complaints"],
-  },
-  {
-    id: 2,
-    type: "spam",
-    status: "pending",
-    priority: "medium",
-    reportedBy: {
-      name: "John Farmer",
-      avatar: "/placeholder.svg?key=jf789",
-    },
-    reportedUser: {
-      name: "Spam Account",
-      avatar: "/placeholder.svg?key=sa012",
-    },
-    content: {
-      type: "marketplace_listing",
-      title: "Suspicious product listing",
-      excerpt: "Multiple identical listings with unrealistic prices...",
-    },
-    reason: "Spam and fake listings",
-    description: "User is posting multiple fake listings with unrealistic prices and duplicate content.",
-    createdAt: "5 hours ago",
-    evidence: ["Multiple duplicate listings", "Unrealistic pricing"],
-  },
-  {
-    id: 3,
-    type: "fraud",
-    status: "resolved",
-    priority: "high",
-    reportedBy: {
-      name: "Lisa Market",
-      avatar: "/placeholder.svg?key=lm345",
-    },
-    reportedUser: {
-      name: "Fake Seller",
-      avatar: "/placeholder.svg?key=fs678",
-    },
-    content: {
-      type: "marketplace_transaction",
-      title: "Fraudulent transaction",
-      excerpt: "Seller took payment but never delivered products...",
-    },
-    reason: "Fraudulent activity",
-    description: "Seller accepted payment for organic vegetables but never delivered the products.",
-    createdAt: "1 day ago",
-    evidence: ["Payment records", "No delivery confirmation", "Multiple complaints"],
-    resolution: "User account suspended and refund processed",
-  },
-]
+export default function AdminReportsPage() {
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [priorityFilter, setPriorityFilter] = useState("all")
+  const [selectedReport, setSelectedReport] = useState<any | null>(null)
+  const { reports, loading, error } = useAdminReports({ status: statusFilter, priority: priorityFilter })
 
 const reportTypes = {
   inappropriate_content: "Inappropriate Content",
@@ -100,21 +33,18 @@ const priorityColors = {
   low: "secondary",
 }
 
-export default function AdminReportsPage() {
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [priorityFilter, setPriorityFilter] = useState("all")
-  const [selectedReport, setSelectedReport] = useState<(typeof reports)[0] | null>(null)
+  const filteredReports = reports
 
-  const filteredReports = reports.filter(
-    (report) =>
-      (statusFilter === "all" || report.status === statusFilter) &&
-      (priorityFilter === "all" || report.priority === priorityFilter),
-  )
-
-  const handleReportAction = (reportId: number, action: string, resolution?: string) => {
-    // TODO: Implement report action handling
-    toast.info(`${action} action for report ${reportId} - Feature coming soon`)
-    setSelectedReport(null)
+  const handleReportAction = async (reportId: string, action: string, resolution?: string) => {
+    try {
+      const mapped = action === 'resolve' || action === 'dismiss' ? action : null
+      if (!mapped) return toast.info('Unsupported action')
+      await adminReportAction(reportId, mapped as any, resolution)
+      toast.success('Report updated')
+      setSelectedReport(null)
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update report')
+    }
   }
 
   return (
@@ -133,7 +63,7 @@ export default function AdminReportsPage() {
               <p className="text-muted-foreground">Review and handle user-reported content</p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="destructive">{reports.filter((r) => r.status === "pending").length} pending</Badge>
+              <Badge variant="destructive">{reports.filter((r: any) => r.status === "pending").length} pending</Badge>
             </div>
           </div>
         </div>
@@ -159,7 +89,7 @@ export default function AdminReportsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold">{reports.filter((r) => r.status === "pending").length}</p>
+                  <p className="text-2xl font-bold">{reports.filter((r: any) => r.status === "pending").length}</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-yellow-500" />
               </div>
@@ -171,7 +101,7 @@ export default function AdminReportsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Resolved</p>
-                  <p className="text-2xl font-bold">{reports.filter((r) => r.status === "resolved").length}</p>
+                  <p className="text-2xl font-bold">{reports.filter((r: any) => r.status === "resolved").length}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-500" />
               </div>
@@ -183,7 +113,7 @@ export default function AdminReportsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">High Priority</p>
-                  <p className="text-2xl font-bold">{reports.filter((r) => r.priority === "high").length}</p>
+                  <p className="text-2xl font-bold">{reports.filter((r: any) => r.priority === "high").length}</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-red-500" />
               </div>
@@ -224,28 +154,28 @@ export default function AdminReportsPage() {
 
         {/* Reports List */}
         <div className="space-y-4">
-          {filteredReports.map((report) => (
-            <Card key={report.id} className="hover:shadow-md transition-shadow">
+          {filteredReports.map((report: any) => (
+            <Card key={report._id || report.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={report.reportedUser.avatar || "/placeholder.svg"} />
-                    <AvatarFallback>{report.reportedUser.name[0]}</AvatarFallback>
+                    <AvatarImage src={report.reported_user?.avatar_url || "/placeholder.svg"} />
+                    <AvatarFallback>{(report.reported_user?.full_name || 'U')[0]}</AvatarFallback>
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="font-semibold">{report.content.title}</h3>
+                        <h3 className="font-semibold">{report.content?.title || report.type}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Reported user: <span className="font-medium">{report.reportedUser.name}</span>
+                          Reported user: <span className="font-medium">{report.reported_user?.full_name || 'Unknown'}</span>
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          Reported by: <span className="font-medium">{report.reportedBy.name}</span>
+                          Reported by: <span className="font-medium">{report.reporter?.full_name || 'Unknown'}</span>
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={priorityColors[report.priority as keyof typeof priorityColors]}>
+                        <Badge variant={priorityColors[report.priority as keyof typeof priorityColors] || 'secondary'}>
                           {report.priority}
                         </Badge>
                         <Badge variant={report.status === "resolved" ? "default" : "secondary"}>{report.status}</Badge>

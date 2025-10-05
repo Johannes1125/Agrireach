@@ -7,7 +7,7 @@ import { validateBody } from "@/server/middleware/validate";
 import { UpdateApplicationSchema } from "@/server/validators/opportunitySchemas";
 import { Notification } from "@/server/models/Notification";
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
   const token = getAuthToken(req, "access");
@@ -15,7 +15,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   let decoded: any; try { decoded = verifyToken<any>(token, "access"); } catch { return jsonError("Unauthorized", 401); }
   await connectToDatabase();
 
-  const application = await JobApplication.findById(params.id);
+  const { id } = await params;
+  const application = await JobApplication.findById(id);
   if (!application) return jsonError("Application not found", 404);
 
   const opportunity = await Opportunity.findById(application.opportunity_id);
@@ -30,7 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!result.ok) return result.res;
 
   const updatedApplication = await JobApplication.findByIdAndUpdate(
-    params.id,
+    id,
     { $set: result.data },
     { new: true }
   ).populate('worker_id', 'full_name email');

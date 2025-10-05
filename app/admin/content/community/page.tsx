@@ -1,3 +1,4 @@
+"use client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,82 +18,63 @@ import {
   Lock,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useAdminCommunity } from "@/hooks/use-admin-data"
+import { authFetch } from "@/lib/auth-client"
+import { toast } from "sonner"
+import { useEffect, useState } from "react"
 
 export default function CommunityContentPage() {
-  // Mock data for community posts
-  const posts = [
-    {
-      id: "1",
-      title: "Best practices for organic soil management",
-      author: "Maria Rodriguez",
-      category: "Farming Tips",
-      replies: 23,
-      views: 456,
-      likes: 34,
-      status: "active",
-      pinned: true,
-      flagged: false,
-      createdAt: "2024-02-20",
-      lastActivity: "2024-02-22",
-    },
-    {
-      id: "2",
-      title: "Seasonal worker housing recommendations",
-      author: "John Smith",
-      category: "Worker Resources",
-      replies: 12,
-      views: 234,
-      likes: 18,
-      status: "active",
-      pinned: false,
-      flagged: false,
-      createdAt: "2024-02-18",
-      lastActivity: "2024-02-21",
-    },
-    {
-      id: "3",
-      title: "Looking for bulk tomato suppliers",
-      author: "Fresh Market Co.",
-      category: "Marketplace",
-      replies: 8,
-      views: 167,
-      likes: 12,
-      status: "active",
-      pinned: false,
-      flagged: false,
-      createdAt: "2024-02-15",
-      lastActivity: "2024-02-20",
-    },
-    {
-      id: "4",
-      title: "Inappropriate content example",
-      author: "Suspicious User",
-      category: "General",
-      replies: 2,
-      views: 45,
-      likes: 0,
-      status: "pending",
-      pinned: false,
-      flagged: true,
-      createdAt: "2024-02-22",
-      lastActivity: "2024-02-22",
-    },
-  ]
+  const { threads, stats, loading } = useAdminCommunity()
+  const [categories, setCategories] = useState<any[]>([])
+  const posts = threads.map((t: any) => ({
+    id: String(t._id),
+    title: t.title,
+    author: t.author_id?.full_name || 'Unknown',
+    category: t.category || t.category_id?.name || 'General',
+    replies: t.replies_count || 0,
+    views: t.views || 0,
+    likes: t.likes_count || 0,
+    status: t.status || 'active',
+    pinned: !!t.pinned,
+    flagged: !!t.flagged,
+    createdAt: t.created_at ? new Date(t.created_at).toLocaleDateString() : '',
+    lastActivity: t.last_activity ? new Date(t.last_activity).toLocaleDateString() : '',
+  }))
 
-  const stats = {
-    totalPosts: 1847,
-    activePosts: 1823,
-    pendingReview: 12,
-    flaggedPosts: 5,
+  const doThreadAction = async (id: string, action: string) => {
+    try {
+      const res = await authFetch(`/api/admin/community/threads/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json?.message || 'Failed')
+      toast.success('Updated')
+    } catch (e: any) {
+      toast.error(e.message || 'Failed')
+    }
   }
 
-  const categories = [
-    { name: "Farming Tips", posts: 456, color: "bg-green-100 text-green-800" },
-    { name: "Worker Resources", posts: 234, color: "bg-blue-100 text-blue-800" },
-    { name: "Marketplace", posts: 189, color: "bg-purple-100 text-purple-800" },
-    { name: "General", posts: 167, color: "bg-gray-100 text-gray-800" },
-    { name: "Equipment", posts: 123, color: "bg-orange-100 text-orange-800" },
-  ]
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const res = await authFetch('/api/community/categories')
+        const json = await res.json().catch(() => ({}))
+        const cats = json?.data?.categories || json?.categories || []
+        // normalize shape: { name, posts }
+        const normalized = Array.isArray(cats) ? cats.map((c: any) => ({
+          name: c.name || c._id || 'Category',
+          posts: c.count || c.posts_count || 0,
+          color: 'bg-gray-100 text-gray-800',
+        })) : []
+        setCategories(normalized)
+      } catch {
+        setCategories([])
+      }
+    }
+    run()
+  }, [])
 
   return (
     <div className="space-y-8">
@@ -112,7 +94,7 @@ export default function CommunityContentPage() {
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPosts.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{((stats as any)?.total || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">All community posts</p>
           </CardContent>
         </Card>
@@ -123,7 +105,7 @@ export default function CommunityContentPage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activePosts.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{((stats as any)?.active || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Currently visible</p>
           </CardContent>
         </Card>
@@ -134,7 +116,7 @@ export default function CommunityContentPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingReview}</div>
+            <div className="text-2xl font-bold">{(stats as any)?.pending || 0}</div>
             <p className="text-xs text-muted-foreground">Awaiting moderation</p>
           </CardContent>
         </Card>
@@ -145,7 +127,7 @@ export default function CommunityContentPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.flaggedPosts}</div>
+            <div className="text-2xl font-bold">{(stats as any)?.flagged || 0}</div>
             <p className="text-xs text-muted-foreground">Need attention</p>
           </CardContent>
         </Card>

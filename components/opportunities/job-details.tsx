@@ -49,8 +49,11 @@ export function JobDetails({ job }: JobDetailsProps) {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return ""
+    const d = new Date(dateString)
+    if (isNaN(d.getTime())) return ""
+    return d.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",

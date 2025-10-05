@@ -12,7 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Link from "next/link"
 import { toast } from "sonner"
-import { useAdminUsers } from "@/hooks/use-admin-data"
+import { useAdminUsers, adminUserAction } from "@/hooks/use-admin-data"
 
 const statusColors = {
   active: "bg-green-500",
@@ -34,9 +34,15 @@ export default function AdminUsersPage() {
 
   const filteredUsers = users
 
-  const handleUserAction = (userId: string, action: string) => {
-    // TODO: Implement user action handling
-    toast.info(`${action} action for user ${userId} - Feature coming soon`)
+  const handleUserAction = async (userId: string, action: string) => {
+    try {
+      const mapped = action === 'verify' || action === 'unverify' || action === 'suspend' || action === 'unsuspend' || action === 'ban' ? action : null
+      if (!mapped) return toast.info('Unsupported action')
+      await adminUserAction(userId, mapped as any)
+      toast.success('Updated')
+    } catch (e: any) {
+      toast.error(e.message || 'Failed')
+    }
   }
 
   return (

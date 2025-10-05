@@ -1,3 +1,4 @@
+"use client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,74 +16,12 @@ import {
   CheckCircle,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useAdminMarketplace } from "@/hooks/use-admin-data"
+import { authFetch } from "@/lib/auth-client"
+import { toast } from "sonner"
 
 export default function MarketplaceContentPage() {
-  // Mock data for marketplace products
-  const products = [
-    {
-      id: "1",
-      name: "Organic Tomatoes",
-      seller: "Green Valley Farms",
-      category: "Vegetables",
-      price: "$3.50/lb",
-      stock: 500,
-      status: "active",
-      views: 1240,
-      orders: 45,
-      rating: 4.8,
-      flagged: false,
-      createdAt: "2024-02-15",
-    },
-    {
-      id: "2",
-      name: "Fresh Strawberries",
-      seller: "Berry Best Farm",
-      category: "Fruits",
-      price: "$4.00/lb",
-      stock: 200,
-      status: "active",
-      views: 890,
-      orders: 32,
-      rating: 4.9,
-      flagged: false,
-      createdAt: "2024-02-18",
-    },
-    {
-      id: "3",
-      name: "Artisan Honey",
-      seller: "Mountain Bee Co.",
-      category: "Pantry",
-      price: "$12.00/jar",
-      stock: 0,
-      status: "out_of_stock",
-      views: 567,
-      orders: 18,
-      rating: 4.7,
-      flagged: false,
-      createdAt: "2024-02-10",
-    },
-    {
-      id: "4",
-      name: "Suspicious Product",
-      seller: "Unknown Seller",
-      category: "Other",
-      price: "$1.00/lb",
-      stock: 1000,
-      status: "pending",
-      views: 23,
-      orders: 0,
-      rating: 0,
-      flagged: true,
-      createdAt: "2024-02-22",
-    },
-  ]
-
-  const stats = {
-    totalProducts: 1247,
-    activeProducts: 1156,
-    pendingReview: 23,
-    flaggedProducts: 8,
-  }
+  const { products, stats, loading } = useAdminMarketplace()
 
   return (
     <div className="space-y-8">
@@ -102,7 +41,7 @@ export default function MarketplaceContentPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProducts.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(stats?.total || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">All marketplace listings</p>
           </CardContent>
         </Card>
@@ -113,7 +52,7 @@ export default function MarketplaceContentPage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeProducts.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(stats?.active || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Currently available</p>
           </CardContent>
         </Card>
@@ -124,7 +63,7 @@ export default function MarketplaceContentPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingReview}</div>
+            <div className="text-2xl font-bold">{stats?.pending || 0}</div>
             <p className="text-xs text-muted-foreground">Awaiting approval</p>
           </CardContent>
         </Card>
@@ -135,7 +74,7 @@ export default function MarketplaceContentPage() {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.flaggedProducts}</div>
+            <div className="text-2xl font-bold">{stats?.flagged || 0}</div>
             <p className="text-xs text-muted-foreground">Need attention</p>
           </CardContent>
         </Card>
@@ -186,7 +125,7 @@ export default function MarketplaceContentPage() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
+                {products.map((product: any) => (
                   <tr key={product.id} className="border-b hover:bg-muted/50">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -194,24 +133,24 @@ export default function MarketplaceContentPage() {
                           <Package className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div>
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">ID: {product.id}</div>
+                          <div className="font-medium">{product.title}</div>
+                          <div className="text-sm text-muted-foreground">ID: {product._id}</div>
                         </div>
                         {product.flagged && <AlertTriangle className="h-4 w-4 text-red-500" />}
                       </div>
                     </td>
                     <td className="p-4">
-                      <div className="font-medium">{product.seller}</div>
+                      <div className="font-medium">{product.seller_id?.full_name || 'Unknown'}</div>
                     </td>
                     <td className="p-4">
                       <Badge variant="outline">{product.category}</Badge>
                     </td>
                     <td className="p-4">
-                      <div className="font-medium">{product.price}</div>
+                      <div className="font-medium">₱{product.price}/{product.unit}</div>
                     </td>
                     <td className="p-4">
-                      <div className={`font-medium ${product.stock === 0 ? "text-red-500" : ""}`}>
-                        {product.stock} units
+                      <div className={`font-medium ${product.quantity_available === 0 ? "text-red-500" : ""}`}>
+                        {product.quantity_available} units
                       </div>
                     </td>
                     <td className="p-4">
@@ -224,7 +163,7 @@ export default function MarketplaceContentPage() {
                               : "destructive"
                         }
                       >
-                        {product.status.replace("_", " ")}
+                        {String(product.status).replace("_", " ")}
                       </Badge>
                     </td>
                     <td className="p-4">
@@ -250,21 +189,33 @@ export default function MarketplaceContentPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toast.info('TODO: navigate to product') }>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toast.info('TODO: open edit product form')}>
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Product
                           </DropdownMenuItem>
-                          {product.status === "pending" && (
-                            <DropdownMenuItem>
+                          {String(product.status).startsWith('pending') && (
+                            <DropdownMenuItem onClick={async () => {
+                              try {
+                                const res = await authFetch(`/api/admin/marketplace/products/${product._id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'approve' }) })
+                                if (!res.ok) throw new Error('Failed to approve')
+                                toast.success('Approved')
+                              } catch (e: any) { toast.error(e.message || 'Failed') }
+                            }}>
                               <CheckCircle className="mr-2 h-4 w-4" />
                               Approve
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem className="text-red-600" onClick={async () => {
+                            try {
+                              const res = await authFetch(`/api/admin/marketplace/products/${product._id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove' }) })
+                              if (!res.ok) throw new Error('Failed to remove')
+                              toast.success('Removed')
+                            } catch (e: any) { toast.error(e.message || 'Failed') }
+                          }}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Remove
                           </DropdownMenuItem>

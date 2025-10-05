@@ -32,7 +32,6 @@ export function PostJobForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [companyLogo, setCompanyLogo] = useState<string | undefined>(undefined)
-  const [jobImages, setJobImages] = useState<string[]>([])
 
   const availableSkills = [
     "Crop Harvesting",
@@ -92,7 +91,7 @@ export function PostJobForm() {
       const urgency = "low"
       const start_date = (document.getElementById("deadline") as HTMLInputElement)?.value || undefined
       const contact_email = (document.getElementById("contact-email") as HTMLInputElement)?.value || undefined
-      const payload: any = { title, description, category: "general", location, company_name, company_logo: companyLogo, images: jobImages, contact_email, pay_rate, pay_type, urgency, required_skills: selectedSkills, requirements, benefits, start_date }
+      const payload: any = { title, description, category: "general", location, company_name, company_logo: companyLogo, contact_email, pay_rate, pay_type, urgency, required_skills: selectedSkills, requirements, benefits, start_date }
       const res = await fetch("/api/opportunities", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json?.message || "Failed to post job")
@@ -174,15 +173,7 @@ export function PostJobForm() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Job Images</Label>
-              <ImageUpload
-                type="general"
-                maxFiles={4}
-                onUploadComplete={(imgs) => setJobImages(imgs.map(i => i.url))}
-                onUploadError={(err) => toast.error(err)}
-              />
-            </div>
+            {/* Job Images removed per request */}
             <div className="space-y-2">
               <Label htmlFor="description">Job Description *</Label>
               <Textarea

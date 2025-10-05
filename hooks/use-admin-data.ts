@@ -67,8 +67,8 @@ export function useAdminUsers(filters: { status?: string; role?: string; search?
         }
 
         const data = await res.json()
-        setUsers(data.users || [])
-        setTotal(data.total || 0)
+        setUsers(data.users || data.items || [])
+        setTotal(data.total || data.count || 0)
       } catch (err: any) {
         setError(err.message)
       } finally {
@@ -80,6 +80,17 @@ export function useAdminUsers(filters: { status?: string; role?: string; search?
   }, [filters.status, filters.role, filters.search])
 
   return { users, loading, error, total, refetch: () => setLoading(true) }
+}
+
+export async function adminUserAction(userId: string, action: "verify" | "unverify" | "suspend" | "unsuspend" | "ban" | "role", role?: string) {
+  const res = await authFetch(`/api/admin/users/${userId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, role }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json?.message || 'Failed to update user')
+  return json
 }
 
 export function useAdminReports(filters: { status?: string; priority?: string } = {}) {
@@ -103,8 +114,8 @@ export function useAdminReports(filters: { status?: string; priority?: string } 
         }
 
         const data = await res.json()
-        setReports(data.reports || [])
-        setTotal(data.total || 0)
+        setReports(data.reports || data.items || [])
+        setTotal(data.total || data.count || 0)
       } catch (err: any) {
         setError(err.message)
       } finally {
@@ -116,6 +127,84 @@ export function useAdminReports(filters: { status?: string; priority?: string } 
   }, [filters.status, filters.priority])
 
   return { reports, loading, error, total, refetch: () => setLoading(true) }
+}
+
+export async function adminReportAction(id: string, action: 'resolve' | 'dismiss', resolution?: string) {
+  const res = await authFetch('/api/admin/reports', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, action, resolution })
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(json?.message || 'Failed to update report')
+  return json
+}
+
+export function useAdminCommunity() {
+  const [threads, setThreads] = useState<any[]>([])
+  const [stats, setStats] = useState<{ total: number; active: number; pending: number; flagged: number } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        setLoading(true)
+        const [threadsRes, statsRes] = await Promise.all([
+          authFetch('/api/community/threads?limit=50'),
+          authFetch('/api/community/stats')
+        ])
+        if (!threadsRes.ok) throw new Error('Failed to fetch threads')
+        const threadsJson = await threadsRes.json()
+        const statsJson = statsRes.ok ? await statsRes.json() : {}
+        setThreads(threadsJson.data?.items || threadsJson.items || [])
+        setStats(statsJson.data || statsJson || null)
+      } catch (e: any) {
+        setError(e.message || 'Failed to fetch community data')
+      } finally {
+        setLoading(false)
+      }
+    }
+    run()
+  }, [])
+
+  return { threads, stats, loading, error }
+}
+
+export function useAdminMarketplace() {
+  const [products, setProducts] = useState<any[]>([])
+  const [stats, setStats] = useState<{ total: number; active: number; pending: number; flagged: number } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        setLoading(true)
+        const [prodRes] = await Promise.all([
+          authFetch('/api/marketplace/products?limit=50')
+        ])
+        if (!prodRes.ok) throw new Error('Failed to fetch products')
+        const prodJson = await prodRes.json()
+        const list = prodJson?.data?.products || prodJson?.products || []
+        setProducts(list)
+        const totals = {
+          total: list.length,
+          active: list.filter((p: any) => p.status === 'active').length,
+          pending: list.filter((p: any) => p.status === 'pending_approval' || p.status === 'pending').length,
+          flagged: 0,
+        }
+        setStats(totals)
+      } catch (e: any) {
+        setError(e.message || 'Failed to fetch marketplace data')
+      } finally {
+        setLoading(false)
+      }
+    }
+    run()
+  }, [])
+
+  return { products, stats, loading, error }
 }
 
 export function useAdminStats() {
@@ -145,4 +234,42 @@ export function useAdminStats() {
   }, [])
 
   return { stats, loading, error, refetch: () => setLoading(true) }
+}
+
+export interface AdminOverview {
+  totalUsers: number
+  activeUsers: number
+  newUsersToday: number
+  totalListings: number
+  pendingReviews: number
+  reportedContent: number
+  platformHealth: number
+}
+
+export function useAdminOverview() {
+  const [stats, setStats] = useState<AdminOverview | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    const run = async () => {
+      try {
+        setLoading(true)
+        const res = await authFetch('/api/admin/overview')
+        if (!res.ok) throw new Error('Failed to fetch admin overview')
+        const json = await res.json()
+        const d = json?.data || json
+        if (mounted) setStats(d)
+      } catch (e: any) {
+        if (mounted) setError(e.message || 'Failed to fetch admin overview')
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    run()
+    return () => { mounted = false }
+  }, [])
+
+  return { stats, loading, error }
 }

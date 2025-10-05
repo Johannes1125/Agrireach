@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     ];
   }
 
-  // Determine visibility: default to only active for public; include seller's own products (any status) if authenticated and no explicit status provided
+  // Visibility: All users see active products. Sellers also see their own products regardless of status.
   let decoded: any | null = null;
   const token = getAuthToken(req, "access");
   if (token) {
@@ -66,13 +66,16 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  let visibilityFilter: any = {};
-  if (status) {
-    visibilityFilter = { status };
-  } else if (decoded?.sub) {
-    visibilityFilter = { $or: [ { status: "active" }, { seller_id: decoded.sub } ] };
+  // If status filter is explicitly provided (e.g., admin filtering), use it
+  // Otherwise: show active products to everyone, plus seller's own products (any status)
+  if (!status) {
+    if (decoded?.sub) {
+      filter.$or = [ { status: "active" }, { seller_id: decoded.sub } ];
+    } else {
+      filter.status = "active";
+    }
   } else {
-    visibilityFilter = { status: "active" };
+    filter.status = status;
   }
 
   // Sorting
@@ -96,13 +99,13 @@ export async function GET(req: NextRequest) {
   }
 
   const [products, total] = await Promise.all([
-    Product.find({ ...filter, ...visibilityFilter })
+    Product.find(filter)
       .populate('seller_id', 'full_name location verified trust_score')
       .sort(sort)
       .skip(skip)
       .limit(limit)
       .lean(),
-    Product.countDocuments({ ...filter, ...visibilityFilter })
+    Product.countDocuments(filter)
   ]);
 
   return jsonOk({ 
