@@ -1,64 +1,80 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { MessageSquare, Users, TrendingUp, Clock, Search, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { SimpleHeader } from "@/components/layout/simple-header"
-import { useCommunityData } from "@/hooks/use-community-data"
-import Link from "next/link"
+import { useEffect, useState } from "react";
+import {
+  MessageSquare,
+  Users,
+  TrendingUp,
+  Clock,
+  Search,
+  Plus,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SimpleHeader } from "@/components/layout/simple-header";
+import { useCommunityData } from "@/hooks/use-community-data";
+import Link from "next/link";
 
-interface CategoryItem { id: string; name: string; description?: string; icon?: string; posts_count?: number }
-const forumCategories: CategoryItem[] = []
-
-
+interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  posts_count?: number;
+}
+const forumCategories: CategoryItem[] = [];
 
 export default function CommunityPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [categories, setCategories] = useState<CategoryItem[]>([])
-  const { stats, trendingTopics, recentActivity, loading, error } = useCommunityData()
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const { stats, trendingTopics, recentActivity, loading, error } =
+    useCommunityData();
 
   function getCategoryIcon(name?: string) {
-    const key = (name || "").toLowerCase()
-    if (key.includes("farming") || key.includes("tips")) return "🌱"
-    if (key.includes("market")) return "📈"
-    if (key.includes("equipment") || key.includes("tools")) return "🚜"
-    if (key.includes("weather") || key.includes("season")) return "🌤️"
-    if (key.includes("success")) return "🏆"
-    if (key.includes("general")) return "💬"
-    return "💬"
+    const key = (name || "").toLowerCase();
+    if (key.includes("farming") || key.includes("tips")) return "🌱";
+    if (key.includes("market")) return "📈";
+    if (key.includes("equipment") || key.includes("tools")) return "🚜";
+    if (key.includes("weather") || key.includes("season")) return "🌤️";
+    if (key.includes("success")) return "🏆";
+    if (key.includes("general")) return "💬";
+    return "💬";
   }
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch("/api/community/categories")
-      const json = await res.json().catch(() => ({}))
-      if (res.ok) setCategories(json?.data?.items || [])
-    }
-    load()
-  }, [])
+      const res = await fetch("/api/community/categories");
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) setCategories(json?.data?.items || []);
+    };
+    load();
+  }, []);
 
   const filteredCategories = (categories || []).filter((category) => {
-    const name = (category.name || "").toLowerCase()
-    const desc = (category.description || "").toLowerCase()
-    const term = searchTerm.toLowerCase()
-    return name.includes(term) || desc.includes(term)
-  })
+    const name = (category.name || "").toLowerCase();
+    const desc = (category.description || "").toLowerCase();
+    const term = searchTerm.toLowerCase();
+    return name.includes(term) || desc.includes(term);
+  });
 
   return (
     <div className="min-h-screen bg-background">
       <SimpleHeader />
 
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-background border-b">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground font-sans">Community Forums</h1>
-              <p className="text-muted-foreground mt-1">Connect, share knowledge, and grow together</p>
+              <h1 className="text-3xl font-bold text-foreground font-sans">
+                Community Forums
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Connect, share knowledge, and grow together
+              </p>
             </div>
             <Link href="/community/new-thread">
               <Button className="bg-primary hover:bg-primary/90">
@@ -90,32 +106,47 @@ export default function CommunityPage() {
               <h2 className="text-xl font-semibold">Forum Categories</h2>
               <div className="space-y-3">
                 {filteredCategories.map((category: any, idx: number) => {
-                  const href = `/community/category/${category._id || encodeURIComponent(category.name)}`
-                  const icon = category.icon || getCategoryIcon(category.name)
-                  const key = String(category._id || category.id || category.name || idx)
+                  const href = `/community/category/${
+                    category._id || encodeURIComponent(category.name)
+                  }`;
+                  const icon = category.icon || getCategoryIcon(category.name);
+                  const key = String(
+                    category._id || category.id || category.name || idx
+                  );
                   return (
-                  <Card key={key} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <div className="text-3xl">{icon}</div>
-                        <div className="flex-1 min-w-0">
-                          <Link href={href}>
-                            <h3 className="text-lg font-semibold hover:text-primary cursor-pointer">{category.name}</h3>
-                          </Link>
-                          <p className="text-muted-foreground text-sm mt-1">{String(category && category.description ? category.description : "")}</p>
+                    <Card
+                      key={key}
+                      className="hover:shadow-md transition-shadow"
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="text-3xl">{icon}</div>
+                          <div className="flex-1 min-w-0">
+                            <Link href={href}>
+                              <h3 className="text-lg font-semibold hover:text-primary cursor-pointer">
+                                {category.name}
+                              </h3>
+                            </Link>
+                            <p className="text-muted-foreground text-sm mt-1">
+                              {String(
+                                category && category.description
+                                  ? category.description
+                                  : ""
+                              )}
+                            </p>
 
-                          <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <MessageSquare className="h-4 w-4" />
-                              <span>{category.posts_count ?? 0} posts</span>
+                            <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <MessageSquare className="h-4 w-4" />
+                                <span>{category.posts_count ?? 0} posts</span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                        
-                      </div>
-                    </CardContent>
-                  </Card>
-                )})}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -133,19 +164,27 @@ export default function CommunityPage() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm">Total Members</span>
-                  <span className="font-semibold">{stats?.totalMembers?.toLocaleString() || "0"}</span>
+                  <span className="font-semibold">
+                    {stats?.totalMembers?.toLocaleString() || "0"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Total Threads</span>
-                  <span className="font-semibold">{stats?.totalThreads?.toLocaleString() || "0"}</span>
+                  <span className="font-semibold">
+                    {stats?.totalThreads?.toLocaleString() || "0"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Total Posts</span>
-                  <span className="font-semibold">{stats?.totalPosts?.toLocaleString() || "0"}</span>
+                  <span className="font-semibold">
+                    {stats?.totalPosts?.toLocaleString() || "0"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm">Online Now</span>
-                  <span className="font-semibold text-green-600">{stats?.onlineNow || "0"}</span>
+                  <span className="font-semibold text-green-600">
+                    {stats?.onlineNow || "0"}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -161,7 +200,10 @@ export default function CommunityPage() {
               <CardContent className="space-y-3">
                 {trendingTopics.map((topic, index) => (
                   <div key={topic._id || index} className="space-y-1">
-                    <Link href={`/community/thread/${topic._id}`} className="text-sm font-medium hover:text-primary line-clamp-2">
+                    <Link
+                      href={`/community/thread/${topic._id}`}
+                      className="text-sm font-medium hover:text-primary line-clamp-2"
+                    >
                       {topic.title}
                     </Link>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -173,7 +215,9 @@ export default function CommunityPage() {
                   </div>
                 ))}
                 {trendingTopics.length === 0 && !loading && (
-                  <p className="text-sm text-muted-foreground">No trending topics yet.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No trending topics yet.
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -190,26 +234,43 @@ export default function CommunityPage() {
                 {recentActivity.map((activity, index) => (
                   <div key={index} className="flex items-start gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={activity.user.avatar_url || "/placeholder.svg"} />
-                      <AvatarFallback>{activity.user.full_name[0]}</AvatarFallback>
+                      <AvatarImage
+                        src={activity.user.avatar_url || "/placeholder.svg"}
+                      />
+                      <AvatarFallback>
+                        {activity.user.full_name[0]}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm">
-                        <span className="font-medium">{activity.user.full_name}</span>
-                        <span className="text-muted-foreground"> {activity.action} </span>
+                        <span className="font-medium">
+                          {activity.user.full_name}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {" "}
+                          {activity.action}{" "}
+                        </span>
                         <Link
-                          href={activity.thread_id ? `/community/thread/${activity.thread_id}` : "#"}
+                          href={
+                            activity.thread_id
+                              ? `/community/thread/${activity.thread_id}`
+                              : "#"
+                          }
                           className="hover:text-primary line-clamp-1"
                         >
                           {activity.topic}
                         </Link>
                       </p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.time}
+                      </p>
                     </div>
                   </div>
                 ))}
                 {recentActivity.length === 0 && !loading && (
-                  <p className="text-sm text-muted-foreground">No recent activity.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No recent activity.
+                  </p>
                 )}
               </CardContent>
             </Card>
@@ -217,5 +278,5 @@ export default function CommunityPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

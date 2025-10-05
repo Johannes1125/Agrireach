@@ -1,41 +1,51 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Search, Grid, List, ShoppingCart } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { SimpleHeader } from "@/components/layout/simple-header"
-import { useMarketplaceData } from "@/hooks/use-marketplace-data"
-import { useAuth } from "@/hooks/use-auth"
-import Link from "next/link"
-
-
+import { useState, useEffect } from "react";
+import { Search, Grid, List, ShoppingCart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SimpleHeader } from "@/components/layout/simple-header";
+import { useMarketplaceData } from "@/hooks/use-marketplace-data";
+import { useAuth } from "@/hooks/use-auth";
+import Link from "next/link";
 
 export default function MarketplacePage() {
-  const { user, loading: authLoading } = useAuth()
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("all")
-  const [sortBy, setSortBy] = useState("newest")
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [cartItems, setCartItems] = useState<string[]>([])
+  const { user, loading: authLoading } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [cartItems, setCartItems] = useState<string[]>([]);
 
   const { products, categories, loading, error, total } = useMarketplaceData({
     search: searchTerm || undefined,
     category: selectedCategory || undefined,
     sortBy,
-    limit: 20
-  })
+    limit: 20,
+  });
 
   if (authLoading) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
   const addToCart = (productId: string) => {
-    setCartItems((prev) => [...prev, productId])
-  }
+    setCartItems((prev) => [...prev, productId]);
+  };
 
   if (loading) {
     return (
@@ -50,7 +60,7 @@ export default function MarketplacePage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -60,33 +70,45 @@ export default function MarketplacePage() {
         <div className="container mx-auto px-4 py-12">
           <div className="flex items-center justify-center">
             <div className="text-center space-y-4">
-              <p className="text-destructive">Error loading marketplace: {error}</p>
+              <p className="text-destructive">
+                Error loading marketplace: {error}
+              </p>
               <Button onClick={() => window.location.reload()}>Retry</Button>
             </div>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader user={user ? {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar || "",
-        location: user.location || "Not specified",
-      } : undefined} />
+      <SimpleHeader
+        user={
+          user
+            ? {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatar: user.avatar || "",
+                location: user.location || "Not specified",
+              }
+            : undefined
+        }
+      />
 
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-background border-b">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-<div>
-              <h1 className="text-3xl font-bold text-foreground font-sans">AgriReach Marketplace</h1>
-              <p className="text-muted-foreground mt-1">Fresh products directly from farmers, fishers, and artisans</p>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground font-sans">
+                AgriReach Marketplace
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Fresh products directly from farmers, fishers, and artisans
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm">
@@ -94,7 +116,9 @@ export default function MarketplacePage() {
                 Cart ({cartItems.length})
               </Button>
               <Link href="/marketplace/sell">
-                <Button className="bg-primary hover:bg-primary/90">Sell Products</Button>
+                <Button className="bg-primary hover:bg-primary/90">
+                  Sell Products
+                </Button>
               </Link>
             </div>
           </div>
@@ -117,14 +141,20 @@ export default function MarketplacePage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select
+              value={selectedCategory}
+              onValueChange={setSelectedCategory}
+            >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
-                  <SelectItem key={category._id || category} value={category.name || category}>
+                  <SelectItem
+                    key={category._id || category}
+                    value={category.name || category}
+                  >
                     {category.name || category}
                   </SelectItem>
                 ))}
@@ -167,11 +197,16 @@ export default function MarketplacePage() {
         {/* Products Grid/List */}
         <div
           className={
-            viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+              : "space-y-4"
           }
         >
           {products.map((product) => (
-            <Card key={product._id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card
+              key={product._id}
+              className="overflow-hidden hover:shadow-lg transition-shadow"
+            >
               <CardHeader className="p-0">
                 <div className="relative">
                   <img
@@ -186,23 +221,34 @@ export default function MarketplacePage() {
                   )}
                   {product.organic && (
                     <div className="absolute top-2 left-2">
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">Organic</Badge>
+                      <Badge
+                        variant="secondary"
+                        className="bg-green-100 text-green-800"
+                      >
+                        Organic
+                      </Badge>
                     </div>
                   )}
                 </div>
               </CardHeader>
-<CardContent className="p-4">
+              <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <CardTitle className="text-lg font-semibold">{product.title}</CardTitle>
+                  <CardTitle className="text-lg font-semibold">
+                    {product.title}
+                  </CardTitle>
                   <Badge variant="secondary">{product.category}</Badge>
                 </div>
 
-                <p className="text-sm text-muted-foreground mb-2">{product.description}</p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {product.description}
+                </p>
 
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-2xl font-bold text-primary">
                     ₱{product.price}
-                    <span className="text-sm font-normal text-muted-foreground ml-1">{product.unit}</span>
+                    <span className="text-sm font-normal text-muted-foreground ml-1">
+                      {product.unit}
+                    </span>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     {product.quantity_available} available
@@ -221,7 +267,11 @@ export default function MarketplacePage() {
                     View Details
                   </Button>
                 </Link>
-                <Button onClick={() => addToCart(product._id)} disabled={product.quantity_available <= 0} className="flex-1">
+                <Button
+                  onClick={() => addToCart(product._id)}
+                  disabled={product.quantity_available <= 0}
+                  className="flex-1"
+                >
                   Add to Cart
                 </Button>
               </CardFooter>
@@ -231,10 +281,12 @@ export default function MarketplacePage() {
 
         {products.length === 0 && !loading && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No products found matching your criteria.</p>
+            <p className="text-muted-foreground">
+              No products found matching your criteria.
+            </p>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }

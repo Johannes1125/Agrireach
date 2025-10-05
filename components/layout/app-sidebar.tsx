@@ -62,7 +62,12 @@ export function AppSidebar({ className }: AppSidebarProps) {
             <Sprout className="h-4 w-4" aria-hidden="true" />
           </div>
           {!collapsed && (
-            <span className="font-heading font-bold text-lg text-sidebar-foreground">
+            <span
+              className={cn(
+                "font-heading font-bold text-lg text-sidebar-foreground transition-opacity duration-400",
+                collapsed ? "opacity-0" : "opacity-100"
+              )}
+            >
               AgriReach
             </span>
           )}
@@ -174,13 +179,13 @@ export function AppSidebar({ className }: AppSidebarProps) {
       {/* Desktop Sidebar */}
       <div
         className={cn(
-          "hidden lg:block",
+          "hidden lg:block transition-all duration-400 ease-in-out",
           collapsed ? "w-16" : "w-64",
           className
         )}
       >
         <div
-          className="fixed inset-y-0 left-0 z-50"
+          className="fixed inset-y-0 left-0 z-50 transition-all duration-400 ease-in-out"
           style={{ width: collapsed ? "4rem" : "16rem" }}
         >
           <SidebarContent />

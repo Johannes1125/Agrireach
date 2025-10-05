@@ -28,6 +28,7 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
   const [defaultPositionClass, setDefaultPositionClass] =
     useState<AccessibilitySettingsProps["position"]>(position);
   const [isCustomPosition, setIsCustomPosition] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
   const {
     highContrast,
@@ -55,7 +56,7 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
     }
   }, []);
 
-  // Save position to localStorage 
+  // Save position to localStorage
   useEffect(() => {
     if (isCustomPosition) {
       localStorage.setItem(
@@ -66,7 +67,6 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
   }, [buttonPosition, isCustomPosition]);
 
   const handleToggle = (e: React.MouseEvent) => {
-
     if (isDragging) {
       e.preventDefault();
       return;
@@ -86,15 +86,15 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
   };
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault(); 
+    e.preventDefault();
     setIsDragging(true);
   };
 
   const handleDragMove = (clientX: number, clientY: number) => {
     if (!isDragging) return;
 
-    const buttonWidth = 48; 
-    const buttonHeight = 48; 
+    const buttonWidth = 48;
+    const buttonHeight = 48;
 
     const newX = Math.max(
       0,
@@ -359,6 +359,29 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
 
               <Separator className="my-3" />
 
+              {/* Keyboard Shortcuts Section */}
+              <div className="pt-1 mb-4">
+                <button
+                  type="button"
+                  className="text-lg font-medium mb-2 underline text-left hover:text-primary focus:outline-none flex items-center gap-2"
+                  onClick={() => setShowShortcutsModal(true)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    width: "100%",
+                  }}
+                >
+                  <span role="img" aria-hidden="true">
+                    ⌨️
+                  </span>{" "}
+                  Keyboard Shortcuts
+                </button>
+              </div>
+
+              <Separator className="my-3" />
+
               <div className="pt-1">
                 <Button
                   variant="secondary"
@@ -381,6 +404,63 @@ export const AccessibilitySettings: React.FC<AccessibilitySettingsProps> = ({
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Modal */}
+      {showShortcutsModal && (
+        <div
+          className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="shortcuts-modal-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowShortcutsModal(false);
+          }}
+        >
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full max-h-[80vh] overflow-auto">
+            <h2 id="shortcuts-modal-title" className="text-2xl font-bold mb-4">
+              Keyboard Shortcuts
+            </h2>
+            <ul className="mb-4 text-base space-y-2 pl-2">
+              <li>
+                <b>Alt+H</b>: Go to home page
+              </li>
+              <li>
+                <b>Alt+M</b>: Go to marketplace
+              </li>
+              <li>
+                <b>Alt+C</b>: Go to community
+              </li>
+              <li>
+                <b>Alt+O</b>: Go to opportunities
+              </li>
+              <li>
+                <b>Alt+P</b>: Go to profile
+              </li>
+              <li>
+                <b>Alt+S</b>: Go to settings
+              </li>
+              <li>
+                <b>Alt+A</b>: Go to accessibility settings
+              </li>
+              <li>
+                <b>Alt+T</b>: Toggle theme
+              </li>
+              <li>
+                <b>Ctrl+/</b>: Focus search
+              </li>
+              <li>
+                <b>Esc</b>: Close popups or modals
+              </li>
+            </ul>
+            <Button
+              className="w-full"
+              onClick={() => setShowShortcutsModal(false)}
+            >
+              Close
+            </Button>
           </div>
         </div>
       )}
