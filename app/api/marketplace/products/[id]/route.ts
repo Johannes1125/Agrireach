@@ -19,15 +19,16 @@ const UpdateProductSchema = z.object({
   status: z.enum(["active", "sold", "pending_approval"]).optional(),
 });
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["GET"]);
   if (mm) return mm;
 
   await connectToDatabase();
+  const { id } = await params;
   
   // Increment view count
   const product = await Product.findByIdAndUpdate(
-    params.id,
+    id,
     { $inc: { views: 1 } },
     { new: true }
   ).populate('seller_id', 'full_name email location').lean();
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   return jsonOk({ product });
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
 
@@ -52,9 +53,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 
   await connectToDatabase();
+  const { id } = await params;
   
   // Check if user owns this product
-  const product = await Product.findById(params.id);
+  const product = await Product.findById(id);
   if (!product) return jsonError("Product not found", 404);
   
   if (product.seller_id.toString() !== decoded.sub) {
@@ -66,7 +68,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!result.ok) return result.res;
 
   const updatedProduct = await Product.findByIdAndUpdate(
-    params.id,
+    id,
     { $set: result.data },
     { new: true }
   ).populate('seller_id', 'full_name email location');
@@ -74,7 +76,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   return jsonOk({ product: updatedProduct });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["DELETE"]);
   if (mm) return mm;
 
@@ -89,16 +91,17 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
 
   await connectToDatabase();
+  const { id } = await params;
   
   // Check if user owns this product
-  const product = await Product.findById(params.id);
+  const product = await Product.findById(id);
   if (!product) return jsonError("Product not found", 404);
   
   if (product.seller_id.toString() !== decoded.sub) {
     return jsonError("Forbidden", 403);
   }
 
-  await Product.findByIdAndDelete(params.id);
+  await Product.findByIdAndDelete(id);
 
   return jsonOk({ message: "Product deleted successfully" });
 }

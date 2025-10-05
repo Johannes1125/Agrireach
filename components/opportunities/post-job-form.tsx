@@ -24,12 +24,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { ImageUpload } from "@/components/ui/image-upload"
 
 export function PostJobForm() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
   const [customSkill, setCustomSkill] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+  const [companyLogo, setCompanyLogo] = useState<string | undefined>(undefined)
+  const [jobImages, setJobImages] = useState<string[]>([])
 
   const availableSkills = [
     "Crop Harvesting",
@@ -79,7 +82,7 @@ export function PostJobForm() {
       const title = (document.getElementById("job-title") as HTMLInputElement)?.value
       const description = (document.getElementById("description") as HTMLTextAreaElement)?.value
       const location = (document.getElementById("location") as HTMLInputElement)?.value
-      const company_name = (document.getElementById("company_name") as HTMLInputElement)?.value
+      const company_name = (document.getElementById("company-name") as HTMLInputElement)?.value
       const benefitsText = (document.getElementById("benefits") as HTMLTextAreaElement)?.value || ""
       const requirementsText = (document.getElementById("requirements") as HTMLTextAreaElement)?.value || ""
       const benefits = benefitsText.split(/\n|,|;/).map((s) => s.trim()).filter(Boolean)
@@ -89,7 +92,7 @@ export function PostJobForm() {
       const urgency = "low"
       const start_date = (document.getElementById("deadline") as HTMLInputElement)?.value || undefined
       const contact_email = (document.getElementById("contact-email") as HTMLInputElement)?.value || undefined
-      const payload: any = { title, description, category: "general", location, company_name, contact_email, pay_rate, pay_type, urgency, required_skills: selectedSkills, requirements, benefits, start_date }
+      const payload: any = { title, description, category: "general", location, company_name, company_logo: companyLogo, images: jobImages, contact_email, pay_rate, pay_type, urgency, required_skills: selectedSkills, requirements, benefits, start_date }
       const res = await fetch("/api/opportunities", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json?.message || "Failed to post job")
@@ -161,6 +164,25 @@ export function PostJobForm() {
             <CardDescription>Describe the role and what you're looking for</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Company Logo</Label>
+              <ImageUpload
+                type="business"
+                maxFiles={1}
+                onUploadComplete={(imgs) => setCompanyLogo(imgs[0]?.url)}
+                onUploadError={(err) => toast.error(err)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Job Images</Label>
+              <ImageUpload
+                type="general"
+                maxFiles={4}
+                onUploadComplete={(imgs) => setJobImages(imgs.map(i => i.url))}
+                onUploadError={(err) => toast.error(err)}
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="description">Job Description *</Label>
               <Textarea

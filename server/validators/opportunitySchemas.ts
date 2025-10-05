@@ -13,6 +13,8 @@ export const CreateJobSchema = z.object({
   urgency: z.enum(["low", "medium", "high", "urgent"]),
   required_skills: z.array(z.string()).optional(),
   company_name: z.string().optional(),
+  company_logo: z.string().url().optional(),
+  images: z.array(z.string().url()).optional(),
   contact_email: z.string().email().optional(),
   experience_level: z.string().optional(),
   start_date: z.preprocess((v) => (typeof v === "string" && v.length ? v : undefined), z.string().optional()),

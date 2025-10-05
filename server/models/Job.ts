@@ -17,6 +17,8 @@ export interface IOpportunity extends Document {
   required_skills?: any; // JSONB equivalent
   experience_level?: string;
   start_date?: Date;
+  company_logo?: string;
+  images?: string[];
   status: OpportunityStatus;
   views: number;
   applications_count: number;
@@ -38,6 +40,8 @@ const OpportunitySchema = new Schema<IOpportunity>(
     required_skills: { type: Schema.Types.Mixed }, // JSONB equivalent
     experience_level: { type: String },
     start_date: { type: Date },
+    company_logo: { type: String },
+    images: { type: [String], default: [] },
     status: { type: String, default: "active", enum: ["active", "closed", "filled"], index: true },
     views: { type: Number, default: 0 },
     applications_count: { type: Number, default: 0 },

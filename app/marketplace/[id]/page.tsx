@@ -63,13 +63,21 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           throw new Error("Product not found")
         }
         const data = await res.json()
-        setProduct(data.product)
+        const prod = data?.data?.product || data?.product || null
+        if (!prod) throw new Error("Product not found")
+        setProduct(prod)
 
         // Fetch reviews for this product's seller
-        const reviewsRes = await authFetch(`/api/reviews?reviewee_id=${data.product.seller_id._id}&limit=10`)
-        if (reviewsRes.ok) {
-          const reviewsData = await reviewsRes.json()
-          setReviews(reviewsData.reviews || [])
+        const sellerId = prod?.seller_id?._id || prod?.seller_id
+        if (sellerId) {
+          const reviewsRes = await authFetch(`/api/reviews?reviewee_id=${sellerId}&limit=10`)
+          if (reviewsRes.ok) {
+            const reviewsData = await reviewsRes.json()
+            const arr = reviewsData?.data?.reviews || reviewsData?.reviews || []
+            setReviews(Array.isArray(arr) ? arr : [])
+          }
+        } else {
+          setReviews([])
         }
       } catch (error: any) {
         toast.error(error.message || "Failed to load product")
