@@ -18,6 +18,10 @@ export interface IOpportunity extends Document {
   experience_level?: string;
   start_date?: Date;
   company_logo?: string;
+  company_name?: string;
+  contact_email?: string;
+  requirements?: string[];
+  benefits?: string[];
   images?: string[];
   status: OpportunityStatus;
   views: number;
@@ -28,21 +32,45 @@ export interface IOpportunity extends Document {
 
 const OpportunitySchema = new Schema<IOpportunity>(
   {
-    recruiter_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    recruiter_id: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
     title: { type: String, required: true, index: "text" },
     description: { type: String, required: true },
     category: { type: String, required: true, index: true },
     location: { type: String, required: true },
     pay_rate: { type: Number, required: true },
-    pay_type: { type: String, required: true, enum: ["hourly", "daily", "project"], index: true },
+    pay_type: {
+      type: String,
+      required: true,
+      enum: ["hourly", "daily", "project"],
+      index: true,
+    },
     duration: { type: String },
-    urgency: { type: String, required: true, enum: ["low", "medium", "high"], index: true },
+    urgency: {
+      type: String,
+      required: true,
+      enum: ["low", "medium", "high"],
+      index: true,
+    },
     required_skills: { type: Schema.Types.Mixed }, // JSONB equivalent
     experience_level: { type: String },
     start_date: { type: Date },
     company_logo: { type: String },
+    company_name: { type: String },
+    contact_email: { type: String },
+    requirements: { type: [String], default: [] },
+    benefits: { type: [String], default: [] },
     images: { type: [String], default: [] },
-    status: { type: String, default: "active", enum: ["active", "closed", "filled"], index: true },
+    status: {
+      type: String,
+      default: "active",
+      enum: ["active", "closed", "filled"],
+      index: true,
+    },
     views: { type: Number, default: 0 },
     applications_count: { type: Number, default: 0 },
   },
@@ -51,12 +79,22 @@ const OpportunitySchema = new Schema<IOpportunity>(
 
 OpportunitySchema.index({ title: "text", description: "text" });
 
-export const Opportunity: Model<IOpportunity> = mongoose.models.Opportunity || mongoose.model<IOpportunity>("Opportunity", OpportunitySchema);
+export const Opportunity: Model<IOpportunity> =
+  mongoose.models.Opportunity ||
+  mongoose.model<IOpportunity>(
+    "Opportunity",
+    OpportunitySchema,
+    "opportunities"
+  );
 
 // Keep Job as alias for backward compatibility
 export const Job = Opportunity;
 
-export type ApplicationStatus = "pending" | "reviewed" | "accepted" | "rejected";
+export type ApplicationStatus =
+  | "pending"
+  | "reviewed"
+  | "accepted"
+  | "rejected";
 
 export interface IJobApplication extends Document {
   opportunity_id: Types.ObjectId;
@@ -70,18 +108,35 @@ export interface IJobApplication extends Document {
 
 const JobApplicationSchema = new Schema<IJobApplication>(
   {
-    opportunity_id: { type: Schema.Types.ObjectId, ref: "Opportunity", required: true, index: true },
-    worker_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    opportunity_id: {
+      type: Schema.Types.ObjectId,
+      ref: "Opportunity",
+      required: true,
+      index: true,
+    },
+    worker_id: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
     cover_letter: { type: String },
     resume_url: { type: String },
-    status: { type: String, default: "pending", enum: ["pending", "reviewed", "accepted", "rejected"], index: true },
+    status: {
+      type: String,
+      default: "pending",
+      enum: ["pending", "reviewed", "accepted", "rejected"],
+      index: true,
+    },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
 
-JobApplicationSchema.index({ opportunity_id: 1, worker_id: 1 }, { unique: true });
+JobApplicationSchema.index(
+  { opportunity_id: 1, worker_id: 1 },
+  { unique: true }
+);
 
 export const JobApplication: Model<IJobApplication> =
-  mongoose.models.JobApplication || mongoose.model<IJobApplication>("JobApplication", JobApplicationSchema);
-
-
+  mongoose.models.JobApplication ||
+  mongoose.model<IJobApplication>("JobApplication", JobApplicationSchema);

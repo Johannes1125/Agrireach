@@ -1,45 +1,68 @@
-import { JobDetails } from "@/components/opportunities/job-details"
-import { JobApplication } from "@/components/opportunities/job-application"
-import { SimilarJobs } from "@/components/opportunities/similar-jobs"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { headers } from "next/headers"
+import { JobDetails } from "@/components/opportunities/job-details";
+import { JobApplication } from "@/components/opportunities/job-application";
+import { SimilarJobs } from "@/components/opportunities/similar-jobs";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { headers } from "next/headers";
 
-interface JobPageProps { params: { id: string } }
+interface JobPageProps {
+  params: { id: string };
+}
 
 async function fetchJob(id: string) {
-  const h = headers()
-  const proto = h.get("x-forwarded-proto") || "http"
-  const host = h.get("host") || "localhost:3000"
-  const baseUrl = process.env.BASE_URL || `${proto}://${host}`
+  const h = headers();
+  const proto = h.get("x-forwarded-proto") || "http";
+  const host = h.get("host") || "localhost:3000";
+  const baseUrl = process.env.BASE_URL || `${proto}://${host}`;
 
-  const res = await fetch(`${baseUrl}/api/opportunities/${id}`, { cache: "no-store" })
-  const json = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(json?.message || "Failed to load job")
-  const j = json?.opportunity || {}
+  const res = await fetch(`${baseUrl}/api/opportunities/${id}`, {
+    cache: "no-store",
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.message || "Failed to load job");
+
+  // FIX: read from json.data.opportunity (jsonOk wrapper)
+  const j = json?.data?.opportunity || {};
+
   return {
     id: String(j._id || id),
     title: j.title,
-    company: j.company_name || (j.recruiter_id?.full_name ? `${j.recruiter_id.full_name}'s Company` : "Company"),
+    company:
+      j.company_name ||
+      (j.recruiter_id?.full_name
+        ? `${j.recruiter_id.full_name}'s Company`
+        : "Company"),
     location: j.location,
     type: j.duration || j.pay_type,
     payRange: `₱${j.pay_rate}/${j.pay_type}`,
     description: j.description,
     companyLogo: j.company_logo || "",
     images: Array.isArray(j.images) ? j.images : [],
-    poster: j.recruiter_id ? { id: String(j.recruiter_id._id || ""), name: j.recruiter_id.full_name, location: j.recruiter_id.location } : undefined,
+    poster: j.recruiter_id
+      ? {
+          id: String(j.recruiter_id._id || ""),
+          name: j.recruiter_id.full_name,
+          location: j.recruiter_id.location,
+        }
+      : undefined,
     requirements: Array.isArray(j.requirements) ? j.requirements : [],
     benefits: Array.isArray(j.benefits) ? j.benefits : [],
     postedDate: j.created_at,
     deadline: j.start_date || j.created_at,
     urgency: j.urgency,
     skills: Array.isArray(j.required_skills) ? j.required_skills : [],
-    companyInfo: { name: j.company_name || "", size: j.contact_email || "", industry: j.company_name || "", rating: 0, description: "" },
-  }
+    companyInfo: {
+      name: j.company_name || "",
+      size: j.contact_email || "",
+      industry: j.company_name || "",
+      rating: 0,
+      description: "",
+    },
+  };
 }
 
 export default async function JobPage({ params }: JobPageProps) {
-  const job = await fetchJob(params.id)
+  const job = await fetchJob(params.id);
 
   return (
     <div className="min-h-screen bg-background">
@@ -69,5 +92,5 @@ export default async function JobPage({ params }: JobPageProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
