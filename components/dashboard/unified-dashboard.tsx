@@ -430,7 +430,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     <CardDescription>Monitor your current job listings and applications</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {recruiterData.activeJobs.map((job) => (
+                    {(Array.isArray((recruiterData as any)?.activeJobs) ? (recruiterData as any).activeJobs : []).map((job) => (
                       <article
                         key={job.id}
                         className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
@@ -489,7 +489,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     <CardDescription>Review new applications</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {recruiterData.recentApplicants.map((applicant) => (
+                    {(Array.isArray((recruiterData as any)?.recentApplicants) ? (recruiterData as any).recentApplicants : []).map((applicant) => (
                       <article key={applicant.id} className="p-3 border rounded-lg space-y-2">
                         <div className="flex items-center justify-between">
                           <h5 className="font-medium">{applicant.name}</h5>
@@ -590,7 +590,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     <CardDescription>Track your current and recent purchases</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {buyerData.recentOrders.map((order) => (
+                    {(Array.isArray((buyerData as any)?.recentOrders) ? (buyerData as any).recentOrders : []).map((order) => (
                       <article
                         key={order.id}
                         className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
@@ -637,7 +637,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     <CardDescription>Fresh picks from local suppliers</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {buyerData.featuredProducts.map((product) => (
+                    {(Array.isArray((buyerData as any)?.featuredProducts) ? (buyerData as any).featuredProducts : []).map((product) => (
                       <article key={product.id} className="p-3 border rounded-lg space-y-3">
                         <div className="flex gap-3">
                           <img

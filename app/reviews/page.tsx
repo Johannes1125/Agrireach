@@ -38,7 +38,7 @@ export default function ReviewsPage() {
     return <div>Error loading reviews: {error}</div>
   }
 
-  const filteredReviews = reviews.filter(
+  const filteredReviews = (Array.isArray(reviews) ? reviews : []).filter(
     (review) =>
       (selectedCategory === "All" || review.category === selectedCategory) &&
       ((review.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||

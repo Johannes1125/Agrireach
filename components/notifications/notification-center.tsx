@@ -36,7 +36,8 @@ export function NotificationCenter() {
       const res = await authFetch("/api/notifications?limit=10")
       if (res.ok) {
         const data = await res.json()
-        const formattedNotifications = data.notifications.map((n: any) => ({
+        const notificationsArray = Array.isArray(data?.notifications) ? data.notifications : []
+        const formattedNotifications = notificationsArray.map((n: any) => ({
           id: n._id,
           type: n.type,
           title: n.title,
@@ -47,7 +48,7 @@ export function NotificationCenter() {
           actionUrl: n.action_url,
         }))
         setNotifications(formattedNotifications)
-        setUnreadCount(data.unreadCount || 0)
+        setUnreadCount(Number.isFinite(data?.unreadCount) ? data.unreadCount : 0)
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error)
