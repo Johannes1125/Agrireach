@@ -3,6 +3,9 @@ import { requireMethod, jsonError, jsonOk, getAuthToken } from "@/server/utils/a
 import { verifyToken } from "@/server/utils/auth"
 import { connectToDatabase } from "@/server/lib/mongodb"
 import { Report } from "@/server/models/Report"
+import { Thread, ThreadReply } from "@/server/models/Thread"
+import { Product } from "@/server/models/Product"
+import { Review } from "@/server/models/Review"
 
 // Placeholder: If you have a dedicated Report model, replace this aggregation accordingly
 
@@ -78,12 +81,61 @@ export async function PUT(req: NextRequest) {
   if (!id || !action) return jsonError('Missing id or action', 400)
 
   await connectToDatabase()
+  
+  // Get the report first to know what content to delete
+  const report = await Report.findById(id)
+  if (!report) return jsonError('Report not found', 404)
+
   let set: any = {}
-  if (action === 'resolve') set = { status: 'resolved', resolution: resolution || '' }
-  else if (action === 'dismiss') set = { status: 'dismissed', resolution: resolution || '' }
-  else return jsonError('Invalid action', 400)
+  
+  if (action === 'resolve') {
+    // Delete the reported content based on type
+    try {
+      if (report.content_id) {
+        switch (report.type) {
+          case 'forum_post':
+            // Delete the forum post/thread reply
+            await ThreadReply.findByIdAndDelete(report.content_id)
+            break
+          case 'thread':
+            // Delete the entire thread
+            await Thread.findByIdAndDelete(report.content_id)
+            break
+          case 'product':
+            // Delete the product
+            await Product.findByIdAndDelete(report.content_id)
+            break
+          case 'review':
+            // Delete the review
+            await Review.findByIdAndDelete(report.content_id)
+            break
+          default:
+            console.log(`Unknown content type: ${report.type}`)
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting content:', error)
+      // Continue to mark as resolved even if deletion fails
+    }
+    
+    set = { 
+      status: 'resolved', 
+      resolution: resolution || 'Content removed by admin',
+      resolved_by: decoded.sub,
+      resolved_at: new Date()
+    }
+  } else if (action === 'dismiss') {
+    // Just dismiss the report, don't delete content
+    set = { 
+      status: 'dismissed', 
+      resolution: resolution || 'Report dismissed as not valid',
+      resolved_by: decoded.sub,
+      resolved_at: new Date()
+    }
+  } else {
+    return jsonError('Invalid action', 400)
+  }
 
   const updated = await Report.findByIdAndUpdate(id, { $set: set }, { new: true })
-  if (!updated) return jsonError('Report not found', 404)
   return jsonOk({ report: updated })
 }
