@@ -114,8 +114,11 @@ export function useAdminReports(filters: { status?: string; priority?: string } 
         }
 
         const data = await res.json()
-        setReports(data.reports || data.items || [])
-        setTotal(data.total || data.count || 0)
+        console.log('Admin reports API response:', data)
+        const reportsList = data.data?.reports || data.reports || data.items || []
+        console.log('Reports list:', reportsList)
+        setReports(reportsList)
+        setTotal(data.data?.total || data.total || data.count || 0)
       } catch (err: any) {
         setError(err.message)
       } finally {

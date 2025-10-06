@@ -25,11 +25,44 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(q.get('limit') || '50', 10), 100)
   const skip = (page - 1) * limit
 
-  const [items, total] = await Promise.all([
-    Report.find(filter).sort({ created_at: -1 }).skip(skip).limit(limit).lean(),
-    Report.countDocuments(filter)
-  ])
-  return jsonOk({ reports: items, total, page, pages: Math.ceil(total / limit) })
+  try {
+    const [items, total] = await Promise.all([
+      Report.find(filter)
+        .populate({
+          path: 'reporter_id',
+          select: 'full_name email avatar_url role',
+          options: { strictPopulate: false }
+        })
+        .sort({ created_at: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Report.countDocuments(filter)
+    ])
+
+    // Format the reports for frontend consumption
+    const formattedReports = items.map((report: any) => {
+      // Handle reporter info
+      const reporter = report.reporter_id && typeof report.reporter_id === 'object' ? {
+        full_name: report.reporter_id.full_name || 'Unknown',
+        email: report.reporter_id.email || '',
+        avatar_url: report.reporter_id.avatar_url || '',
+        role: report.reporter_id.role || 'user'
+      } : { full_name: 'Unknown', email: '', avatar_url: '', role: 'user' }
+
+      return {
+        ...report,
+        reporter,
+        createdAt: report.created_at ? new Date(report.created_at).toLocaleString() : '',
+        id: report._id.toString()
+      }
+    })
+
+    return jsonOk({ reports: formattedReports, total, page, pages: Math.ceil(total / limit) })
+  } catch (error) {
+    console.error('Error fetching reports:', error)
+    return jsonError('Failed to fetch reports', 500, error instanceof Error ? error.message : 'Unknown error')
+  }
 }
 
 export async function PUT(req: NextRequest) {

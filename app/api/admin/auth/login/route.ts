@@ -1,17 +1,75 @@
-import { NextRequest } from "next/server";
-import { requireMethod, jsonError } from "@/server/utils/api";
+import { NextRequest, NextResponse } from "next/server";
+import { requireMethod, jsonError, jsonOk, setAuthCookies } from "@/server/utils/api";
 import { validateBody } from "@/server/middleware/validate";
+import { connectToDatabase } from "@/server/lib/mongodb";
+import { User } from "@/server/models/User";
+import { UserSession } from "@/server/models/UserSession";
+import { verifyPassword, signAccessToken, signRefreshToken } from "@/server/utils/auth";
 import { z } from "zod";
 
-const AdminLoginSchema = z.object({ username: z.string().min(1), password: z.string().min(1) });
+const AdminLoginSchema = z.object({ 
+  email: z.string().email(), 
+  password: z.string().min(1) 
+});
 
 export async function POST(req: NextRequest) {
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
+  
   const validate = validateBody(AdminLoginSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;
-  return jsonError("Admin auth not implemented yet", 501);
+
+  const { email, password } = result.data;
+
+  await connectToDatabase();
+
+  // Find user by email
+  const user = await User.findOne({ email });
+  if (!user) return jsonError("Invalid email or password", 401);
+
+  // Check if user is admin
+  if (user.role !== "admin") {
+    return jsonError("Access denied. Admin privileges required.", 403);
+  }
+
+  // Verify password
+  const valid = await verifyPassword(password, user.password_hash);
+  if (!valid) return jsonError("Invalid email or password", 401);
+
+  // Check if account is active
+  if (user.status !== "active") {
+    return jsonError(`Account is ${user.status}. Please contact support.`, 403);
+  }
+
+  // Generate tokens
+  const accessToken = signAccessToken({ sub: user._id.toString(), role: user.role });
+  const refreshToken = signRefreshToken({ sub: user._id.toString(), role: user.role });
+
+  // Save session
+  await UserSession.create({
+    user_id: user._id,
+    token: refreshToken,
+    expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
+  });
+
+  // Update last login
+  await User.findByIdAndUpdate(user._id, { last_login: new Date() });
+
+  // Create response with cookies
+  const response = jsonOk({ 
+    user: {
+      id: user._id,
+      email: user.email,
+      full_name: user.full_name,
+      role: user.role,
+    }
+  });
+
+  // Set auth cookies
+  setAuthCookies(response, { accessToken, refreshToken });
+
+  return response;
 }
 
 

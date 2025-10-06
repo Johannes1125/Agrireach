@@ -1,6 +1,6 @@
 import mongoose, { Schema, Model, Document } from "mongoose";
 
-export type UserRole = "worker" | "recruiter" | "buyer";
+export type UserRole = "worker" | "recruiter" | "buyer" | "admin";
 export type UserStatus = "active" | "suspended" | "banned";
 
 export interface IUser extends Document {
@@ -28,7 +28,7 @@ const UserSchema = new Schema<IUser>(
     email: { type: String, required: true, unique: true },
     password_hash: { type: String, required: true },
     full_name: { type: String, required: true },
-    role: { type: String, required: true, enum: ["worker", "recruiter", "buyer"], index: true },
+    role: { type: String, required: true, enum: ["worker", "recruiter", "buyer", "admin"], index: true },
     phone: { type: String },
     location: { type: String },
     avatar_url: { type: String },

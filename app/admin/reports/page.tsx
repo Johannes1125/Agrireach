@@ -19,6 +19,8 @@ export default function AdminReportsPage() {
   const [selectedReport, setSelectedReport] = useState<any | null>(null)
   const { reports, loading, error } = useAdminReports({ status: statusFilter, priority: priorityFilter })
 
+  console.log('Reports in component:', reports, 'Loading:', loading, 'Error:', error)
+
 const reportTypes = {
   inappropriate_content: "Inappropriate Content",
   spam: "Spam",
@@ -152,142 +154,180 @@ const priorityColors = {
           </CardContent>
         </Card>
 
-        {/* Reports List */}
-        <div className="space-y-4">
-          {filteredReports.map((report: any) => (
-            <Card key={report._id || report.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={report.reported_user?.avatar_url || "/placeholder.svg"} />
-                    <AvatarFallback>{(report.reported_user?.full_name || 'U')[0]}</AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-semibold">{report.content?.title || report.type}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Reported user: <span className="font-medium">{report.reported_user?.full_name || 'Unknown'}</span>
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Reported by: <span className="font-medium">{report.reporter?.full_name || 'Unknown'}</span>
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={priorityColors[report.priority as keyof typeof priorityColors] || 'secondary'}>
-                          {report.priority}
-                        </Badge>
-                        <Badge variant={report.status === "resolved" ? "default" : "secondary"}>{report.status}</Badge>
-                      </div>
-                    </div>
-
-                    <div className="mb-3">
-                      <p className="text-sm font-medium mb-1">Reason: {report.reason}</p>
-                      <p className="text-sm text-muted-foreground">{report.description}</p>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>Type: {reportTypes[report.type as keyof typeof reportTypes]}</span>
-                        <span>•</span>
-                        <span>{report.createdAt}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedReport(report)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Review
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Report Details</DialogTitle>
-                            </DialogHeader>
-                            {selectedReport && (
-                              <div className="space-y-4">
-                                <div>
-                                  <h4 className="font-medium mb-2">Reported Content</h4>
-                                  <p className="text-sm text-muted-foreground">{selectedReport.content.excerpt}</p>
-                                </div>
-
-                                <div>
-                                  <h4 className="font-medium mb-2">Evidence</h4>
-                                  <ul className="text-sm text-muted-foreground space-y-1">
-                                    {selectedReport.evidence.map((item, index) => (
-                                      <li key={index}>• {item}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-
-                                {selectedReport.status === "resolved" && selectedReport.resolution && (
-                                  <div>
-                                    <h4 className="font-medium mb-2">Resolution</h4>
-                                    <p className="text-sm text-muted-foreground">{selectedReport.resolution}</p>
-                                  </div>
-                                )}
-
-                                {selectedReport.status === "pending" && (
+        {/* Reports Table */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50 border-b">
+                  <tr>
+                    <th className="p-4 text-left text-sm font-medium">Reporter</th>
+                    <th className="p-4 text-left text-sm font-medium">Type</th>
+                    <th className="p-4 text-left text-sm font-medium">Reason</th>
+                    <th className="p-4 text-left text-sm font-medium">Description</th>
+                    <th className="p-4 text-left text-sm font-medium">Priority</th>
+                    <th className="p-4 text-left text-sm font-medium">Status</th>
+                    <th className="p-4 text-left text-sm font-medium">Created</th>
+                    <th className="p-4 text-left text-sm font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                        Loading reports...
+                      </td>
+                    </tr>
+                  ) : filteredReports.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                        No reports found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredReports.map((report: any) => (
+                      <tr key={report._id || report.id} className="border-b hover:bg-muted/50">
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={report.reporter?.avatar_url || "/placeholder.svg"} />
+                              <AvatarFallback>{(report.reporter?.full_name || 'U')[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{report.reporter?.full_name || 'Unknown'}</p>
+                              <p className="text-xs text-muted-foreground truncate">{report.reporter?.email || ''}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <Badge variant="outline" className="text-xs">
+                            {report.type}
+                          </Badge>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-sm">{report.reason}</span>
+                        </td>
+                        <td className="p-4 max-w-xs">
+                          <p className="text-sm text-muted-foreground truncate" title={report.description}>
+                            {report.description}
+                          </p>
+                        </td>
+                        <td className="p-4">
+                          <Badge variant={priorityColors[report.priority as keyof typeof priorityColors] || 'secondary'}>
+                            {report.priority}
+                          </Badge>
+                        </td>
+                        <td className="p-4">
+                          <Badge variant={report.status === "resolved" ? "default" : report.status === "pending" ? "secondary" : "outline"}>
+                            {report.status}
+                          </Badge>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-xs text-muted-foreground">
+                            {report.createdAt}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="ghost" size="sm" onClick={() => setSelectedReport(report)}>
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Report Details</DialogTitle>
+                                </DialogHeader>
+                                {selectedReport && (
                                   <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                        <h4 className="font-medium mb-2">Report ID</h4>
+                                        <p className="text-sm text-muted-foreground">{selectedReport._id || selectedReport.id}</p>
+                                      </div>
+                                      <div>
+                                        <h4 className="font-medium mb-2">Content ID</h4>
+                                        <p className="text-sm text-muted-foreground">{selectedReport.content_id || 'N/A'}</p>
+                                      </div>
+                                    </div>
                                     <div>
-                                      <h4 className="font-medium mb-2">Resolution Notes</h4>
-                                      <Textarea placeholder="Add resolution notes..." rows={3} />
+                                      <h4 className="font-medium mb-2">Full Description</h4>
+                                      <p className="text-sm text-muted-foreground">{selectedReport.description}</p>
                                     </div>
 
-                                    <div className="flex gap-2">
-                                      <Button
-                                        onClick={() => handleReportAction(selectedReport.id, "resolve")}
-                                        className="flex-1"
-                                      >
-                                        <CheckCircle className="h-4 w-4 mr-2" />
-                                        Resolve
-                                      </Button>
-                                      <Button
-                                        variant="outline"
-                                        onClick={() => handleReportAction(selectedReport.id, "dismiss")}
-                                        className="flex-1"
-                                      >
-                                        <X className="h-4 w-4 mr-2" />
-                                        Dismiss
-                                      </Button>
-                                    </div>
+                                    {selectedReport.admin_notes && (
+                                      <div>
+                                        <h4 className="font-medium mb-2">Admin Notes</h4>
+                                        <p className="text-sm text-muted-foreground">{selectedReport.admin_notes}</p>
+                                      </div>
+                                    )}
+
+                                    {selectedReport.status === "pending" && (
+                                      <div className="space-y-4">
+                                        <div>
+                                          <h4 className="font-medium mb-2">Resolution Notes</h4>
+                                          <Textarea id="resolution-notes" placeholder="Add resolution notes..." rows={3} />
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                          <Button
+                                            onClick={() => {
+                                              const notes = (document.getElementById('resolution-notes') as HTMLTextAreaElement)?.value
+                                              handleReportAction(selectedReport._id || selectedReport.id, "resolve", notes)
+                                            }}
+                                            className="flex-1"
+                                          >
+                                            <CheckCircle className="h-4 w-4 mr-2" />
+                                            Resolve
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            onClick={() => {
+                                              const notes = (document.getElementById('resolution-notes') as HTMLTextAreaElement)?.value
+                                              handleReportAction(selectedReport._id || selectedReport.id, "dismiss", notes)
+                                            }}
+                                            className="flex-1"
+                                          >
+                                            <X className="h-4 w-4 mr-2" />
+                                            Dismiss
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
+                              </DialogContent>
+                            </Dialog>
 
-                        {report.status === "pending" && (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() => handleReportAction(report.id, "resolve")}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Resolve
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleReportAction(report.id, "dismiss")}
-                            >
-                              <X className="h-4 w-4 mr-2" />
-                              Dismiss
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                            {report.status === "pending" && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleReportAction(report._id || report.id, "resolve")}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleReportAction(report._id || report.id, "dismiss")}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
