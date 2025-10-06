@@ -8,6 +8,11 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useNotifications } from "@/components/notifications/notification-provider"
 import { useDashboardData } from "@/hooks/use-dashboard-data"
+import { useRecruiterData } from "@/hooks/use-recruiter-data"
+import { ManageJobModal } from "@/components/dashboard/manage-job-modal"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { authFetch } from "@/lib/auth-client"
 import {
   Briefcase,
   Star,
@@ -40,8 +45,12 @@ interface UnifiedDashboardProps {
 
 export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
   const [activeRole, setActiveRole] = useState(user.role || "worker")
+  const [selectedJob, setSelectedJob] = useState<any | null>(null)
+  const [manageModalOpen, setManageModalOpen] = useState(false)
+  const router = useRouter()
   const notifications = useNotifications()
   const { stats, activities, loading, error } = useDashboardData()
+  const { jobs: recruiterJobs, applicants: recentApplicants, loading: recruiterLoading } = useRecruiterData()
 
   const getWorkerData = () => {
     if (!stats?.worker) return null
@@ -86,6 +95,34 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
         verified: stats.user.verified,
       },
       recentActivities: activities.filter(a => a.type.includes('order') || a.type.includes('product')).slice(0, 5),
+    }
+  }
+
+  const handleManageJob = (job: any) => {
+    setSelectedJob(job)
+    setManageModalOpen(true)
+  }
+
+  const handleEditJob = (jobId: string) => {
+    router.push(`/opportunities/edit/${jobId}`)
+  }
+
+  const handleDeleteJob = async (jobId: string) => {
+    try {
+      const res = await authFetch(`/api/opportunities/${jobId}`, {
+        method: "DELETE"
+      })
+
+      if (res.ok) {
+        notifications.showSuccess("Job Deleted", "The job posting has been removed")
+        setManageModalOpen(false)
+        // Refresh the page to update the job list
+        window.location.reload()
+      } else {
+        notifications.showError("Delete Failed", "Failed to delete job posting")
+      }
+    } catch (error) {
+      notifications.showError("Error", "An error occurred while deleting the job")
     }
   }
 
@@ -394,18 +431,18 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats?.recruiter?.totalApplications || 0}</div>
-                  <p className="text-xs text-muted-foreground">This month</p>
+                  <p className="text-xs text-muted-foreground">All applications</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Hired Workers</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.recruiter?.pendingApplications || 0}</div>
-                  <p className="text-xs text-muted-foreground">Pending review</p>
+                  <div className="text-2xl font-bold">{(stats?.recruiter as any)?.hiredWorkers || 0}</div>
+                  <p className="text-xs text-muted-foreground">Accepted applications</p>
                 </CardContent>
               </Card>
 
@@ -425,58 +462,84 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
               {/* Active Job Postings */}
               <section className="lg:col-span-2">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading">Active Job Postings</CardTitle>
-                    <CardDescription>Monitor your current job listings and applications</CardDescription>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="font-heading">Active Job Postings</CardTitle>
+                      <CardDescription>Monitor your current job listings and applications</CardDescription>
+                    </div>
+                    <Link href="/opportunities/post">
+                      <Button size="sm">
+                        <Plus className="mr-1 h-4 w-4" />
+                        Post Job
+                      </Button>
+                    </Link>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {(Array.isArray((recruiterData as any)?.activeJobs) ? (recruiterData as any).activeJobs : []).map((job) => (
-                      <article
-                        key={job.id}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
-                      >
-                        <div className="space-y-1 flex-1">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                            <h4 className="font-medium">{job.title}</h4>
-                            <Badge variant={job.urgency === "high" ? "destructive" : "secondary"}>
-                              {job.urgency} priority
-                            </Badge>
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {job.location}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              Posted {job.posted}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {job.applicants} applicants
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 sm:flex-none bg-transparent"
-                            onClick={() => notifications.showInfo("View Job", `Loading details for ${job.title}...`)}
-                          >
-                            <Eye className="mr-1 h-3 w-3" />
-                            View
+                    {recruiterLoading ? (
+                      <div className="text-center py-8 text-muted-foreground">Loading jobs...</div>
+                    ) : recruiterJobs.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="mb-4">You haven't posted any jobs yet.</p>
+                        <Link href="/opportunities/post">
+                          <Button>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Post Your First Job
                           </Button>
-                          <Button
-                            size="sm"
-                            className="flex-1 sm:flex-none"
-                            onClick={() => notifications.showInfo("Manage Job", `Managing ${job.title}...`)}
+                        </Link>
+                      </div>
+                    ) : (
+                      recruiterJobs.map((job) => {
+                        const daysAgo = Math.floor((Date.now() - new Date(job.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                        return (
+                          <article
+                            key={job._id}
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
                           >
-                            Manage
-                          </Button>
-                        </div>
-                      </article>
-                    ))}
+                            <div className="space-y-1 flex-1">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                <h4 className="font-medium">{job.title}</h4>
+                                <Badge variant={job.urgency === "high" ? "destructive" : job.urgency === "medium" ? "default" : "secondary"}>
+                                  {job.urgency} priority
+                                </Badge>
+                              </div>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {job.location}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  Posted {daysAgo === 0 ? 'today' : `${daysAgo}d ago`}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Users className="h-3 w-3" />
+                                  {job.applicantCount} applicant{job.applicantCount !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Link href={`/opportunities/${job._id}`}>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 sm:flex-none bg-transparent"
+                                >
+                                  <Eye className="mr-1 h-3 w-3" />
+                                  View
+                                </Button>
+                              </Link>
+                              <Button
+                                size="sm"
+                                className="flex-1 sm:flex-none"
+                                onClick={() => handleManageJob(job)}
+                              >
+                                Manage
+                              </Button>
+                            </div>
+                          </article>
+                        )
+                      })
+                    )}
                   </CardContent>
                 </Card>
               </section>
@@ -489,43 +552,39 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     <CardDescription>Review new applications</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {(Array.isArray((recruiterData as any)?.recentApplicants) ? (recruiterData as any).recentApplicants : []).map((applicant) => (
-                      <article key={applicant.id} className="p-3 border rounded-lg space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h5 className="font-medium">{applicant.name}</h5>
-                          <div className="flex items-center gap-1 text-sm">
-                            <span className="text-yellow-500">★</span>
-                            <span>{applicant.rating}</span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{applicant.job}</p>
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{applicant.experience} experience</span>
-                          <span>{applicant.location}</span>
-                        </div>
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 bg-transparent"
-                            onClick={() =>
-                              notifications.showInfo("Applicant Profile", `Loading profile for ${applicant.name}...`)
-                            }
-                          >
-                            View Profile
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="flex-1"
-                            onClick={() =>
-                              notifications.showInfo("Contact Applicant", `Contacting ${applicant.name}...`)
-                            }
-                          >
-                            Contact
-                          </Button>
-                        </div>
-                      </article>
-                    ))}
+                    {recruiterLoading ? (
+                      <div className="text-center py-4 text-muted-foreground">Loading...</div>
+                    ) : recentApplicants.length === 0 ? (
+                      <div className="text-center py-4 text-muted-foreground">No recent applicants</div>
+                    ) : (
+                      recentApplicants.map((applicant) => {
+                        const rating = (applicant.worker.trust_score / 20).toFixed(1)
+                        return (
+                          <article key={applicant._id} className="p-3 border rounded-lg space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h5 className="font-medium">{applicant.worker.full_name}</h5>
+                              <div className="flex items-center gap-1 text-sm">
+                                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                                <span>{rating}</span>
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{applicant.opportunity.title}</p>
+                            <div className="flex items-center justify-between">
+                              <Badge variant={
+                                applicant.status === "accepted" ? "default" : 
+                                applicant.status === "rejected" ? "destructive" : 
+                                "secondary"
+                              }>
+                                {applicant.status}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(applicant.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </article>
+                        )
+                      })
+                    )}
                   </CardContent>
                 </Card>
               </aside>
@@ -676,6 +735,20 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
           </TabsContent>
         </Tabs>
       </header>
+
+      {/* Manage Job Modal */}
+      {selectedJob && (
+        <ManageJobModal
+          job={selectedJob}
+          open={manageModalOpen}
+          onClose={() => {
+            setManageModalOpen(false)
+            setSelectedJob(null)
+          }}
+          onEdit={handleEditJob}
+          onDelete={handleDeleteJob}
+        />
+      )}
     </div>
   )
 }

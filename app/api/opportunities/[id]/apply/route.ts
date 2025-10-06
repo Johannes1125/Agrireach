@@ -18,6 +18,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const job = await Job.findById(id);
   if (!job) return jsonError("Not found", 404);
+  
+  // Prevent users from applying to their own job postings
+  if (String(job.recruiter_id) === decoded.sub) {
+    return jsonError("You cannot apply to your own job posting", 400);
+  }
+  
   const validate = validateBody(ApplyJobSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;

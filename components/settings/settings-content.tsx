@@ -33,7 +33,7 @@ interface SettingsUser {
   id: string
   name: string
   email: string
-  role: "worker" | "recruiter" | "buyer"
+  role: "worker" | "recruiter" | "buyer" | ("worker" | "recruiter" | "buyer")[]
   avatar: string
   location: string
   bio?: string
@@ -75,7 +75,10 @@ interface SettingsContentProps {
 
 export function SettingsContent({ user }: SettingsContentProps) {
   const [formData, setFormData] = useState(user)
-  const [activeRole, setActiveRole] = useState(user.role)
+  const [selectedRoles, setSelectedRoles] = useState<("worker" | "recruiter" | "buyer")[]>(
+    Array.isArray(user.role) ? user.role : [user.role]
+  )
+  const [isSavingRoles, setIsSavingRoles] = useState(false)
   const notifications = useNotifications()
   const [darkMode, setDarkMode] = useState(false)
   const { profile, saveProfile } = useUserProfile()
@@ -122,10 +125,51 @@ export function SettingsContent({ user }: SettingsContentProps) {
     notifications.showSuccess("Settings Saved", `Your ${section} settings have been updated successfully.`)
   }
 
-  const handleRoleChange = (newRole: string) => {
-    setActiveRole(newRole as "worker" | "recruiter" | "buyer")
-    setFormData({ ...formData, role: newRole as "worker" | "recruiter" | "buyer" })
-    notifications.showInfo("Role Updated", `Your active role has been changed to ${newRole}.`)
+  const toggleRole = (role: "worker" | "recruiter" | "buyer") => {
+    setSelectedRoles(prev => {
+      if (prev.includes(role)) {
+        // Don't allow removing the last role
+        if (prev.length === 1) {
+          notifications.showError("Cannot Remove Role", "You must have at least one role selected.")
+          return prev
+        }
+        return prev.filter(r => r !== role)
+      } else {
+        return [...prev, role]
+      }
+    })
+  }
+
+  const handleSaveRoles = async () => {
+    if (selectedRoles.length === 0) {
+      notifications.showError("No Roles Selected", "Please select at least one role.")
+      return
+    }
+
+    setIsSavingRoles(true)
+    try {
+      const response = await authFetch(`/api/users/${user.id}/roles`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roles: selectedRoles })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Failed to update roles")
+      }
+
+      notifications.showSuccess("Roles Updated", `Your platform roles have been updated successfully.`)
+      // Update local state
+      setFormData({ ...formData, role: selectedRoles as any })
+      
+      // Refresh the page to update the UI with new roles
+      setTimeout(() => window.location.reload(), 1500)
+    } catch (error: any) {
+      notifications.showError("Failed to Update Roles", error.message || "An error occurred while updating your roles.")
+    } finally {
+      setIsSavingRoles(false)
+    }
   }
 
   const getRoleIcon = (role: string) => {
@@ -255,37 +299,45 @@ export function SettingsContent({ user }: SettingsContentProps) {
             {/* Role Selection */}
             <Card>
               <CardHeader>
-                <CardTitle className="font-heading">Platform Role</CardTitle>
-                <CardDescription>Choose your primary role to customize your dashboard experience</CardDescription>
+                <CardTitle className="font-heading">Platform Roles</CardTitle>
+                <CardDescription>Select all roles that apply to you - you can have multiple roles at once</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-3">
-                  {["worker", "recruiter", "buyer"].map((role) => (
-                    <div
-                      key={role}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                        activeRole === role
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                      onClick={() => handleRoleChange(role)}
-                    >
-                      <div className="flex items-center gap-3 mb-2">
-                        {getRoleIcon(role)}
-                        <h4 className="font-medium capitalize">{role}</h4>
-                        {activeRole === role && <Badge variant="secondary">Active</Badge>}
+                  {(["worker", "recruiter", "buyer"] as const).map((role) => {
+                    const isSelected = selectedRoles.includes(role)
+                    return (
+                      <div
+                        key={role}
+                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                          isSelected
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                        onClick={() => toggleRole(role)}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          {getRoleIcon(role)}
+                          <h4 className="font-medium capitalize">{role}</h4>
+                          {isSelected && <Badge variant="secondary">Selected</Badge>}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{getRoleDescription(role)}</p>
                       </div>
-                      <p className="text-sm text-muted-foreground">{getRoleDescription(role)}</p>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> You can switch between roles anytime. Your profile data and history will be
-                    preserved for each role.
+                    <strong>Note:</strong> You can select multiple roles if you use the platform for different purposes. 
+                    For example, you can be a worker looking for jobs while also being a buyer purchasing products.
                   </p>
                 </div>
+
+                <Button onClick={handleSaveRoles} disabled={isSavingRoles || selectedRoles.length === 0} className="w-fit">
+                  <Save className="mr-2 h-4 w-4" />
+                  {isSavingRoles ? "Saving..." : "Save Role Changes"}
+                </Button>
               </CardContent>
             </Card>
           </div>

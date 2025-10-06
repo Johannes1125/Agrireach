@@ -22,6 +22,7 @@ export interface DashboardStats {
     activeJobs: number
     totalApplications: number
     pendingApplications: number
+    hiredWorkers: number
   }
   buyer?: {
     activeProducts: number
@@ -69,6 +70,10 @@ export function useDashboardData() {
 
         const statsData = await statsRes.json()
         const activitiesData = await activitiesRes.json()
+
+        console.log("DEBUG - Stats response:", statsData)
+        console.log("DEBUG - Stats data:", statsData.data?.stats)
+        console.log("DEBUG - Recruiter stats:", statsData.data?.stats?.recruiter)
 
         setStats(statsData.data.stats)
         setActivities(activitiesData.data.activities)
