@@ -1,15 +1,14 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Search, MapPin, Plus } from "lucide-react"
-import Link from "next/link"
-import { useState } from "react"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Search, MapPin, Plus } from "lucide-react";
+import Link from "next/link";
+import { useJobSearch } from "@/contexts/job-search-context";
 
 export function OpportunityHeader() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [location, setLocation] = useState("")
+  const { searchQuery, setSearchQuery, location, setLocation } = useJobSearch();
 
   return (
     <div className="bg-card border-b">
@@ -18,8 +17,12 @@ export function OpportunityHeader() {
           {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="font-heading text-3xl font-bold">Job Opportunities</h1>
-              <p className="text-muted-foreground">Discover agricultural jobs and seasonal work opportunities</p>
+              <h1 className="font-heading text-3xl font-bold">
+                Job Opportunities
+              </h1>
+              <p className="text-muted-foreground">
+                Discover agricultural jobs and seasonal work opportunities
+              </p>
             </div>
 
             <Link href="/opportunities/post">
@@ -72,5 +75,5 @@ export function OpportunityHeader() {
         </div>
       </div>
     </div>
-  )
+  );
 }

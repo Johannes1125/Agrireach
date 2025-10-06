@@ -27,59 +27,31 @@ import Link from "next/link";
 export default function MarketplacePage() {
   const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [cartItems, setCartItems] = useState<string[]>([]);
 
+  // Use debouncedSearch to avoid firing a request on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 350);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
   const { products, categories, loading, error, total } = useMarketplaceData({
-    search: searchTerm || undefined,
+    search: debouncedSearch || undefined,
     category: selectedCategory || undefined,
     sortBy,
     limit: 20,
   });
-
   if (authLoading) {
     return <div>Loading...</div>;
   }
-
   const addToCart = (productId: string) => {
     setCartItems((prev) => [...prev, productId]);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <SimpleHeader />
-        <div className="container mx-auto px-4 py-12">
-          <div className="flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground">Loading marketplace...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background">
-        <SimpleHeader />
-        <div className="container mx-auto px-4 py-12">
-          <div className="flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <p className="text-destructive">
-                Error loading marketplace: {error}
-              </p>
-              <Button onClick={() => window.location.reload()}>Retry</Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,7 +62,8 @@ export default function MarketplacePage() {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role,
+                // cast role to expected union
+                role: (user.role as unknown) as "worker" | "recruiter" | "buyer",
                 avatar: user.avatar || "",
                 location: user.location || "Not specified",
               }
@@ -150,14 +123,21 @@ export default function MarketplacePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem
-                    key={category._id || category}
-                    value={category.name || category}
-                  >
-                    {category.name || category}
-                  </SelectItem>
-                ))}
+                {categories.map((category, index) => {
+                  const isObject =
+                    typeof category === "object" && category !== null;
+                  const categoryKey =
+                    isObject && category._id
+                      ? category._id
+                      : `category-${index}`;
+                  const categoryName =
+                    isObject && category.name ? category.name : category;
+                  return (
+                    <SelectItem key={categoryKey} value={categoryName}>
+                      {categoryName}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
 
