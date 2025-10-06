@@ -13,11 +13,13 @@ export const AuthController = {
     const exists = await User.findOne({ email: payload.email });
     if (exists) return jsonError("Email already registered", 409);
     const password_hash = await hashPassword(payload.password);
+    const selectedRole = payload.role || "worker";
     const user = await User.create({
       email: payload.email,
       password_hash,
       full_name: payload.name,
-      role: payload.role || "worker"
+      role: selectedRole,
+      roles: [selectedRole] // Initialize roles array with the selected role
     });
     const res = jsonOk({ id: user._id, email: user.email, full_name: user.full_name, role: user.role });
     return res;
@@ -76,11 +78,13 @@ export const AuthController = {
     let user = await User.findOne({ email: data.email });
     if (!user) {
       const random = await bcrypt.genSalt(8);
+      const selectedRole = payload.role || "buyer";
       user = await User.create({
         email: data.email,
         password_hash: random, // not used for google users
         full_name: data.name || data.email.split("@")[0],
-        role: payload.role || "buyer", // Default to buyer for Google OAuth users
+        role: selectedRole, // Default to buyer for Google OAuth users
+        roles: [selectedRole], // Initialize roles array
         avatar_url: data.picture,
         verified: true,
       });

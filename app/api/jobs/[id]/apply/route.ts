@@ -22,6 +22,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const job = await Job.findById(params.id).lean();
   if (!job || job.status !== "open") return jsonError("Job not available", 400);
 
+  // Prevent users from applying to their own job postings
+  if (String(job.recruiter_id) === decoded.sub) {
+    return jsonError("You cannot apply to your own job posting", 400);
+  }
+
   const body = await req.json();
   const { cover_letter, resume_url } = body || {};
 

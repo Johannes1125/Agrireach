@@ -25,7 +25,7 @@ export default async function DashboardPage() {
         <UnifiedDashboard user={{
           id: user.id,
           name: user.full_name,
-          role: user.role,
+          role: (user as any).roles?.[0] || user.role,
           location: user.location || "Not specified",
           joinDate: new Date(user.created_at).toISOString().split('T')[0],
         }} />
