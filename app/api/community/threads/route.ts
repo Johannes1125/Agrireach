@@ -1,10 +1,12 @@
 import { NextRequest } from "next/server"
 import { connectToDatabase } from "@/server/lib/mongodb"
 import { Thread, ThreadCategory } from "@/server/models/Thread"
+import { User } from "@/server/models/User"
 import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/api"
 import { verifyToken } from "@/server/utils/auth"
 import { validateBody } from "@/server/middleware/validate"
 import { CreateThreadSchema } from "@/server/validators/threadSchemas"
+import { notifyAllUsersNewThread } from "@/server/utils/notifications"
 
 export async function GET(req: NextRequest) {
   const mm = requireMethod(req, ["GET"])
@@ -39,11 +41,30 @@ export async function GET(req: NextRequest) {
   const skip = (page - 1) * limit
 
   const [items, total] = await Promise.all([
-    Thread.find(filter).sort({ pinned: -1, last_activity: -1 }).skip(skip).limit(limit).lean(),
+    Thread.find(filter)
+      .populate('author_id', 'full_name avatar_url role')
+      .sort({ pinned: -1, last_activity: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
     Thread.countDocuments(filter),
   ])
 
-  return jsonOk({ items, total, page, pages: Math.ceil(total / limit) })
+  // Format items to match frontend expectations
+  const formattedItems = items.map((item: any) => ({
+    ...item,
+    author: item.author_id ? {
+      name: item.author_id.full_name || 'User',
+      avatar: item.author_id.avatar_url || '',
+      role: item.author_id.role || 'Member'
+    } : {
+      name: 'User',
+      avatar: '',
+      role: 'Member'
+    }
+  }))
+
+  return jsonOk({ items: formattedItems, total, page, pages: Math.ceil(total / limit) })
 }
 
 export async function POST(req: NextRequest) {
@@ -102,6 +123,16 @@ export async function POST(req: NextRequest) {
     }
 
     const thread = await Thread.create(threadData)
+    
+    // Get author info for notification
+    const author = await User.findById(decoded.sub).select("full_name").lean();
+    const authorName = author?.full_name || "A user";
+    
+    // Notify all users about new community thread (don't await to avoid slowing down the response)
+    notifyAllUsersNewThread(authorName, result.data.title, thread._id.toString()).catch(err => 
+      console.error("Failed to send thread notifications:", err)
+    );
+    
     return jsonOk({ id: thread._id })
   } catch (error) {
     console.error("Thread creation error:", error)

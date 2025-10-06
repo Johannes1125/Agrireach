@@ -4,6 +4,8 @@ import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Product } from "@/server/models/Product";
+import { User } from "@/server/models/User";
+import { notifyAllUsersNewProduct } from "@/server/utils/notifications";
 import { z } from "zod";
 
 const CreateProductSchema = z.object({
@@ -141,6 +143,15 @@ export async function POST(req: NextRequest) {
     seller_id: decoded.sub,
     status: "active"
   });
+
+  // Get seller info for notification
+  const seller = await User.findById(decoded.sub).select("full_name").lean();
+  const sellerName = seller?.full_name || "A seller";
+  
+  // Notify all users about new product listing (don't await to avoid slowing down the response)
+  notifyAllUsersNewProduct(result.data.title, sellerName, product._id.toString()).catch(err => 
+    console.error("Failed to send product notifications:", err)
+  );
 
   return jsonOk({ 
     id: product._id,

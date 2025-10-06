@@ -31,6 +31,7 @@ const categories = [
   "Vegetables",
   "Fruits",
   "Grains",
+  "Seeds",
   "Fish & Seafood",
   "Dairy",
   "Crafts",

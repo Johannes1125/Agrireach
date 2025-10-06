@@ -1,10 +1,12 @@
 import { NextRequest } from "next/server";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Opportunity } from "@/server/models/Job";
+import { User } from "@/server/models/User";
 import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/api";
 import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { CreateJobSchema } from "@/server/validators/opportunitySchemas";
+import { notifyAllUsersNewJob } from "@/server/utils/notifications";
 
 export async function GET(req: NextRequest) {
   const mm = requireMethod(req, ["GET"]);
@@ -49,6 +51,16 @@ export async function POST(req: NextRequest) {
   const result = await validate(req);
   if (!result.ok) return result.res;
   const job = await Opportunity.create({ ...result.data, recruiter_id: decoded.sub });
+  
+  // Get recruiter info for notification
+  const recruiter = await User.findById(decoded.sub).select("full_name company_name").lean();
+  const companyName = result.data.company_name || recruiter?.full_name || "A company";
+  
+  // Notify all users about new job posting (don't await to avoid slowing down the response)
+  notifyAllUsersNewJob(result.data.title, companyName, result.data.location, job._id.toString()).catch(err => 
+    console.error("Failed to send job notifications:", err)
+  );
+  
   return jsonOk({ id: job._id });
 }
 

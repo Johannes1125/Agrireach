@@ -15,8 +15,26 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const thr = await Thread.findById(id);
   if (!thr) return jsonError("Not found", 404);
-  const posts = await ThreadReply.find({ thread_id: id, status: { $ne: "hidden" } }).sort({ created_at: 1 }).lean();
-  return jsonOk({ items: posts });
+  const posts = await ThreadReply.find({ thread_id: id, status: { $ne: "hidden" } })
+    .populate('author_id', 'full_name avatar_url role')
+    .sort({ created_at: 1 })
+    .lean();
+  
+  // Format posts to match frontend expectations
+  const formattedPosts = posts.map((post: any) => ({
+    ...post,
+    author: post.author_id ? {
+      name: post.author_id.full_name || 'User',
+      avatar: post.author_id.avatar_url || '',
+      role: post.author_id.role || 'Member'
+    } : {
+      name: 'User',
+      avatar: '',
+      role: 'Member'
+    }
+  }));
+  
+  return jsonOk({ items: formattedPosts });
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

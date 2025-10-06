@@ -13,10 +13,27 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
 
-  const thr = await Thread.findById(id).lean();
+  const thr = await Thread.findById(id)
+    .populate('author_id', 'full_name avatar_url role')
+    .lean();
   if (!thr) return jsonError("Not found", 404);
   await Thread.findByIdAndUpdate(id, { $inc: { views: 1 }, $set: { last_activity: new Date() } });
-  return jsonOk(thr);
+  
+  // Format thread to match frontend expectations
+  const formattedThread = {
+    ...thr,
+    author: (thr as any).author_id ? {
+      name: (thr as any).author_id.full_name || 'User',
+      avatar: (thr as any).author_id.avatar_url || '',
+      role: (thr as any).author_id.role || 'Member'
+    } : {
+      name: 'User',
+      avatar: '',
+      role: 'Member'
+    }
+  };
+  
+  return jsonOk(formattedThread);
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {

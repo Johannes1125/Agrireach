@@ -1,5 +1,6 @@
 import { connectToDatabase } from "../lib/mongodb";
 import { Notification } from "../models/Notification";
+import { User } from "../models/User";
 import { Types } from "mongoose";
 
 export interface CreateNotificationData {
@@ -134,6 +135,14 @@ export const NotificationTemplates = {
     action_url: `/community/thread/${threadId}`,
   }),
 
+  newThreadPosted: (authorName: string, threadTitle: string, threadId: string) => ({
+    type: "community",
+    title: "New Community Thread",
+    message: `${authorName} posted: "${threadTitle}"`,
+    priority: "low" as const,
+    action_url: `/community/thread/${threadId}`,
+  }),
+
   // System notifications
   profileIncomplete: () => ({
     type: "system",
@@ -210,6 +219,67 @@ export async function notifyNewJob(workerIds: string[], jobTitle: string, locati
   
   const notifications = workerIds.map(workerId => createNotification({
     user_id: workerId,
+    ...template,
+  }));
+
+  return Promise.all(notifications);
+}
+
+// Helper function to get all regular user IDs (excluding admins)
+export async function getAllRegularUserIds(): Promise<string[]> {
+  try {
+    await connectToDatabase();
+    // Get all users with regular roles (worker, recruiter, buyer)
+    const users = await User.find(
+      { role: { $in: ["worker", "recruiter", "buyer"] }, status: "active" },
+      { _id: 1 }
+    ).lean();
+    return users.map(user => user._id.toString());
+  } catch (error) {
+    console.error("Failed to get regular user IDs:", error);
+    return [];
+  }
+}
+
+// Notify all users about new job posting
+export async function notifyAllUsersNewJob(jobTitle: string, companyName: string, location: string, jobId: string) {
+  const userIds = await getAllRegularUserIds();
+  if (userIds.length === 0) return [];
+  
+  const template = NotificationTemplates.newJobPosted(jobTitle, location, jobId);
+  
+  const notifications = userIds.map(userId => createNotification({
+    user_id: userId,
+    ...template,
+  }));
+
+  return Promise.all(notifications);
+}
+
+// Notify all users about new product listing
+export async function notifyAllUsersNewProduct(productName: string, sellerName: string, productId: string) {
+  const userIds = await getAllRegularUserIds();
+  if (userIds.length === 0) return [];
+  
+  const template = NotificationTemplates.newProductListed(productName, sellerName, productId);
+  
+  const notifications = userIds.map(userId => createNotification({
+    user_id: userId,
+    ...template,
+  }));
+
+  return Promise.all(notifications);
+}
+
+// Notify all users about new community thread
+export async function notifyAllUsersNewThread(authorName: string, threadTitle: string, threadId: string) {
+  const userIds = await getAllRegularUserIds();
+  if (userIds.length === 0) return [];
+  
+  const template = NotificationTemplates.newThreadPosted(authorName, threadTitle, threadId);
+  
+  const notifications = userIds.map(userId => createNotification({
+    user_id: userId,
     ...template,
   }));
 
