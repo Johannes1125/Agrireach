@@ -44,6 +44,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`font-sans ${openSans.variable} ${montserrat.variable} ${GeistMono.variable}`}
+        suppressHydrationWarning
       >
         <SkipToContent />
         <Suspense fallback={null}>
