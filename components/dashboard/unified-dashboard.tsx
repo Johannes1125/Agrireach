@@ -9,7 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useNotifications } from "@/components/notifications/notification-provider"
 import { useDashboardData } from "@/hooks/use-dashboard-data"
 import { useRecruiterData } from "@/hooks/use-recruiter-data"
+import { useBuyerData } from "@/hooks/use-buyer-data"
 import { ManageJobModal } from "@/components/dashboard/manage-job-modal"
+import { ManageProductModal } from "@/components/marketplace/manage-product-modal"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { authFetch } from "@/lib/auth-client"
@@ -46,11 +48,14 @@ interface UnifiedDashboardProps {
 export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
   const [activeRole, setActiveRole] = useState(user.role || "worker")
   const [selectedJob, setSelectedJob] = useState<any | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
   const [manageModalOpen, setManageModalOpen] = useState(false)
+  const [manageProductModalOpen, setManageProductModalOpen] = useState(false)
   const router = useRouter()
   const notifications = useNotifications()
   const { stats, activities, loading, error } = useDashboardData()
   const { jobs: recruiterJobs, applicants: recentApplicants, loading: recruiterLoading } = useRecruiterData()
+  const { products: buyerProducts, loading: buyerLoading, refetch: refetchProducts } = useBuyerData()
 
   const getWorkerData = () => {
     if (!stats?.worker) return null
@@ -105,6 +110,19 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
 
   const handleEditJob = (jobId: string) => {
     router.push(`/opportunities/edit/${jobId}`)
+  }
+
+  const handleManageProduct = (product: any) => {
+    setSelectedProduct(product)
+    setManageProductModalOpen(true)
+  }
+
+  const handleEditProduct = (productId: string) => {
+    router.push(`/marketplace/edit/${productId}`)
+  }
+
+  const handleDeleteProduct = async (productId: string) => {
+    refetchProducts()
   }
 
   const handleDeleteJob = async (jobId: string) => {
@@ -640,6 +658,104 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
               </Card>
             </section>
 
+            {/* My Products Section */}
+            <section>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="font-heading">My Products</CardTitle>
+                    <CardDescription>Manage your posted products</CardDescription>
+                  </div>
+                  <Link href="/marketplace/sell">
+                    <Button size="sm">
+                      <Plus className="mr-1 h-4 w-4" />
+                      List Product
+                    </Button>
+                  </Link>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {buyerLoading ? (
+                    <div className="text-center py-8 text-muted-foreground">Loading products...</div>
+                  ) : buyerProducts.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p className="mb-4">You haven't listed any products yet.</p>
+                      <Link href="/marketplace/sell">
+                        <Button>
+                          <Plus className="mr-2 h-4 w-4" />
+                          List Your First Product
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {buyerProducts.map((product) => {
+                        const daysAgo = Math.floor((Date.now() - new Date(product.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                        const imageUrl = product.images?.[0] || "/placeholder.svg"
+                        return (
+                          <article
+                            key={product._id}
+                            className="flex flex-col p-4 border rounded-lg gap-3"
+                          >
+                            <img
+                              src={imageUrl}
+                              alt={product.title}
+                              className="w-full h-32 object-cover rounded-md"
+                            />
+                            <div className="space-y-2 flex-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <h4 className="font-medium line-clamp-1">{product.title}</h4>
+                                <Badge variant={
+                                  product.status === "active" ? "default" :
+                                  product.status === "pending_approval" ? "secondary" :
+                                  "outline"
+                                }>
+                                  {product.status}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <span className="font-semibold text-primary">₱{product.price}</span>
+                                <span>•</span>
+                                <span>{product.quantity_available} {product.unit}</span>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Eye className="h-3 w-3" />
+                                  {product.views} views
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {daysAgo === 0 ? 'Today' : `${daysAgo}d ago`}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Link href={`/marketplace/${product._id}`} className="flex-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full bg-transparent"
+                                >
+                                  <Eye className="mr-1 h-3 w-3" />
+                                  View
+                                </Button>
+                              </Link>
+                              <Button
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => handleManageProduct(product)}
+                              >
+                                Manage
+                              </Button>
+                            </div>
+                          </article>
+                        )
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </section>
+
             <div className="grid gap-6 lg:grid-cols-3">
               {/* Recent Orders */}
               <section className="lg:col-span-2">
@@ -747,6 +863,19 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
           }}
           onEdit={handleEditJob}
           onDelete={handleDeleteJob}
+        />
+      )}
+
+      {selectedProduct && (
+        <ManageProductModal
+          product={selectedProduct}
+          open={manageProductModalOpen}
+          onClose={() => {
+            setManageProductModalOpen(false)
+            setSelectedProduct(null)
+          }}
+          onEdit={handleEditProduct}
+          onDelete={handleDeleteProduct}
         />
       )}
     </div>

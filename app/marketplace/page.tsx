@@ -22,6 +22,9 @@ import {
 import { SimpleHeader } from "@/components/layout/simple-header";
 import { useMarketplaceData } from "@/hooks/use-marketplace-data";
 import { useAuth } from "@/hooks/use-auth";
+import { authFetch } from "@/lib/auth-client";
+import { toast } from "sonner";
+import { CheckoutModal } from "@/components/marketplace/checkout-modal";
 import Link from "next/link";
 
 export default function MarketplacePage() {
@@ -31,7 +34,9 @@ export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [cartItems, setCartItems] = useState<string[]>([]);
+  const [cartItems, setCartItems] = useState<any[]>([]);
+  const [cartLoading, setCartLoading] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   // Use debouncedSearch to avoid firing a request on every keystroke
   useEffect(() => {
@@ -45,11 +50,60 @@ export default function MarketplacePage() {
     sortBy,
     limit: 20,
   });
+
+  // Fetch cart items
+  const fetchCart = async () => {
+    setCartLoading(true);
+    try {
+      const res = await authFetch("/api/marketplace/cart");
+      if (res.ok) {
+        const data = await res.json();
+        console.log("Cart data received:", data); // Debug log
+        setCartItems(data.items || []);
+      } else if (res.status === 401) {
+        // User not logged in, just clear cart
+        setCartItems([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch cart:", error);
+      setCartItems([]);
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCart();
+  }, [user]);
+
   if (authLoading) {
     return <div>Loading...</div>;
   }
-  const addToCart = (productId: string) => {
-    setCartItems((prev) => [...prev, productId]);
+
+  const addToCart = async (productId: string) => {
+    try {
+      const res = await authFetch("/api/marketplace/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id: productId, quantity: 1 }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to add to cart");
+      }
+
+      toast.success("Item added to cart!");
+      fetchCart(); // Refresh cart
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add to cart");
+    }
+  };
+
+  const handleCheckoutSuccess = () => {
+    setShowCheckout(false);
+    fetchCart(); // Refresh cart after successful checkout
+    toast.success("Order placed successfully!");
   };
 
 
@@ -84,9 +138,21 @@ export default function MarketplacePage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  console.log("Cart items:", cartItems); // Debug log
+                  if (cartItems.length === 0) {
+                    toast.info("Your cart is empty");
+                    return;
+                  }
+                  setShowCheckout(true);
+                }}
+                disabled={cartLoading}
+              >
                 <ShoppingCart className="h-4 w-4 mr-2" />
-                Cart ({cartItems.length})
+                Cart ({cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0)})
               </Button>
               <Link href="/marketplace/sell">
                 <Button className="bg-primary hover:bg-primary/90">
@@ -267,6 +333,14 @@ export default function MarketplacePage() {
           </div>
         )}
       </div>
+
+      {/* Checkout Modal */}
+      <CheckoutModal
+        open={showCheckout}
+        onClose={() => setShowCheckout(false)}
+        cartItems={cartItems}
+        onSuccess={handleCheckoutSuccess}
+      />
     </div>
   );
 }

@@ -54,6 +54,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [quantity, setQuantity] = useState(1)
   const [addingToCart, setAddingToCart] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [cartItemCount, setCartItemCount] = useState(0)
+
+  // Fetch cart count
+  const fetchCartCount = async () => {
+    try {
+      const res = await authFetch("/api/marketplace/cart")
+      if (res.ok) {
+        const data = await res.json()
+        const items = data.items || []
+        console.log("Cart items fetched:", items) // Debug log
+        // Calculate total quantity across all cart items
+        const totalCount = items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0)
+        setCartItemCount(totalCount)
+      }
+    } catch (error) {
+      console.error("Failed to fetch cart count:", error)
+    }
+  }
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -88,6 +106,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
 
     fetchProduct()
+    fetchCartCount() // Fetch cart count on page load
   }, [id, router])
 
   const handleAddToCart = async () => {
@@ -112,6 +131,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       }
 
       toast.success("Added to cart successfully!")
+      fetchCartCount() // Update cart count after adding
     } catch (error: any) {
       toast.error(error.message || "Failed to add to cart")
     } finally {
@@ -170,10 +190,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
-          <Link href="/marketplace" className="inline-flex items-center text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Marketplace
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link href="/marketplace" className="inline-flex items-center text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Marketplace
+            </Link>
+            <Link href="/marketplace">
+              <Button variant="outline" size="sm">
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Cart ({cartItemCount})
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 

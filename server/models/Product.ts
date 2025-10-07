@@ -63,17 +63,26 @@ CartItemSchema.index({ user_id: 1, product_id: 1 }, { unique: true });
 export const CartItem: Model<ICartItem> = mongoose.models.CartItem || mongoose.model<ICartItem>("CartItem", CartItemSchema);
 
 export type OrderStatus = "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
-export type PaymentStatus = "pending" | "paid" | "refunded";
+export type PaymentStatus = "pending" | "paid" | "refunded" | "failed";
 
 export interface IOrder extends Document {
   buyer_id: Types.ObjectId;
   seller_id: Types.ObjectId;
   product_id?: Types.ObjectId;
+  items?: Array<{
+    product_id: Types.ObjectId;
+    quantity: number;
+    price: number;
+  }>;
   quantity: number;
   total_price: number;
   delivery_address: string;
   status: OrderStatus;
   payment_status: PaymentStatus;
+  payment_method?: string;
+  payment_intent_id?: string;
+  payment_source_id?: string;
+  paymongo_payment_id?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -83,11 +92,20 @@ const OrderSchema = new Schema<IOrder>(
     buyer_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     seller_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     product_id: { type: Schema.Types.ObjectId, ref: "Product" },
+    items: [{
+      product_id: { type: Schema.Types.ObjectId, ref: "Product" },
+      quantity: { type: Number },
+      price: { type: Number }
+    }],
     quantity: { type: Number, required: true },
     total_price: { type: Number, required: true },
     delivery_address: { type: String, required: true },
     status: { type: String, default: "pending", enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"], index: true },
-    payment_status: { type: String, default: "pending", enum: ["pending", "paid", "refunded"], index: true },
+    payment_status: { type: String, default: "pending", enum: ["pending", "paid", "refunded", "failed"], index: true },
+    payment_method: { type: String },
+    payment_intent_id: { type: String },
+    payment_source_id: { type: String },
+    paymongo_payment_id: { type: String },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );

@@ -27,6 +27,8 @@ export async function GET(req: NextRequest) {
 
   await connectToDatabase();
   
+  console.log("Fetching cart for user_id:", decoded.sub);
+  
   const cartItems = await CartItem.find({ user_id: decoded.sub })
     .populate({
       path: 'product_id',
@@ -37,14 +39,29 @@ export async function GET(req: NextRequest) {
     })
     .lean();
 
+  console.log("Cart items found (before filtering):", cartItems.length);
+
+  // Filter out items where product_id is null (deleted products)
+  const validCartItems = cartItems.filter((item: any) => item.product_id !== null);
+  
+  console.log("Valid cart items (after filtering):", validCartItems.length);
+
+  // If any items had null products, delete them from database
+  const invalidItems = cartItems.filter((item: any) => item.product_id === null);
+  if (invalidItems.length > 0) {
+    console.log("Removing invalid cart items:", invalidItems.length);
+    const invalidIds = invalidItems.map((item: any) => item._id);
+    await CartItem.deleteMany({ _id: { $in: invalidIds } });
+  }
+
   // Calculate totals
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cartItems.reduce((sum, item: any) => {
+  const totalItems = validCartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = validCartItems.reduce((sum, item: any) => {
     return sum + (item.product_id.price * item.quantity);
   }, 0);
 
   return jsonOk({ 
-    items: cartItems,
+    items: validCartItems,
     summary: {
       totalItems,
       totalPrice: Math.round(totalPrice * 100) / 100
