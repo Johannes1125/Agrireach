@@ -1,20 +1,32 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useNotifications } from "@/components/notifications/notification-provider"
-import { useUserProfile } from "@/hooks/use-user-profile"
-import { authFetch } from "@/lib/auth-client"
-import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNotifications } from "@/components/notifications/notification-provider";
+import { useUserProfile } from "@/hooks/use-user-profile";
+import { authFetch } from "@/lib/auth-client";
+import { ImageUpload, UploadedImage } from "@/components/ui/image-upload";
 import {
   Bell,
   Shield,
@@ -27,7 +39,7 @@ import {
   Trash2,
   AlertTriangle,
   Moon,
-} from "lucide-react"
+} from "lucide-react";
 
 interface SettingsUser {
   id: string
@@ -39,38 +51,38 @@ interface SettingsUser {
   bio?: string
   phone?: string
   business?: {
-    name?: string
-    industry?: string
-    type?: string
-    size?: string
-    description?: string
-    website?: string
-    logo?: string
-  }
+    name?: string;
+    industry?: string;
+    type?: string;
+    size?: string;
+    description?: string;
+    website?: string;
+    logo?: string;
+  };
   preferences: {
     notifications: {
-      email: boolean
-      push: boolean
-      sms: boolean
-      jobAlerts: boolean
-      messageAlerts: boolean
-      marketingEmails: boolean
-    }
+      email: boolean;
+      push: boolean;
+      sms: boolean;
+      jobAlerts: boolean;
+      messageAlerts: boolean;
+      marketingEmails: boolean;
+    };
     privacy: {
-      profileVisibility: "public" | "private" | "contacts"
-      showLocation: boolean
-      showContactInfo: boolean
-      showRating: boolean
-    }
+      profileVisibility: "public" | "private" | "contacts";
+      showLocation: boolean;
+      showContactInfo: boolean;
+      showRating: boolean;
+    };
     account: {
-      sessionTimeout: number
-      dataRetention: number
-    }
-  }
+      sessionTimeout: number;
+      dataRetention: number;
+    };
+  };
 }
 
 interface SettingsContentProps {
-  user: SettingsUser
+  user: SettingsUser;
 }
 
 export function SettingsContent({ user }: SettingsContentProps) {
@@ -83,24 +95,35 @@ export function SettingsContent({ user }: SettingsContentProps) {
   const [darkMode, setDarkMode] = useState(false)
   const { profile, saveProfile } = useUserProfile()
 
-  // Initialize dark mode from localStorage
+  // Initialize dark mode from both localStorage and document class
   useEffect(() => {
-    const savedDarkMode = localStorage.getItem("darkMode")
-    if (savedDarkMode === "true") {
-      setDarkMode(true)
-      document.documentElement.classList.add("dark")
-    } else if (savedDarkMode === "false") {
-      setDarkMode(false)
-      document.documentElement.classList.remove("dark")
-    } else {
-      // Default to system preference
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-      setDarkMode(prefersDark)
-      if (prefersDark) {
-        document.documentElement.classList.add("dark")
-      }
+    // Check if dark mode is already applied via HTML class (set by keyboard shortcut or prior setting)
+    const isDarkMode = document.documentElement.classList.contains("dark");
+
+    // Get stored theme preference
+    const savedTheme = localStorage.getItem("theme");
+
+    // Set state based on current state or localStorage
+    setDarkMode(isDarkMode || savedTheme === "dark");
+
+    // Make sure the class and localStorage are in sync
+    if (isDarkMode && savedTheme !== "dark") {
+      localStorage.setItem("theme", "dark");
+    } else if (!isDarkMode && savedTheme === "dark") {
+      document.documentElement.classList.add("dark");
     }
-  }, [])
+
+    // Add listener for custom theme change events (from keyboard shortcuts)
+    const handleThemeChange = () => {
+      const newIsDarkMode = document.documentElement.classList.contains("dark");
+      setDarkMode(newIsDarkMode);
+    };
+
+    document.addEventListener("themeChange", handleThemeChange);
+    return () => {
+      document.removeEventListener("themeChange", handleThemeChange);
+    };
+  }, []);
 
   const handleSave = async (section: string) => {
     if (section === "business") {
@@ -113,17 +136,32 @@ export function SettingsContent({ user }: SettingsContentProps) {
           business_description: formData.business?.description || "",
           website: formData.business?.website || "",
           business_logo: formData.business?.logo || "",
-          years_in_business: (formData as any)?.business?.years ?? (profile?.years_in_business ?? undefined),
-          services_offered: (formData as any)?.business?.services ?? (profile?.services_offered ?? undefined),
-        })
-        notifications.showSuccess("Business Saved", "Your business information has been updated.")
+          years_in_business:
+            (formData as any)?.business?.years ??
+            profile?.years_in_business ??
+            undefined,
+          services_offered:
+            (formData as any)?.business?.services ??
+            profile?.services_offered ??
+            undefined,
+        });
+        notifications.showSuccess(
+          "Business Saved",
+          "Your business information has been updated."
+        );
       } catch (e: any) {
-        notifications.showError("Save Failed", e.message || "Unable to save business info")
+        notifications.showError(
+          "Save Failed",
+          e.message || "Unable to save business info"
+        );
       }
-      return
+      return;
     }
-    notifications.showSuccess("Settings Saved", `Your ${section} settings have been updated successfully.`)
-  }
+    notifications.showSuccess(
+      "Settings Saved",
+      `Your ${section} settings have been updated successfully.`
+    );
+  };
 
   const toggleRole = (role: "worker" | "recruiter" | "buyer") => {
     setSelectedRoles(prev => {
@@ -175,28 +213,28 @@ export function SettingsContent({ user }: SettingsContentProps) {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case "worker":
-        return <Briefcase className="h-4 w-4" />
+        return <Briefcase className="h-4 w-4" />;
       case "recruiter":
-        return <Users className="h-4 w-4" />
+        return <Users className="h-4 w-4" />;
       case "buyer":
-        return <ShoppingCart className="h-4 w-4" />
+        return <ShoppingCart className="h-4 w-4" />;
       default:
-        return <Bell className="h-4 w-4" />
+        return <Bell className="h-4 w-4" />;
     }
-  }
+  };
 
   const getRoleDescription = (role: string) => {
     switch (role) {
       case "worker":
-        return "Find and apply for agricultural jobs, showcase your skills and experience"
+        return "Find and apply for agricultural jobs, showcase your skills and experience";
       case "recruiter":
-        return "Post job opportunities, manage applications, and hire qualified workers"
+        return "Post job opportunities, manage applications, and hire qualified workers";
       case "buyer":
-        return "Browse and purchase fresh products directly from local farmers and suppliers"
+        return "Browse and purchase fresh products directly from local farmers and suppliers";
       default:
-        return "Select your primary role on the platform"
+        return "Select your primary role on the platform";
     }
-  }
+  };
 
   return (
     <Tabs defaultValue="profile" className="space-y-6">
@@ -234,8 +272,12 @@ export function SettingsContent({ user }: SettingsContentProps) {
             {/* Basic Information */}
             <Card>
               <CardHeader>
-                <CardTitle className="font-heading">Basic Information</CardTitle>
-                <CardDescription>Update your personal details and contact information</CardDescription>
+                <CardTitle className="font-heading">
+                  Basic Information
+                </CardTitle>
+                <CardDescription>
+                  Update your personal details and contact information
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -244,7 +286,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                     />
                   </div>
 
@@ -254,7 +298,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                     />
                   </div>
 
@@ -264,7 +310,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       id="phone"
                       type="tel"
                       value={formData.phone || ""}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
                     />
                   </div>
 
@@ -273,7 +321,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     <Input
                       id="location"
                       value={formData.location}
-                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, location: e.target.value })
+                      }
                     />
                   </div>
                 </div>
@@ -284,7 +334,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     id="bio"
                     placeholder="Tell others about yourself, your experience, and what you're looking for..."
                     value={formData.bio || ""}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bio: e.target.value })
+                    }
                     rows={4}
                   />
                 </div>
@@ -352,10 +404,16 @@ export function SettingsContent({ user }: SettingsContentProps) {
               <CardContent className="space-y-4">
                 <div className="flex flex-col items-center gap-4">
                   <Avatar className="h-32 w-32">
-                    <AvatarImage src={formData.avatar || "/placeholder.svg"} alt={formData.name} />
+                    <AvatarImage
+                      src={formData.avatar || "/placeholder.svg"}
+                      alt={formData.name}
+                    />
                     <AvatarFallback className="text-2xl">
                       {formData.name
-                        ? formData.name.split(" ").map((n) => n[0]).join("")
+                        ? formData.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
                         : "U"}
                     </AvatarFallback>
                   </Avatar>
@@ -364,21 +422,29 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     type="avatar"
                     maxFiles={1}
                     maxSizeMB={5}
-                    acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
+                    acceptedTypes={[
+                      "image/jpeg",
+                      "image/jpg",
+                      "image/png",
+                      "image/webp",
+                    ]}
                     onUploadComplete={(images) => {
                       if (images.length > 0) {
-                        setFormData({ ...formData, avatar: images[0].url })
-                        notifications.showSuccess("Profile Picture Updated", "Your profile picture has been updated successfully.")
+                        setFormData({ ...formData, avatar: images[0].url });
+                        notifications.showSuccess(
+                          "Profile Picture Updated",
+                          "Your profile picture has been updated successfully."
+                        );
                         // Persist avatar to user
                         authFetch(`/api/users/${user.id}`, {
                           method: "PUT",
                           headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ avatar_url: images[0].url })
-                        }).catch(() => {})
+                          body: JSON.stringify({ avatar_url: images[0].url }),
+                        }).catch(() => {});
                       }
                     }}
                     onUploadError={(error) => {
-                      notifications.showError("Upload Failed", error)
+                      notifications.showError("Upload Failed", error);
                     }}
                     className="w-full max-w-md"
                   />
@@ -397,8 +463,12 @@ export function SettingsContent({ user }: SettingsContentProps) {
       <TabsContent value="notifications" className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="font-heading">Notification Preferences</CardTitle>
-            <CardDescription>Choose how you want to be notified about important updates</CardDescription>
+            <CardTitle className="font-heading">
+              Notification Preferences
+            </CardTitle>
+            <CardDescription>
+              Choose how you want to be notified about important updates
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
@@ -406,8 +476,12 @@ export function SettingsContent({ user }: SettingsContentProps) {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="email-notifications">Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive notifications via email</p>
+                    <Label htmlFor="email-notifications">
+                      Email Notifications
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive notifications via email
+                    </p>
                   </div>
                   <Switch
                     id="email-notifications"
@@ -417,7 +491,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         ...formData,
                         preferences: {
                           ...formData.preferences,
-                          notifications: { ...formData.preferences.notifications, email: checked },
+                          notifications: {
+                            ...formData.preferences.notifications,
+                            email: checked,
+                          },
                         },
                       })
                     }
@@ -426,8 +503,12 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="push-notifications">Push Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive browser push notifications</p>
+                    <Label htmlFor="push-notifications">
+                      Push Notifications
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive browser push notifications
+                    </p>
                   </div>
                   <Switch
                     id="push-notifications"
@@ -437,7 +518,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         ...formData,
                         preferences: {
                           ...formData.preferences,
-                          notifications: { ...formData.preferences.notifications, push: checked },
+                          notifications: {
+                            ...formData.preferences.notifications,
+                            push: checked,
+                          },
                         },
                       })
                     }
@@ -447,7 +531,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="sms-notifications">SMS Notifications</Label>
-                    <p className="text-sm text-muted-foreground">Receive text message alerts</p>
+                    <p className="text-sm text-muted-foreground">
+                      Receive text message alerts
+                    </p>
                   </div>
                   <Switch
                     id="sms-notifications"
@@ -457,7 +543,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         ...formData,
                         preferences: {
                           ...formData.preferences,
-                          notifications: { ...formData.preferences.notifications, sms: checked },
+                          notifications: {
+                            ...formData.preferences.notifications,
+                            sms: checked,
+                          },
                         },
                       })
                     }
@@ -472,7 +561,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="job-alerts">Job Alerts</Label>
-                    <p className="text-sm text-muted-foreground">New job opportunities matching your profile</p>
+                    <p className="text-sm text-muted-foreground">
+                      New job opportunities matching your profile
+                    </p>
                   </div>
                   <Switch
                     id="job-alerts"
@@ -482,7 +573,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         ...formData,
                         preferences: {
                           ...formData.preferences,
-                          notifications: { ...formData.preferences.notifications, jobAlerts: checked },
+                          notifications: {
+                            ...formData.preferences.notifications,
+                            jobAlerts: checked,
+                          },
                         },
                       })
                     }
@@ -492,7 +586,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="message-alerts">Message Alerts</Label>
-                    <p className="text-sm text-muted-foreground">New messages and communications</p>
+                    <p className="text-sm text-muted-foreground">
+                      New messages and communications
+                    </p>
                   </div>
                   <Switch
                     id="message-alerts"
@@ -502,7 +598,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         ...formData,
                         preferences: {
                           ...formData.preferences,
-                          notifications: { ...formData.preferences.notifications, messageAlerts: checked },
+                          notifications: {
+                            ...formData.preferences.notifications,
+                            messageAlerts: checked,
+                          },
                         },
                       })
                     }
@@ -512,7 +611,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="marketing-emails">Marketing Emails</Label>
-                    <p className="text-sm text-muted-foreground">Product updates and promotional content</p>
+                    <p className="text-sm text-muted-foreground">
+                      Product updates and promotional content
+                    </p>
                   </div>
                   <Switch
                     id="marketing-emails"
@@ -522,7 +623,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         ...formData,
                         preferences: {
                           ...formData.preferences,
-                          notifications: { ...formData.preferences.notifications, marketingEmails: checked },
+                          notifications: {
+                            ...formData.preferences.notifications,
+                            marketingEmails: checked,
+                          },
                         },
                       })
                     }
@@ -531,7 +635,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
               </div>
             </div>
 
-            <Button onClick={() => handleSave("notification")} className="w-fit">
+            <Button
+              onClick={() => handleSave("notification")}
+              className="w-fit"
+            >
               <Save className="mr-2 h-4 w-4" />
               Save Preferences
             </Button>
@@ -544,7 +651,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Privacy Settings</CardTitle>
-            <CardDescription>Control who can see your information and how it's used</CardDescription>
+            <CardDescription>
+              Control who can see your information and how it's used
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
@@ -559,7 +668,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         ...formData.preferences,
                         privacy: {
                           ...formData.preferences.privacy,
-                          profileVisibility: value as "public" | "private" | "contacts",
+                          profileVisibility: value as
+                            | "public"
+                            | "private"
+                            | "contacts",
                         },
                       },
                     })
@@ -569,9 +681,15 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="public">Public - Anyone can view your profile</SelectItem>
-                    <SelectItem value="contacts">Contacts Only - Only people you've worked with</SelectItem>
-                    <SelectItem value="private">Private - Only you can view your profile</SelectItem>
+                    <SelectItem value="public">
+                      Public - Anyone can view your profile
+                    </SelectItem>
+                    <SelectItem value="contacts">
+                      Contacts Only - Only people you've worked with
+                    </SelectItem>
+                    <SelectItem value="private">
+                      Private - Only you can view your profile
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -580,7 +698,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="show-location">Show Location</Label>
-                    <p className="text-sm text-muted-foreground">Display your location on your profile</p>
+                    <p className="text-sm text-muted-foreground">
+                      Display your location on your profile
+                    </p>
                   </div>
                   <Switch
                     id="show-location"
@@ -590,7 +710,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         ...formData,
                         preferences: {
                           ...formData.preferences,
-                          privacy: { ...formData.preferences.privacy, showLocation: checked },
+                          privacy: {
+                            ...formData.preferences.privacy,
+                            showLocation: checked,
+                          },
                         },
                       })
                     }
@@ -599,8 +722,12 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="show-contact">Show Contact Information</Label>
-                    <p className="text-sm text-muted-foreground">Allow others to see your contact details</p>
+                    <Label htmlFor="show-contact">
+                      Show Contact Information
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Allow others to see your contact details
+                    </p>
                   </div>
                   <Switch
                     id="show-contact"
@@ -610,7 +737,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         ...formData,
                         preferences: {
                           ...formData.preferences,
-                          privacy: { ...formData.preferences.privacy, showContactInfo: checked },
+                          privacy: {
+                            ...formData.preferences.privacy,
+                            showContactInfo: checked,
+                          },
                         },
                       })
                     }
@@ -620,7 +750,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="show-rating">Show Rating</Label>
-                    <p className="text-sm text-muted-foreground">Display your rating and reviews publicly</p>
+                    <p className="text-sm text-muted-foreground">
+                      Display your rating and reviews publicly
+                    </p>
                   </div>
                   <Switch
                     id="show-rating"
@@ -630,7 +762,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         ...formData,
                         preferences: {
                           ...formData.preferences,
-                          privacy: { ...formData.preferences.privacy, showRating: checked },
+                          privacy: {
+                            ...formData.preferences.privacy,
+                            showRating: checked,
+                          },
                         },
                       })
                     }
@@ -651,14 +786,19 @@ export function SettingsContent({ user }: SettingsContentProps) {
       <TabsContent value="billing" className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="font-heading">Billing & Subscription</CardTitle>
-            <CardDescription>Manage your payment methods and subscription</CardDescription>
+            <CardTitle className="font-heading">
+              Billing & Subscription
+            </CardTitle>
+            <CardDescription>
+              Manage your payment methods and subscription
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="p-4 bg-muted/50 rounded-lg">
               <h4 className="font-medium mb-2">Current Plan: Free</h4>
               <p className="text-sm text-muted-foreground mb-4">
-                You're currently on the free plan with basic features. Upgrade to unlock premium features.
+                You're currently on the free plan with basic features. Upgrade
+                to unlock premium features.
               </p>
               <Button>Upgrade to Premium</Button>
             </div>
@@ -666,7 +806,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
             <div className="space-y-4">
               <h4 className="font-medium">Payment Methods</h4>
               <div className="p-4 border rounded-lg">
-                <p className="text-sm text-muted-foreground">No payment methods added yet.</p>
+                <p className="text-sm text-muted-foreground">
+                  No payment methods added yet.
+                </p>
                 <Button variant="outline" className="mt-2 bg-transparent">
                   Add Payment Method
                 </Button>
@@ -676,7 +818,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
             <div className="space-y-4">
               <h4 className="font-medium">Billing History</h4>
               <div className="p-4 border rounded-lg">
-                <p className="text-sm text-muted-foreground">No billing history available.</p>
+                <p className="text-sm text-muted-foreground">
+                  No billing history available.
+                </p>
               </div>
             </div>
           </CardContent>
@@ -688,7 +832,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Business Information</CardTitle>
-            <CardDescription>Manage your business profile and company details</CardDescription>
+            <CardDescription>
+              Manage your business profile and company details
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
@@ -721,13 +867,23 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="crop-production">Crop Production</SelectItem>
+                    <SelectItem value="crop-production">
+                      Crop Production
+                    </SelectItem>
                     <SelectItem value="livestock">Livestock</SelectItem>
-                    <SelectItem value="organic-farming">Organic Farming</SelectItem>
-                    <SelectItem value="equipment-rental">Equipment Rental</SelectItem>
-                    <SelectItem value="food-processing">Food Processing</SelectItem>
+                    <SelectItem value="organic-farming">
+                      Organic Farming
+                    </SelectItem>
+                    <SelectItem value="equipment-rental">
+                      Equipment Rental
+                    </SelectItem>
+                    <SelectItem value="food-processing">
+                      Food Processing
+                    </SelectItem>
                     <SelectItem value="distribution">Distribution</SelectItem>
-                    <SelectItem value="consulting">Agricultural Consulting</SelectItem>
+                    <SelectItem value="consulting">
+                      Agricultural Consulting
+                    </SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
@@ -738,7 +894,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
               <div>
                 <Label htmlFor="business-type">Business Type</Label>
                 <Select
-                  value={formData.business?.type || profile?.business_type || ""}
+                  value={
+                    formData.business?.type || profile?.business_type || ""
+                  }
                   onValueChange={(value) =>
                     setFormData({
                       ...formData,
@@ -754,7 +912,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     <SelectItem value="cooperative">Cooperative</SelectItem>
                     <SelectItem value="corporation">Corporation</SelectItem>
                     <SelectItem value="partnership">Partnership</SelectItem>
-                    <SelectItem value="sole-proprietorship">Sole Proprietorship</SelectItem>
+                    <SelectItem value="sole-proprietorship">
+                      Sole Proprietorship
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -788,11 +948,21 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   type="number"
                   min={0}
                   placeholder="e.g., 5"
-                  value={(formData as any)?.business?.years ?? (profile?.years_in_business ?? "")}
+                  value={
+                    (formData as any)?.business?.years ??
+                    profile?.years_in_business ??
+                    ""
+                  }
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      business: { ...formData.business, years: e.target.value === "" ? undefined : Number(e.target.value) },
+                      business: {
+                        ...formData.business,
+                        years:
+                          e.target.value === ""
+                            ? undefined
+                            : Number(e.target.value),
+                      },
                     })
                   }
                 />
@@ -805,7 +975,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   value={
                     Array.isArray((formData as any)?.business?.services)
                       ? (formData as any).business.services.join(", ")
-                      : (profile?.services_offered?.join(", ") || "")
+                      : profile?.services_offered?.join(", ") || ""
                   }
                   onChange={(e) =>
                     setFormData({
@@ -828,11 +998,18 @@ export function SettingsContent({ user }: SettingsContentProps) {
               <Textarea
                 id="business-description"
                 placeholder="Describe your business, services, and what makes you unique..."
-                value={formData.business?.description || profile?.business_description || ""}
+                value={
+                  formData.business?.description ||
+                  profile?.business_description ||
+                  ""
+                }
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    business: { ...formData.business, description: e.target.value },
+                    business: {
+                      ...formData.business,
+                      description: e.target.value,
+                    },
                   })
                 }
                 rows={4}
@@ -865,27 +1042,37 @@ export function SettingsContent({ user }: SettingsContentProps) {
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Business Logo</CardTitle>
-            <CardDescription>Upload your company logo for professional branding</CardDescription>
+            <CardDescription>
+              Upload your company logo for professional branding
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ImageUpload
               type="business"
               maxFiles={1}
               maxSizeMB={5}
-              acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
+              acceptedTypes={[
+                "image/jpeg",
+                "image/jpg",
+                "image/png",
+                "image/webp",
+              ]}
               onUploadComplete={(images) => {
                 if (images.length > 0) {
                   setFormData({
                     ...formData,
                     business: { ...formData.business, logo: images[0].url },
-                  })
-                  notifications.showSuccess("Business Logo Updated", "Your business logo has been updated successfully.")
+                  });
+                  notifications.showSuccess(
+                    "Business Logo Updated",
+                    "Your business logo has been updated successfully."
+                  );
                   // Persist logo immediately
-                  saveProfile({ business_logo: images[0].url }).catch(() => {})
+                  saveProfile({ business_logo: images[0].url }).catch(() => {});
                 }
               }}
               onUploadError={(error) => {
-                notifications.showError("Upload Failed", error)
+                notifications.showError("Upload Failed", error);
               }}
               className="w-full max-w-md"
             />
@@ -902,28 +1089,44 @@ export function SettingsContent({ user }: SettingsContentProps) {
               <Moon className="h-5 w-5" />
               Appearance
             </CardTitle>
-            <CardDescription>Customize how AgriReach looks on your device</CardDescription>
+            <CardDescription>
+              Customize how AgriReach looks on your device
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="dark-mode">Dark Mode</Label>
-                <p className="text-sm text-muted-foreground">Switch to a darker color scheme</p>
+                <p className="text-sm text-muted-foreground">
+                  Switch to a darker color scheme
+                </p>
               </div>
               <Switch
                 id="dark-mode"
                 checked={darkMode}
                 onCheckedChange={(checked) => {
-                  setDarkMode(checked)
-                  // Apply dark mode to document
+                  setDarkMode(checked);
+
+                  // Apply the theme change directly
                   if (checked) {
-                    document.documentElement.classList.add("dark")
-                    localStorage.setItem("darkMode", "true")
+                    document.documentElement.classList.add("dark");
+                    localStorage.setItem("theme", "dark");
                   } else {
-                    document.documentElement.classList.remove("dark")
-                    localStorage.setItem("darkMode", "false")
+                    document.documentElement.classList.remove("dark");
+                    localStorage.setItem("theme", "light");
                   }
-                  notifications.showSuccess("Appearance Updated", `Dark mode ${checked ? "enabled" : "disabled"}`)
+
+                  // Dispatch the custom event for any other listeners
+                  const themeChangeEvent = new CustomEvent("themeChange", {
+                    detail: { theme: checked ? "dark" : "light" },
+                    bubbles: true,
+                  });
+                  document.dispatchEvent(themeChangeEvent);
+
+                  notifications.showSuccess(
+                    "Appearance Updated",
+                    `Dark mode ${checked ? "enabled" : "disabled"}`
+                  );
                 }}
               />
             </div>
@@ -933,7 +1136,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Account Security</CardTitle>
-            <CardDescription>Manage your account security and data preferences</CardDescription>
+            <CardDescription>
+              Manage your account security and data preferences
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
@@ -942,7 +1147,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="session-timeout">Session Timeout (minutes)</Label>
+                <Label htmlFor="session-timeout">
+                  Session Timeout (minutes)
+                </Label>
                 <Select
                   value={formData.preferences.account.sessionTimeout.toString()}
                   onValueChange={(value) =>
@@ -950,7 +1157,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       ...formData,
                       preferences: {
                         ...formData.preferences,
-                        account: { ...formData.preferences.account, sessionTimeout: Number.parseInt(value) },
+                        account: {
+                          ...formData.preferences.account,
+                          sessionTimeout: Number.parseInt(value),
+                        },
                       },
                     })
                   }
@@ -978,14 +1188,20 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
         <Card className="border-destructive/50">
           <CardHeader>
-            <CardTitle className="font-heading text-destructive">Danger Zone</CardTitle>
-            <CardDescription>Irreversible actions that affect your account</CardDescription>
+            <CardTitle className="font-heading text-destructive">
+              Danger Zone
+            </CardTitle>
+            <CardDescription>
+              Irreversible actions that affect your account
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg">
               <div>
                 <h4 className="font-medium">Delete Account</h4>
-                <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data</p>
+                <p className="text-sm text-muted-foreground">
+                  Permanently delete your account and all associated data
+                </p>
               </div>
               <Button variant="destructive">Delete Account</Button>
             </div>
@@ -993,5 +1209,5 @@ export function SettingsContent({ user }: SettingsContentProps) {
         </Card>
       </TabsContent>
     </Tabs>
-  )
+  );
 }

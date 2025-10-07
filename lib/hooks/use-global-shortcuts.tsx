@@ -111,17 +111,11 @@ export function useGlobalShortcuts() {
         altKey: true,
         description: "Toggle theme",
         action: () => {
-          const html = document.documentElement;
-          const currentTheme = html.classList.contains("dark")
-            ? "dark"
-            : "light";
-          const newTheme = currentTheme === "dark" ? "light" : "dark";
-
-          html.classList.remove(currentTheme);
-          html.classList.add(newTheme);
-
-          localStorage.setItem("theme", newTheme);
-          announce(`Theme changed to ${newTheme} mode`);
+          // Import at the top of the file would create circular dependency
+          // So we import dynamically here
+          import("@/lib/theme-utils").then(({ toggleTheme }) => {
+            toggleTheme(announce);
+          });
         },
       },
     ];
