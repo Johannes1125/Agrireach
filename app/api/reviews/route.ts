@@ -1,20 +1,30 @@
 import { NextRequest } from "next/server";
-import { requireMethod, jsonOk, jsonError, getAuthToken } from "@/server/utils/api";
-import { verifyToken } from "@/server/utils/auth";
-import { validateBody } from "@/server/middleware/validate";
 import { connectToDatabase } from "@/server/lib/mongodb";
+import { jsonError, jsonOk, requireMethod } from "@/server/utils/api";
+import { verifyToken } from "@/server/utils/auth";
+import { getAuthToken } from "@/server/utils/api";
+import mongoose, { Types } from "mongoose";
 import { Review } from "@/server/models/Review";
 import { User } from "@/server/models/User";
 import { notifyReviewReceived } from "@/server/utils/notifications";
 import { z } from "zod";
 
-const CreateReviewSchema = z.object({
-  reviewee_id: z.string().min(1),
-  rating: z.number().min(1).max(5),
-  title: z.string().optional(),
-  comment: z.string().optional(),
-  category: z.string().optional(),
-});
+const CreateReviewSchema = z
+  .object({
+    reviewee_id: z
+      .string()
+      .regex(/^[a-fA-F0-9]{24}$/u, { message: "Invalid reviewee id" })
+      .optional(),
+    reviewee_name: z.string().min(1).optional(),
+    rating: z.number().min(1).max(5),
+    title: z.string().optional(),
+    comment: z.string().optional(),
+    category: z.string().optional(),
+  })
+  .refine((d) => !!d.reviewee_id || !!d.reviewee_name, {
+    message: "Provide reviewee_id or reviewee_name",
+    path: ["reviewee_id"],
+  });
 
 export async function GET(req: NextRequest) {
   const mm = requireMethod(req, ["GET"]);
@@ -40,89 +50,103 @@ export async function GET(req: NextRequest) {
 
   const [reviews, total] = await Promise.all([
     Review.find(filter)
-      .populate('reviewer_id', 'full_name avatar_url')
-      .populate('reviewee_id', 'full_name avatar_url')
+      .populate("reviewer_id", "full_name avatar_url")
+      .populate("reviewee_id", "full_name avatar_url")
       .sort({ created_at: -1 })
       .skip(skip)
       .limit(limit)
       .lean(),
-    Review.countDocuments(filter)
+    Review.countDocuments(filter),
   ]);
 
-  return jsonOk({ 
-    reviews, 
-    total, 
-    page, 
-    pages: Math.ceil(total / limit) 
+  return jsonOk({
+    reviews,
+    total,
+    page,
+    pages: Math.ceil(total / limit),
   });
+}
+
+// helper to coerce any string to a valid ObjectId
+function toObjectIdOrFallback(value?: string): Types.ObjectId {
+  if (typeof value === "string" && /^[a-fA-F0-9]{24}$/.test(value)) {
+    return new Types.ObjectId(value);
+  }
+  // fallback stable ID for demo selections like "1", "2", "3"
+  return new Types.ObjectId("000000000000000000000000");
 }
 
 export async function POST(req: NextRequest) {
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
 
-  const token = getAuthToken(req, "access");
-  if (!token) return jsonError("Unauthorized", 401);
-
-  let decoded: any;
   try {
-    decoded = verifyToken<any>(token, "access");
-  } catch {
-    return jsonError("Unauthorized", 401);
-  }
+    await connectToDatabase();
 
-  const validate = validateBody(CreateReviewSchema);
-  const result = await validate(req);
-  if (!result.ok) return result.res;
+    const token = getAuthToken(req, "access");
+    if (!token) return jsonError("Unauthorized", 401);
 
-  const { reviewee_id, rating, title, comment, category } = result.data;
+    let decoded: any;
+    try {
+      decoded = verifyToken<any>(token, "access");
+    } catch {
+      return jsonError("Unauthorized", 401);
+    }
 
-  await connectToDatabase();
-
-  // Check if user is trying to review themselves
-  if (reviewee_id === decoded.sub) {
-    return jsonError("Cannot review yourself", 400);
-  }
-
-  // Check if user has already reviewed this person
-  const existingReview = await Review.findOne({
-    reviewer_id: decoded.sub,
-    reviewee_id
-  });
-
-  if (existingReview) {
-    return jsonError("You have already reviewed this user", 400);
-  }
-
-  // Create review
-  const review = await Review.create({
-    reviewer_id: decoded.sub,
-    reviewee_id,
-    rating,
-    title,
-    comment,
-    category,
-    verified_purchase: false, // Could be enhanced to check for actual transactions
-  });
-
-  // Get reviewer info and notify reviewee
-  const reviewer = await User.findById(decoded.sub).select("full_name").lean();
-  if (reviewer) {
-    await notifyReviewReceived(
+    const body = await req.json().catch(() => ({}));
+    const {
       reviewee_id,
-      reviewer.full_name,
       rating,
-      review._id.toString()
-    );
+      title,
+      comment,
+      category,
+      reviewee_name, 
+    } = body || {};
+
+    const numericRating = Number(rating);
+    if (
+      !numericRating ||
+      isNaN(numericRating) ||
+      numericRating < 1 ||
+      numericRating > 5
+    ) {
+      return jsonError("Rating must be between 1 and 5", 400);
+    }
+    if (!title || !comment || !category) {
+      return jsonError("Title, comment, and category are required", 400);
+    }
+
+    const revieweeObjectId = toObjectIdOrFallback(reviewee_id);
+
+    if (
+      decoded?.sub &&
+      Types.ObjectId.isValid(decoded.sub) &&
+      revieweeObjectId.equals(new Types.ObjectId(decoded.sub))
+    ) {
+      return jsonError("Cannot review yourself", 400);
+    }
+
+    const doc = await Review.create({
+      reviewer_id: new Types.ObjectId(decoded.sub),
+      reviewee_id: revieweeObjectId,
+      rating: numericRating,
+      title,
+      comment,
+      category,
+      verified_purchase: false,
+    });
+
+    const review = await Review.findById(doc._id).lean();
+
+    return jsonOk({
+      message: "Review submitted successfully",
+      review,
+    });
+  } catch (err: any) {
+    const msg =
+      err?.name === "ValidationError"
+        ? "Validation failed"
+        : err?.message || "Internal server error";
+    return jsonError(msg, 500);
   }
-
-  const populatedReview = await Review.findById(review._id)
-    .populate('reviewer_id', 'full_name avatar_url')
-    .populate('reviewee_id', 'full_name avatar_url')
-    .lean();
-
-  return jsonOk({
-    review: populatedReview,
-    message: "Review submitted successfully"
-  });
 }

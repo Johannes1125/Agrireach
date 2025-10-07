@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Star, Search, TrendingUp, Award, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,26 @@ const sortOptions = [
   "Lowest Rated",
 ];
 
+function normalizeUser(u: any) {
+  if (!u) return { full_name: "Unknown", avatar_url: "", _id: undefined };
+  if (typeof u === "string")
+    return { _id: u, full_name: "Unknown", avatar_url: "" };
+  return {
+    _id: u._id ?? u.id,
+    full_name: u.full_name ?? u.name ?? "Unknown",
+    avatar_url: u.avatar_url ?? u.avatar ?? "",
+  };
+}
+
+function normalizeReview(r: any) {
+  if (!r || typeof r !== "object") return r;
+  return {
+    ...r,
+    reviewer_id: normalizeUser(r.reviewer_id),
+    reviewee_id: normalizeUser(r.reviewee_id),
+  };
+}
+
 export default function ReviewsPage() {
   const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,10 +65,38 @@ export default function ReviewsPage() {
     reviews,
     loading: reviewsLoading,
     error,
+    addOptimistic,
+    refetch,
   } = useReviewsData({
     status: "active",
     limit: 20,
   });
+
+  // Normalize reviews from the hook to a safe shape
+  const normalizedReviews = useMemo(
+    () => (Array.isArray(reviews) ? reviews.map(normalizeReview) : []),
+    [reviews]
+  );
+
+  // Pick up optimistic review from Write page (same-tab navigation)
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("reviews:optimistic");
+      if (raw) {
+        const r = JSON.parse(raw);
+        if (r) addOptimistic(normalizeReview(r));
+        sessionStorage.removeItem("reviews:optimistic");
+      }
+    } catch {}
+  }, [addOptimistic]);
+
+  // Also listen for "reviews:updated" while staying on this page
+  useEffect(() => {
+    const onUpdated = () => refetch();
+    window.addEventListener("reviews:updated", onUpdated as any);
+    return () =>
+      window.removeEventListener("reviews:updated", onUpdated as any);
+  }, [refetch]);
 
   if (authLoading || reviewsLoading) {
     return <div>Loading...</div>;
@@ -58,17 +106,23 @@ export default function ReviewsPage() {
     return <div>Error loading reviews: {error}</div>;
   }
 
-  const filteredReviews = (Array.isArray(reviews) ? reviews : []).filter(
-    (review) =>
-      (selectedCategory === "All" || review.category === selectedCategory) &&
-      (review.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        false ||
-        review.comment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        false ||
-        review.reviewee_id.full_name
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()))
-  );
+  const searchLower = (searchTerm || "").toLowerCase();
+  const filteredReviews = normalizedReviews.filter((review: any) => {
+    const matchesCategory =
+      selectedCategory === "All" || review.category === selectedCategory;
+    const haystacks = [
+      review.title,
+      review.comment,
+      review.reviewee_id?.full_name,
+      review.reviewer_id?.full_name,
+    ]
+      .filter(Boolean)
+      .map((s: string) => s.toLowerCase());
+
+    const matchesSearch =
+      !searchLower || haystacks.some((h: string) => h.includes(searchLower));
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -209,7 +263,7 @@ export default function ReviewsPage() {
                               <p className="text-sm text-muted-foreground">
                                 Review for{" "}
                                 <span className="font-medium">
-                                  {review.reviewee_id.full_name}
+                                  {review.reviewee_id?.full_name ?? "Unknown"}
                                 </span>
                               </p>
                             </div>
