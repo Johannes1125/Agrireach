@@ -6,6 +6,7 @@ import { connectToDatabase } from "@/server/lib/mongodb";
 import { Product } from "@/server/models/Product";
 import { User } from "@/server/models/User";
 import { notifyAllUsersNewProduct } from "@/server/utils/notifications";
+import { hasRole, getRoleErrorMessage } from "@/server/utils/role-validation";
 import { z } from "zod";
 
 const CreateProductSchema = z.object({
@@ -132,11 +133,20 @@ export async function POST(req: NextRequest) {
     return jsonError("Unauthorized", 401);
   }
 
+  await connectToDatabase();
+  
+  // Check if user has buyer role (buyers can sell products too)
+  const user = await User.findById(decoded.sub).select("roles role").lean();
+  if (!user) return jsonError("User not found", 404);
+  
+  const userRoles = user.roles || [user.role];
+  if (!hasRole(userRoles, "buyer")) {
+    return jsonError(getRoleErrorMessage("buyer"), 403);
+  }
+
   const validate = validateBody(CreateProductSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;
-
-  await connectToDatabase();
   
   const product = await Product.create({
     ...result.data,

@@ -7,6 +7,7 @@ import { Order, CartItem, Product } from "@/server/models/Product";
 import { Notification } from "@/server/models/Notification";
 import { User } from "@/server/models/User";
 import { notifyOrderPlaced } from "@/server/utils/notifications";
+import { hasRole, getRoleErrorMessage } from "@/server/utils/role-validation";
 import { z } from "zod";
 
 const CreateOrderSchema = z.object({
@@ -80,13 +81,22 @@ export async function POST(req: NextRequest) {
     return jsonError("Unauthorized", 401);
   }
 
+  await connectToDatabase();
+
+  // Check if user has buyer role
+  const user = await User.findById(decoded.sub).select("roles role").lean();
+  if (!user) return jsonError("User not found", 404);
+  
+  const userRoles = user.roles || [user.role];
+  if (!hasRole(userRoles, "buyer")) {
+    return jsonError(getRoleErrorMessage("buyer"), 403);
+  }
+
   const validate = validateBody(CreateOrderSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;
 
   const { product_id, quantity, delivery_address } = result.data;
-
-  await connectToDatabase();
 
   // Check if product exists and is available
   const product = await Product.findById(product_id);

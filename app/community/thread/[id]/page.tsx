@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { authFetch } from "@/lib/auth-client";
+import { formatRelativeTime } from "@/lib/utils";
 
 interface ThreadData {
   _id: string;
@@ -273,7 +274,7 @@ export default function ThreadPage({
                       {threadData?.author?.role || "Member"}
                     </Badge>
                     <span>•</span>
-                    <span>{threadData?.created_at || ""}</span>
+                    <span>{threadData?.created_at ? formatRelativeTime(threadData.created_at) : ""}</span>
                   </div>
                 </div>
               </div>
@@ -397,7 +398,7 @@ export default function ThreadPage({
                             •
                           </span>
                           <span className="text-sm text-muted-foreground">
-                            {reply.created_at || ""}
+                            {reply.created_at ? formatRelativeTime(reply.created_at) : ""}
                           </span>
                         </div>
 

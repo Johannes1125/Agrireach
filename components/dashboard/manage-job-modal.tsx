@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { authFetch } from "@/lib/auth-client"
 import { useNotifications } from "@/components/notifications/notification-provider"
+import { formatDate } from "@/lib/utils"
 import { 
   Users, 
   Edit, 
@@ -239,7 +240,7 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
                               </Badge>
                               <span className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                {new Date(applicant.created_at).toLocaleDateString()}
+                                {formatDate(applicant.created_at)}
                               </span>
                             </div>
                           </div>

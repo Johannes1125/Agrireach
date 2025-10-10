@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { MapPin, Clock, DollarSign, Users, Star, Building } from "lucide-react"
+import { formatDate } from "@/lib/utils"
 import Link from "next/link"
 
 interface Job {
@@ -47,17 +48,6 @@ export function JobDetails({ job }: JobDetailsProps) {
       default:
         return "outline"
     }
-  }
-
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return ""
-    const d = new Date(dateString)
-    if (isNaN(d.getTime())) return ""
-    return d.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
   }
 
   return (

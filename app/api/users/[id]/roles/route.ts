@@ -1,73 +1,243 @@
-import { NextRequest } from "next/server"
-import { connectToDatabase } from "@/server/lib/mongodb"
-import { User } from "@/server/models/User"
-import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/api"
-import { verifyToken } from "@/server/utils/auth"
-import { z } from "zod"
+import { NextRequest } from "next/server";
+import { connectToDatabase } from "@/server/lib/mongodb";
+import { User, UserRole } from "@/server/models/User";
+import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/api";
+import { verifyToken } from "@/server/utils/auth";
+import { z } from "zod";
 
-const RolesUpdateSchema = z.object({
-  roles: z.array(z.enum(["worker", "recruiter", "buyer"])).min(1, "At least one role is required")
-})
+const UpdateRolesSchema = z.object({
+  roles: z.array(z.enum(["worker", "recruiter", "buyer", "admin"])).min(1).max(4),
+});
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const mm = requireMethod(req, ["PUT"])
-  if (mm) return mm
+// GET user roles
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const mm = requireMethod(req, ["GET"]);
+  if (mm) return mm;
 
-  const token = getAuthToken(req, "access")
-  if (!token) return jsonError("Unauthorized", 401)
+  const token = getAuthToken(req, "access");
+  if (!token) return jsonError("Unauthorized", 401);
 
-  let decoded: any
+  let decoded: any;
   try {
-    decoded = verifyToken<any>(token, "access")
+    decoded = verifyToken<any>(token, "access");
   } catch {
-    return jsonError("Unauthorized", 401)
+    return jsonError("Unauthorized", 401);
   }
 
-  // Users can only update their own roles (not even admins can change other users' roles this way)
-  if (decoded.sub !== params.id) {
-    return jsonError("Forbidden - You can only update your own roles", 403)
-  }
+  const { id } = await params;
 
-  try {
-    const body = await req.json()
-    const result = RolesUpdateSchema.safeParse(body)
-
-    if (!result.success) {
-      return jsonError(result.error.errors[0].message, 400)
+  // Users can only view their own roles, unless they're admin
+  if (decoded.sub !== id) {
+    const currentUser = await User.findById(decoded.sub).select("roles role").lean();
+    const userRoles = currentUser?.roles || [currentUser?.role];
+    if (!userRoles?.includes("admin")) {
+      return jsonError("Forbidden", 403);
     }
-
-    await connectToDatabase()
-
-    // Update user roles AND sync the legacy role field for backward compatibility
-    const user = await User.findByIdAndUpdate(
-      params.id,
-      { 
-        $set: { 
-          roles: result.data.roles,
-          role: result.data.roles[0] // Set the first role as the primary/legacy role
-        } 
-      },
-      { new: true }
-    )
-
-    if (!user) {
-      return jsonError("User not found", 404)
-    }
-
-    console.log("Roles updated successfully:", {
-      userId: user._id,
-      roles: user.roles,
-      primaryRole: user.role
-    })
-
-    return jsonOk({
-      message: "Roles updated successfully",
-      roles: user.roles,
-      role: user.role
-    })
-  } catch (error: any) {
-    console.error("Error updating user roles:", error)
-    return jsonError(error.message || "Failed to update roles", 500)
   }
+
+  await connectToDatabase();
+
+  const user = await User.findById(id).select("roles role").lean();
+  if (!user) return jsonError("User not found", 404);
+
+  const roles = user.roles || [user.role];
+
+  return jsonOk({ roles });
 }
 
+// PUT - Update user roles
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const mm = requireMethod(req, ["PUT"]);
+  if (mm) return mm;
+
+  const token = getAuthToken(req, "access");
+  if (!token) return jsonError("Unauthorized", 401);
+
+  let decoded: any;
+  try {
+    decoded = verifyToken<any>(token, "access");
+  } catch {
+    return jsonError("Unauthorized", 401);
+  }
+
+  const { id } = await params;
+
+  // Users can only update their own roles (except admin role)
+  if (decoded.sub !== id) {
+    const currentUser = await User.findById(decoded.sub).select("roles role").lean();
+    const userRoles = currentUser?.roles || [currentUser?.role];
+    if (!userRoles?.includes("admin")) {
+      return jsonError("Forbidden", 403);
+    }
+  }
+
+  await connectToDatabase();
+
+  const body = await req.json();
+  const result = UpdateRolesSchema.safeParse(body);
+
+  if (!result.success) {
+    return jsonError(result.error.errors[0].message, 400);
+  }
+
+  const { roles } = result.data;
+
+  // Prevent non-admins from adding admin role
+  const currentUser = await User.findById(decoded.sub).select("roles role").lean();
+  const currentUserRoles = currentUser?.roles || [currentUser?.role];
+  
+  if (roles.includes("admin") && !currentUserRoles?.includes("admin")) {
+    return jsonError("You cannot add admin role to yourself", 403);
+  }
+
+  // Update user roles
+  const user = await User.findByIdAndUpdate(
+    id,
+    { 
+      roles,
+      role: roles[0] // Keep legacy field in sync
+    },
+    { new: true }
+  ).select("roles role full_name email");
+
+  if (!user) return jsonError("User not found", 404);
+
+  return jsonOk({ 
+    roles: user.roles,
+    message: "Roles updated successfully"
+  });
+}
+
+// POST - Add a role to user
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const mm = requireMethod(req, ["POST"]);
+  if (mm) return mm;
+
+  const token = getAuthToken(req, "access");
+  if (!token) return jsonError("Unauthorized", 401);
+
+  let decoded: any;
+  try {
+    decoded = verifyToken<any>(token, "access");
+  } catch {
+    return jsonError("Unauthorized", 401);
+  }
+
+  const { id } = await params;
+
+  // Users can only update their own roles
+  if (decoded.sub !== id) {
+    const currentUser = await User.findById(decoded.sub).select("roles role").lean();
+    const userRoles = currentUser?.roles || [currentUser?.role];
+    if (!userRoles?.includes("admin")) {
+      return jsonError("Forbidden", 403);
+    }
+  }
+
+  await connectToDatabase();
+
+  const body = await req.json();
+  const { role } = body;
+
+  if (!role || !["worker", "recruiter", "buyer", "admin"].includes(role)) {
+    return jsonError("Invalid role", 400);
+  }
+
+  // Prevent non-admins from adding admin role
+  const currentUser = await User.findById(decoded.sub).select("roles role").lean();
+  const currentUserRoles = currentUser?.roles || [currentUser?.role];
+  
+  if (role === "admin" && !currentUserRoles?.includes("admin")) {
+    return jsonError("You cannot add admin role", 403);
+  }
+
+  const user = await User.findById(id).select("roles role");
+  if (!user) return jsonError("User not found", 404);
+
+  const userRoles = user.roles || [user.role];
+
+  if (userRoles.includes(role as UserRole)) {
+    return jsonError("User already has this role", 400);
+  }
+
+  userRoles.push(role as UserRole);
+
+  await User.findByIdAndUpdate(id, {
+    roles: userRoles,
+    role: userRoles[0]
+  });
+
+  return jsonOk({ 
+    roles: userRoles,
+    message: "Role added successfully"
+  });
+}
+
+// DELETE - Remove a role from user
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const mm = requireMethod(req, ["DELETE"]);
+  if (mm) return mm;
+
+  const token = getAuthToken(req, "access");
+  if (!token) return jsonError("Unauthorized", 401);
+
+  let decoded: any;
+  try {
+    decoded = verifyToken<any>(token, "access");
+  } catch {
+    return jsonError("Unauthorized", 401);
+  }
+
+  const { id } = await params;
+
+  // Users can only update their own roles
+  if (decoded.sub !== id) {
+    const currentUser = await User.findById(decoded.sub).select("roles role").lean();
+    const userRoles = currentUser?.roles || [currentUser?.role];
+    if (!userRoles?.includes("admin")) {
+      return jsonError("Forbidden", 403);
+    }
+  }
+
+  await connectToDatabase();
+
+  const { searchParams } = new URL(req.url);
+  const roleToRemove = searchParams.get("role");
+
+  if (!roleToRemove || !["worker", "recruiter", "buyer", "admin"].includes(roleToRemove)) {
+    return jsonError("Invalid role", 400);
+  }
+
+  const user = await User.findById(id).select("roles role");
+  if (!user) return jsonError("User not found", 404);
+
+  const userRoles = user.roles || [user.role];
+
+  if (userRoles.length <= 1) {
+    return jsonError("User must have at least one role", 400);
+  }
+
+  const updatedRoles = userRoles.filter(r => r !== roleToRemove);
+
+  await User.findByIdAndUpdate(id, {
+    roles: updatedRoles,
+    role: updatedRoles[0]
+  });
+
+  return jsonOk({ 
+    roles: updatedRoles,
+    message: "Role removed successfully"
+  });
+}

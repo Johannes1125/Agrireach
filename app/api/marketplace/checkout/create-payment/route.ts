@@ -3,7 +3,9 @@ import { requireMethod, jsonError, jsonOk, getAuthToken } from "@/server/utils/a
 import { verifyToken } from "@/server/utils/auth";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { CartItem, Product } from "@/server/models/Product";
+import { User } from "@/server/models/User";
 import { createPaymentIntent, createSource } from "@/lib/paymongo";
+import { hasRole, getRoleErrorMessage } from "@/server/utils/role-validation";
 import { z } from "zod";
 
 const CheckoutSchema = z.object({
@@ -42,6 +44,15 @@ export async function POST(req: NextRequest) {
     const { items: cartItemIds, delivery_address, payment_method, billing_details } = result.data;
 
     await connectToDatabase();
+
+    // Check if user has buyer role
+    const user = await User.findById(decoded.sub).select("roles role").lean();
+    if (!user) return jsonError("User not found", 404);
+    
+    const userRoles = user.roles || [user.role];
+    if (!hasRole(userRoles, "buyer")) {
+      return jsonError(getRoleErrorMessage("buyer"), 403);
+    }
 
     // Fetch cart items with product details
     const cartItems = await CartItem.find({

@@ -18,6 +18,9 @@ import { Progress } from "@/components/ui/progress";
 import { SimpleHeader } from "@/components/layout/simple-header";
 import { useAuth } from "@/hooks/use-auth";
 import { useReviewsData } from "@/hooks/use-reviews-data";
+import { InlineLoader } from "@/components/ui/page-loader";
+import { PageTransition } from "@/components/ui/page-transition";
+import { CardSkeleton } from "@/components/ui/skeleton-loader";
 import Link from "next/link";
 
 const categories = [
@@ -99,7 +102,11 @@ export default function ReviewsPage() {
   }, [refetch]);
 
   if (authLoading || reviewsLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <InlineLoader text="Loading reviews..." variant="spinner" size="lg" />
+      </div>
+    );
   }
 
   if (error) {
@@ -141,6 +148,7 @@ export default function ReviewsPage() {
         }
       />
 
+      <PageTransition>
       {/* Header */}
       <div className="bg-background border-b">
         <div className="container mx-auto px-4 py-6">
@@ -210,7 +218,12 @@ export default function ReviewsPage() {
 
             {/* Reviews List */}
             <div className="space-y-4">
-              {filteredReviews.length === 0 ? (
+              {reviewsLoading ? (
+                // Show skeleton loaders while loading
+                Array.from({ length: 5 }).map((_, index) => (
+                  <CardSkeleton key={index} />
+                ))
+              ) : filteredReviews.length === 0 ? (
                 <Card>
                   <CardContent className="p-6 text-center">
                     <p className="text-muted-foreground">
@@ -455,6 +468,7 @@ export default function ReviewsPage() {
           </div>
         </div>
       </div>
+      </PageTransition>
     </div>
   );
 }

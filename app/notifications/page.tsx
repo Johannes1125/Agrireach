@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { AppLayout } from "@/components/layout/app-layout"
+import { PageTransition } from "@/components/ui/page-transition"
 import {
   Bell,
   Briefcase,
@@ -101,6 +102,7 @@ export default function NotificationsPage() {
 
   return (
     <AppLayout>
+      <PageTransition>
       <div className="min-h-screen bg-background">
         <div className="container px-4 py-8">
           <div className="max-w-4xl mx-auto space-y-6">
@@ -238,6 +240,7 @@ export default function NotificationsPage() {
           </div>
         </div>
       </div>
+      </PageTransition>
     </AppLayout>
   )
 }

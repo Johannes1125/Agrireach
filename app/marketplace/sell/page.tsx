@@ -26,6 +26,8 @@ import {
 import { toast } from "sonner"
 import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
 import { authFetch } from "@/lib/auth-client"
+import { useLoading } from "@/hooks/use-loading"
+import { SlideTransition } from "@/components/ui/page-transition"
 
 const categories = [
   "Vegetables",
@@ -42,6 +44,7 @@ const categories = [
 const units = ["kg", "liter", "piece", "dozen", "bundle", "bag", "box"]
 
 export default function SellProductPage() {
+  const { withLoading } = useLoading()
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -90,47 +93,52 @@ export default function SellProductPage() {
     setShowConfirmDialog(false)
     setIsSubmitting(true)
 
-    try {
-      const payload = {
-        title: formData.name.trim(),
-        description: formData.description.trim(),
-        category: formData.category as string,
-        price: Number(formData.price),
-        unit: formData.unit as string,
-        quantity_available: Number(formData.stockQuantity),
-        location: formData.location.trim(),
-        images: formData.images,
-        organic: Boolean(isOrganic),
-      }
+    await withLoading(async () => {
+      try {
+        const payload = {
+          title: formData.name.trim(),
+          description: formData.description.trim(),
+          category: formData.category as string,
+          price: Number(formData.price),
+          unit: formData.unit as string,
+          quantity_available: Number(formData.stockQuantity),
+          location: formData.location.trim(),
+          images: formData.images,
+          organic: Boolean(isOrganic),
+        }
 
-      const res = await authFetch("/api/marketplace/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      })
+        const res = await authFetch("/api/marketplace/products", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
 
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.message || "Failed to create product listing")
-      }
+        if (!res.ok) {
+          const error = await res.json()
+          throw new Error(error.message || "Failed to create product listing")
+        }
 
-      const data = await res.json()
-      toast.success("Product listed successfully!")
-      const productId = data?.data?.id || data?.id
-      if (productId) {
-        window.location.href = `/marketplace/${productId}`
+        const data = await res.json()
+        toast.success("Product listed successfully!")
+        const productId = data?.data?.id || data?.id
+        if (productId) {
+          // Add delay to show loading for at least 5 seconds
+          await new Promise(resolve => setTimeout(resolve, 3000))
+          window.location.href = `/marketplace/${productId}`
+        }
+      } catch (error: any) {
+        toast.error(error.message || "Failed to create product listing")
+      } finally {
+        setIsSubmitting(false)
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create product listing")
-    } finally {
-      setIsSubmitting(false)
-    }
+    }, "Creating your product listing...")
   }
 
   return (
     <>
+      <SlideTransition>
       <div className="min-h-screen bg-background">
         {/* Header */}
         <div className="bg-white border-b">
@@ -350,6 +358,7 @@ export default function SellProductPage() {
           </form>
         </div>
       </div>
+      </SlideTransition>
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>

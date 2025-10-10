@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { InlineLoader } from "@/components/ui/page-loader"
+import { formatRelativeTime } from "@/lib/utils"
 import Link from "next/link"
 
 interface ThreadItem { _id: string; title: string; tags?: string[]; replies_count?: number; views?: number; likes_count?: number; author_id?: string; created_at?: string; pinned?: boolean }
@@ -18,17 +20,23 @@ export default function CategoryPage({ params }: { params: Promise<{ id: string 
   const [sortBy, setSortBy] = useState("recent")
   const [category, setCategory] = useState<any>(null)
   const [threads, setThreads] = useState<ThreadItem[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
-      const [cres, tres] = await Promise.all([
-        fetch(`/api/community/categories/${id}`),
-        fetch(`/api/community/threads?category_id=${encodeURIComponent(id)}`),
+      setLoading(true)
+      // Add minimum delay for loading state
+      const [results] = await Promise.all([
+        Promise.all([
+          fetch(`/api/community/categories/${id}`).then(res => res.json().catch(() => ({}))),
+          fetch(`/api/community/threads?category_id=${encodeURIComponent(id)}`).then(res => res.json().catch(() => ({}))),
+        ]),
+        new Promise(resolve => setTimeout(resolve, 2000)) // Minimum 2 second delay
       ])
-      const cjson = await cres.json().catch(() => ({}))
-      const tjson = await tres.json().catch(() => ({}))
-      if (cres.ok) setCategory(cjson?.data)
-      if (tres.ok) setThreads(tjson?.data?.items || [])
+      const [cjson, tjson] = results
+      if (cjson?.data) setCategory(cjson.data)
+      if (tjson?.data?.items) setThreads(tjson.data.items)
+      setLoading(false)
     }
     load()
   }, [id])
@@ -55,6 +63,18 @@ export default function CategoryPage({ params }: { params: Promise<{ id: string 
   // Separate pinned and regular threads
   const pinnedThreads = filteredThreads.filter((thread: any) => thread.pinned)
   const regularThreads = filteredThreads.filter((thread: any) => !thread.pinned)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container px-4 py-8">
+          <div className="flex items-center justify-center min-h-[600px]">
+            <InlineLoader text="Loading category..." variant="spinner" size="lg" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -166,7 +186,7 @@ function ThreadCard({ thread, isPinned = false }: { thread: any; isPinned?: bool
               <Badge variant="outline" className="text-xs">
                 {thread.author?.role || "Member"}
               </Badge>
-              <span>{thread.created_at || ""}</span>
+              <span>{thread.created_at ? formatRelativeTime(thread.created_at) : ""}</span>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-3">

@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input"
 import { authFetch } from "@/lib/auth-client"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { InlineLoader } from "@/components/ui/page-loader"
+import { PageTransition } from "@/components/ui/page-transition"
 import Link from "next/link"
 
 interface Product {
@@ -172,7 +174,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div>Loading...</div>
+        <InlineLoader text="Loading product details..." variant="spinner" size="lg" />
       </div>
     )
   }
@@ -187,6 +189,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="min-h-screen bg-background">
+      <PageTransition>
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
@@ -430,6 +433,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </Card>
         </div>
       </div>
+      </PageTransition>
     </div>
   )
 }

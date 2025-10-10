@@ -13,15 +13,18 @@ import { UpdateJobSchema } from "@/server/validators/opportunitySchemas";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const mm = requireMethod(_req, ["GET"]);
   if (mm) return mm;
+  
+  const { id } = await params;
+  
   await connectToDatabase();
 
   // Increment view count and get opportunity with recruiter info
   const opportunity = await Opportunity.findByIdAndUpdate(
-    params.id,
+    id,
     { $inc: { views: 1 } },
     { new: true }
   )
@@ -30,18 +33,12 @@ export async function GET(
 
   if (!opportunity) return jsonError("Opportunity not found", 404);
 
-  // Debug: Log the actual data being returned
-  console.log(
-    "DEBUG - Full opportunity data:",
-    JSON.stringify(opportunity, null, 2)
-  );
-
   return jsonOk({ opportunity });
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
@@ -53,8 +50,11 @@ export async function PUT(
   } catch {
     return jsonError("Unauthorized", 401);
   }
+  
+  const { id } = await params;
+  
   await connectToDatabase();
-  const opportunity = await Opportunity.findById(params.id);
+  const opportunity = await Opportunity.findById(id);
   if (!opportunity) return jsonError("Opportunity not found", 404);
   if (
     String(opportunity.recruiter_id) !== decoded.sub &&
@@ -65,7 +65,7 @@ export async function PUT(
   const result = await validate(req);
   if (!result.ok) return result.res;
   const updatedOpportunity = await Opportunity.findByIdAndUpdate(
-    params.id,
+    id,
     { $set: result.data },
     { new: true }
   ).populate("recruiter_id", "full_name email location");
@@ -74,7 +74,7 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const mm = requireMethod(req, ["DELETE"]);
   if (mm) return mm;
@@ -86,14 +86,17 @@ export async function DELETE(
   } catch {
     return jsonError("Unauthorized", 401);
   }
+  
+  const { id } = await params;
+  
   await connectToDatabase();
-  const opportunity = await Opportunity.findById(params.id);
+  const opportunity = await Opportunity.findById(id);
   if (!opportunity) return jsonError("Opportunity not found", 404);
   if (
     String(opportunity.recruiter_id) !== decoded.sub &&
     decoded.role !== "admin"
   )
     return jsonError("Forbidden", 403);
-  await Opportunity.findByIdAndDelete(params.id);
+  await Opportunity.findByIdAndDelete(id);
   return jsonOk({ message: "Opportunity deleted successfully" });
 }

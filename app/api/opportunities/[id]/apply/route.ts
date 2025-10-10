@@ -7,6 +7,7 @@ import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { ApplyJobSchema } from "@/server/validators/opportunitySchemas";
 import { notifyJobApplication } from "@/server/utils/notifications";
+import { hasRole, getRoleErrorMessage } from "@/server/utils/role-validation";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["POST"]);
@@ -16,6 +17,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   let decoded: any; try { decoded = verifyToken<any>(token, "access"); } catch { return jsonError("Unauthorized", 401); }
   await connectToDatabase();
   const { id } = await params;
+  
+  // Check if user has worker role
+  const user = await User.findById(decoded.sub).select("roles role").lean();
+  if (!user) return jsonError("User not found", 404);
+  
+  const userRoles = user.roles || [user.role];
+  if (!hasRole(userRoles, "worker")) {
+    return jsonError(getRoleErrorMessage("worker"), 403);
+  }
+  
   const job = await Job.findById(id);
   if (!job) return jsonError("Not found", 404);
   

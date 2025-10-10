@@ -12,6 +12,7 @@ import { useRecruiterData } from "@/hooks/use-recruiter-data"
 import { useBuyerData } from "@/hooks/use-buyer-data"
 import { ManageJobModal } from "@/components/dashboard/manage-job-modal"
 import { ManageProductModal } from "@/components/marketplace/manage-product-modal"
+import { formatDate, formatRelativeTime } from "@/lib/utils"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { authFetch } from "@/lib/auth-client"
@@ -343,7 +344,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                             <h4 className="font-medium">{activity.title}</h4>
                             <p className="text-sm text-muted-foreground">{activity.description}</p>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(activity.timestamp).toLocaleDateString()}
+                              {formatRelativeTime(activity.timestamp)}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -507,7 +508,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                       </div>
                     ) : (
                       recruiterJobs.map((job) => {
-                        const daysAgo = Math.floor((Date.now() - new Date(job.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                        const daysAgo = formatRelativeTime(job.created_at)
                         return (
                           <article
                             key={job._id}
@@ -527,7 +528,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
-                                  Posted {daysAgo === 0 ? 'today' : `${daysAgo}d ago`}
+                                  Posted {daysAgo}
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Users className="h-3 w-3" />
@@ -596,7 +597,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                                 {applicant.status}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
-                                {new Date(applicant.created_at).toLocaleDateString()}
+                                {formatDate(applicant.created_at)}
                               </span>
                             </div>
                           </article>
@@ -689,7 +690,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   ) : (
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {buyerProducts.map((product) => {
-                        const daysAgo = Math.floor((Date.now() - new Date(product.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                        const daysAgo = formatRelativeTime(product.created_at)
                         const imageUrl = product.images?.[0] || "/placeholder.svg"
                         return (
                           <article
@@ -724,7 +725,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
-                                  {daysAgo === 0 ? 'Today' : `${daysAgo}d ago`}
+                                  {daysAgo}
                                 </span>
                               </div>
                             </div>

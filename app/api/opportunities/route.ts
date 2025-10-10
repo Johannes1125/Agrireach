@@ -7,6 +7,7 @@ import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { CreateJobSchema } from "@/server/validators/opportunitySchemas";
 import { notifyAllUsersNewJob } from "@/server/utils/notifications";
+import { hasRole, getRoleErrorMessage } from "@/server/utils/role-validation";
 
 export async function GET(req: NextRequest) {
   const mm = requireMethod(req, ["GET"]);
@@ -47,6 +48,16 @@ export async function POST(req: NextRequest) {
   if (!token) return jsonError("Unauthorized", 401);
   let decoded: any; try { decoded = verifyToken<any>(token, "access"); } catch { return jsonError("Unauthorized", 401); }
   await connectToDatabase();
+  
+  // Check if user has recruiter role
+  const user = await User.findById(decoded.sub).select("roles role").lean();
+  if (!user) return jsonError("User not found", 404);
+  
+  const userRoles = user.roles || [user.role];
+  if (!hasRole(userRoles, "recruiter")) {
+    return jsonError(getRoleErrorMessage("recruiter"), 403);
+  }
+  
   const validate = validateBody(CreateJobSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;

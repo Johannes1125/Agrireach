@@ -1,0 +1,6 @@
+import { PageLoader } from "@/components/ui/page-loader"
+
+export default function Loading() {
+  return <PageLoader text="Please wait..." variant="dots" size="md" />
+}
+

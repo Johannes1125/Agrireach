@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
+import { useLoading } from "@/hooks/use-loading"
+import { SlideTransition } from "@/components/ui/page-transition"
 
 interface Category { _id: string; name: string; icon?: string }
 const defaultCategories: Category[] = [
@@ -53,6 +55,7 @@ const suggestedTags = [
 ]
 
 export default function NewThreadPage() {
+  const { withLoading } = useLoading()
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -117,42 +120,46 @@ export default function NewThreadPage() {
   const handleConfirmedSubmit = async () => {
     setShowConfirmDialog(false)
     setIsSubmitting(true)
-    try {
-      const payload: any = {
-        title: formData.title,
-        content: formData.content,
-        tags: formData.tags,
+    
+    await withLoading(async () => {
+      try {
+        const payload: any = {
+          title: formData.title,
+          content: formData.content,
+          tags: formData.tags,
+        }
+        const selected = categoryOptions.find((c) => c._id === formData.category) || null
+        const isObjectId = formData.category ? /^[a-fA-F0-9]{24}$/.test(formData.category) : false
+        if (formData.category) {
+          if (isObjectId) payload.category_id = formData.category
+          else if (selected?.name) payload.category = selected.name
+          else payload.category = formData.category
+        }
+
+        const res = await fetch("/api/community/threads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        const json = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(json?.message || "Failed to post thread")
+        const newId = json?.data?.id
+        toast.success("Thread posted successfully!")
+        // Add delay to show loading for at least 5 seconds
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        window.location.href = newId ? `/community/thread/${newId}` : "/community"
+      } catch (e: any) {
+        console.error(e)
+        toast.error(e?.message || "Failed to post thread")
+      } finally {
+        setIsSubmitting(false)
       }
-      const selected = categoryOptions.find((c) => c._id === formData.category) || null
-      const isObjectId = formData.category ? /^[a-fA-F0-9]{24}$/.test(formData.category) : false
-      if (formData.category) {
-        if (isObjectId) payload.category_id = formData.category
-        else if (selected?.name) payload.category = selected.name
-        else payload.category = formData.category
-      }
-
-
-
-      const res = await fetch("/api/community/threads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(json?.message || "Failed to post thread")
-      const newId = json?.data?.id
-      toast.success("Thread posted successfully!")
-      window.location.href = newId ? `/community/thread/${newId}` : "/community"
-    } catch (e: any) {
-      console.error(e)
-      toast.error(e?.message || "Failed to post thread")
-    } finally {
-      setIsSubmitting(false)
-    }
+    }, "Posting your discussion...")
   }
 
   return (
     <>
+      <SlideTransition>
       <div className="min-h-screen bg-background">
         {/* Header */}
         <div className="bg-white border-b">
@@ -353,6 +360,7 @@ export default function NewThreadPage() {
           </form>
         </div>
       </div>
+      </SlideTransition>
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>

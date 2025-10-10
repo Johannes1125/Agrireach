@@ -25,6 +25,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { authFetch } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { CheckoutModal } from "@/components/marketplace/checkout-modal";
+import { PageTransition } from "@/components/ui/page-transition";
+import { InlineLoader } from "@/components/ui/page-loader";
+import { ProductCardSkeleton } from "@/components/ui/skeleton-loader";
 import Link from "next/link";
 
 export default function MarketplacePage() {
@@ -77,7 +80,11 @@ export default function MarketplacePage() {
   }, [user]);
 
   if (authLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <InlineLoader text="Loading marketplace..." variant="spinner" size="lg" />
+      </div>
+    );
   }
 
   const addToCart = async (productId: string) => {
@@ -124,6 +131,8 @@ export default function MarketplacePage() {
             : undefined
         }
       />
+
+      <PageTransition>
 
       {/* Header */}
       <div className="bg-background border-b">
@@ -248,7 +257,13 @@ export default function MarketplacePage() {
               : "space-y-4"
           }
         >
-          {products.map((product) => (
+          {loading ? (
+            // Show skeleton loaders while loading
+            Array.from({ length: 8 }).map((_, index) => (
+              <ProductCardSkeleton key={index} />
+            ))
+          ) : (
+            products.map((product) => (
             <Card
               key={product._id}
               className="overflow-hidden hover:shadow-lg transition-shadow"
@@ -322,7 +337,8 @@ export default function MarketplacePage() {
                 </Button>
               </CardFooter>
             </Card>
-          ))}
+            ))
+          )}
         </div>
 
         {products.length === 0 && !loading && (
@@ -341,6 +357,7 @@ export default function MarketplacePage() {
         cartItems={cartItems}
         onSuccess={handleCheckoutSuccess}
       />
+      </PageTransition>
     </div>
   );
 }

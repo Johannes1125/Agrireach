@@ -3,26 +3,30 @@ import { JobApplication } from "@/components/opportunities/job-application";
 import { SimilarJobs } from "@/components/opportunities/similar-jobs";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { headers } from "next/headers";
+import { connectToDatabase } from "@/server/lib/mongodb";
+import { Opportunity } from "@/server/models/Job";
 
 interface JobPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 async function fetchJob(id: string) {
-  const h = headers();
-  const proto = h.get("x-forwarded-proto") || "http";
-  const host = h.get("host") || "localhost:3000";
-  const baseUrl = process.env.BASE_URL || `${proto}://${host}`;
+  await connectToDatabase();
 
-  const res = await fetch(`${baseUrl}/api/opportunities/${id}`, {
-    cache: "no-store",
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json?.message || "Failed to load job");
+  // Increment view count and get opportunity with recruiter info
+  const opportunity = await Opportunity.findByIdAndUpdate(
+    id,
+    { $inc: { views: 1 } },
+    { new: true }
+  )
+    .populate("recruiter_id", "full_name email location")
+    .lean();
 
-  // FIX: read from json.data.opportunity (jsonOk wrapper)
-  const j = json?.data?.opportunity || {};
+  if (!opportunity) {
+    throw new Error("Opportunity not found");
+  }
+
+  const j = opportunity;
 
   return {
     id: String(j._id || id),
@@ -62,7 +66,8 @@ async function fetchJob(id: string) {
 }
 
 export default async function JobPage({ params }: JobPageProps) {
-  const job = await fetchJob(params.id);
+  const { id } = await params;
+  const job = await fetchJob(id);
 
   return (
     <div className="min-h-screen bg-background">

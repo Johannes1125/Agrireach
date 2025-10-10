@@ -24,6 +24,8 @@ import {
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { useJobSearch } from "@/contexts/job-search-context";
+import { InlineLoader } from "@/components/ui/page-loader";
+import { formatDate, formatRelativeTime } from "@/lib/utils";
 
 export function OpportunityBoard() {
   const [sortBy, setSortBy] = useState("newest");
@@ -31,14 +33,19 @@ export function OpportunityBoard() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [allJobs, setAllJobs] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
   const { searchQuery, location } = useJobSearch();
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch(`/api/opportunities?limit=100&page=1`);
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) return;
-      const items: any[] = (json?.data?.items || []).map((j: any) => ({
+      setLoading(true);
+      // Add minimum delay for loading state
+      const [data] = await Promise.all([
+        fetch(`/api/opportunities?limit=100&page=1`).then(res => res.json().catch(() => ({}))),
+        new Promise(resolve => setTimeout(resolve, 2000)) // Minimum 2 second delay
+      ]);
+      
+      const items: any[] = (data?.data?.items || []).map((j: any) => ({
         id: String(j._id),
         title: j.title,
         company: j.company_name || "",
@@ -56,6 +63,7 @@ export function OpportunityBoard() {
         matchScore: 0,
       }));
       setAllJobs(items);
+      setLoading(false);
     };
     load();
   }, []);
@@ -110,12 +118,13 @@ export function OpportunityBoard() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[600px]">
+        <InlineLoader text="Loading opportunities..." variant="spinner" size="lg" />
+      </div>
+    );
+  }
 
   return (
     <section className="space-y-6" aria-label="Job Opportunities">
@@ -248,7 +257,7 @@ export function OpportunityBoard() {
 
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          <span>Posted {formatDate(job.postedDate)}</span>
+                          <span>Posted {formatRelativeTime(job.postedDate)}</span>
                         </div>
 
                         <div className="flex items-center gap-1">

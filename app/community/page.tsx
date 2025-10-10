@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SimpleHeader } from "@/components/layout/simple-header";
 import { useCommunityData } from "@/hooks/use-community-data";
+import { PageTransition } from "@/components/ui/page-transition";
+import { InlineLoader } from "@/components/ui/page-loader";
 import Link from "next/link";
 
 interface CategoryItem {
@@ -30,6 +32,7 @@ const forumCategories: CategoryItem[] = [];
 export default function CommunityPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const { stats, trendingTopics, recentActivity, loading, error } =
     useCommunityData();
 
@@ -46,9 +49,14 @@ export default function CommunityPage() {
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch("/api/community/categories");
-      const json = await res.json().catch(() => ({}));
-      if (res.ok) setCategories(json?.data?.items || []);
+      setCategoriesLoading(true);
+      // Add minimum delay for loading state
+      const [data] = await Promise.all([
+        fetch("/api/community/categories").then(res => res.json().catch(() => ({}))),
+        new Promise(resolve => setTimeout(resolve, 2000)) // Minimum 2 second delay
+      ]);
+      if (data?.data?.items) setCategories(data.data.items);
+      setCategoriesLoading(false);
     };
     load();
   }, []);
@@ -64,6 +72,7 @@ export default function CommunityPage() {
     <div className="min-h-screen bg-background">
       <SimpleHeader />
 
+      <PageTransition>
       {/* Header */}
       <div className="bg-background border-b">
         <div className="container mx-auto px-4 py-6">
@@ -104,50 +113,61 @@ export default function CommunityPage() {
             {/* Forum Categories */}
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Forum Categories</h2>
-              <div className="space-y-3">
-                {filteredCategories.map((category: any, idx: number) => {
-                  const href = `/community/category/${
-                    category._id || encodeURIComponent(category.name)
-                  }`;
-                  const icon = category.icon || getCategoryIcon(category.name);
-                  const key = String(
-                    category._id || category.id || category.name || idx
-                  );
-                  return (
-                    <Card
-                      key={key}
-                      className="hover:shadow-md transition-shadow"
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-start gap-4">
-                          <div className="text-3xl">{icon}</div>
-                          <div className="flex-1 min-w-0">
-                            <Link href={href}>
-                              <h3 className="text-lg font-semibold hover:text-primary cursor-pointer">
-                                {category.name}
-                              </h3>
-                            </Link>
-                            <p className="text-muted-foreground text-sm mt-1">
-                              {String(
-                                category && category.description
-                                  ? category.description
-                                  : ""
-                              )}
-                            </p>
+              {categoriesLoading ? (
+                <div className="flex items-center justify-center min-h-[400px]">
+                  <InlineLoader text="Loading categories..." variant="spinner" size="lg" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredCategories.map((category: any, idx: number) => {
+                    const href = `/community/category/${
+                      category._id || encodeURIComponent(category.name)
+                    }`;
+                    const icon = category.icon || getCategoryIcon(category.name);
+                    const key = String(
+                      category._id || category.id || category.name || idx
+                    );
+                    return (
+                      <Card
+                        key={key}
+                        className="hover:shadow-md transition-shadow"
+                      >
+                        <CardContent className="p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="text-3xl">{icon}</div>
+                            <div className="flex-1 min-w-0">
+                              <Link href={href}>
+                                <h3 className="text-lg font-semibold hover:text-primary cursor-pointer">
+                                  {category.name}
+                                </h3>
+                              </Link>
+                              <p className="text-muted-foreground text-sm mt-1">
+                                {String(
+                                  category && category.description
+                                    ? category.description
+                                    : ""
+                                )}
+                              </p>
 
-                            <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <MessageSquare className="h-4 w-4" />
-                                <span>{category.posts_count ?? 0} posts</span>
+                              <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-4 w-4" />
+                                  <span>{category.posts_count ?? 0} posts</span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  {filteredCategories.length === 0 && !categoriesLoading && (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground">No categories found.</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -277,6 +297,7 @@ export default function CommunityPage() {
           </div>
         </div>
       </div>
+      </PageTransition>
     </div>
   );
 }

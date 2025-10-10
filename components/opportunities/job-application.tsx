@@ -26,13 +26,26 @@ interface JobApplicationProps {
 export function JobApplication({ job }: JobApplicationProps) {
   const [coverLetter, setCoverLetter] = useState("")
   const [isApplied, setIsApplied] = useState(false)
+  const { user, loading } = useAuth()
 
   // Mock user skills and match calculation
   const userSkills = ["Crop Harvesting", "Team Leadership", "Safety Protocols", "Equipment Operation"]
   const matchingSkills = job.skills.filter((skill) => userSkills.includes(skill))
   const matchPercentage = Math.round((matchingSkills.length / job.skills.length) * 100)
 
+  const canApply = user && userHasRole(user, "worker")
+
   const handleApply = async () => {
+    if (!user) {
+      toast.error("Please log in to apply for jobs")
+      return
+    }
+
+    if (!canApply) {
+      toast.error("You need the Worker role to apply for jobs. Update your roles in Settings.")
+      return
+    }
+
     try {
       const res = await authFetch(`/api/opportunities/${job.id}/apply`, {
         method: "POST",
@@ -46,8 +59,57 @@ export function JobApplication({ job }: JobApplicationProps) {
       setIsApplied(true)
       toast.success("Application submitted successfully!")
     } catch (e: any) {
-      toast.error(e?.message || "Failed to apply")
+      console.error("Application error:", e)
+      toast.error(e?.message || "Failed to apply. Please check your connection and try again.")
     }
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!user) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <UserX className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="font-heading text-lg font-semibold mb-2">Login Required</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            You need to be logged in to apply for jobs.
+          </p>
+          <Link href="/auth/login">
+            <Button className="w-full">
+              Log In to Apply
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!canApply) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <AlertCircle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+          <h3 className="font-heading text-lg font-semibold mb-2">Worker Role Required</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            You need the Worker role to apply for jobs. Add it to your profile to start applying!
+          </p>
+          <Link href="/settings">
+            <Button className="w-full">
+              Update Roles in Settings
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    )
   }
 
   if (isApplied) {
