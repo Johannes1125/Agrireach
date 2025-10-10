@@ -55,7 +55,7 @@ export default function HomePage() {
                 Join AgriReach Today
               </Button>
             </Link>
-            <Link href="/opportunities">
+            <Link href="/auth/login">
               <Button
                 variant="outline"
                 size="lg"
