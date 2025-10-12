@@ -28,6 +28,7 @@ import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
 import { authFetch } from "@/lib/auth-client"
 import { useLoading } from "@/hooks/use-loading"
 import { SlideTransition } from "@/components/ui/page-transition"
+import { RouteGuard } from "@/components/auth/route-guard"
 
 const categories = [
   "Vegetables",
@@ -44,6 +45,14 @@ const categories = [
 const units = ["kg", "liter", "piece", "dozen", "bundle", "bag", "box"]
 
 export default function SellProductPage() {
+  return (
+    <RouteGuard requireAuth requiredRole="buyer" redirectTo="/auth/login">
+      <SellProductPageContent />
+    </RouteGuard>
+  )
+}
+
+function SellProductPageContent() {
   const { withLoading } = useLoading()
   const [formData, setFormData] = useState({
     name: "",

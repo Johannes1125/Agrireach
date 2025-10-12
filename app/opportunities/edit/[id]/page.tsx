@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, Briefcase } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { getCurrentUser } from "@/lib/auth-server"
+import { getCurrentUser, requireRecruiter } from "@/lib/auth-server"
 import { headers } from "next/headers"
 
 interface EditJobPageProps {
@@ -37,11 +37,8 @@ async function fetchJob(id: string) {
 }
 
 export default async function EditJobPage({ params }: EditJobPageProps) {
-  const user = await getCurrentUser()
-
-  if (!user) {
-    redirect("/auth/login")
-  }
+  // Require recruiter role to edit jobs
+  const user = await requireRecruiter()
 
   const job = await fetchJob(params.id)
 
@@ -49,8 +46,9 @@ export default async function EditJobPage({ params }: EditJobPageProps) {
     redirect("/opportunities")
   }
 
-  // Check if user is the owner of the job
-  if (job.recruiter_id._id !== user.id && user.role !== "admin") {
+  // Check if user is the owner of the job or is an admin
+  const isAdmin = user.roles?.includes("admin")
+  if (job.recruiter_id._id !== user.id && !isAdmin) {
     redirect("/opportunities")
   }
 

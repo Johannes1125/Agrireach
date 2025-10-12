@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RouteGuard } from "@/components/auth/route-guard";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -68,6 +69,14 @@ const reviewCategories = {
 };
 
 export default function WriteReviewPage() {
+  return (
+    <RouteGuard requireAuth>
+      <WriteReviewPageContent />
+    </RouteGuard>
+  )
+}
+
+function WriteReviewPageContent() {
   const router = useRouter();
   const [selectedUser, setSelectedUser] = useState("");
   const [rating, setRating] = useState(0);

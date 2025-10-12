@@ -2,8 +2,11 @@ import { PostJobForm } from "@/components/opportunities/post-job-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Briefcase } from "lucide-react"
 import Link from "next/link"
+import { requireRecruiter } from "@/lib/auth-server"
 
-export default function PostJobPage() {
+export default async function PostJobPage() {
+  // Server-side route guard: Only recruiters can post jobs
+  await requireRecruiter()
   return (
     <div className="min-h-screen bg-background">
       <div className="container px-4 py-8">

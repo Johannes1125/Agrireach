@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { useAdminOverview } from "@/hooks/use-admin-data"
+import { RouteGuard } from "@/components/auth/route-guard"
 
 // Real admin data via hook
 
@@ -66,6 +67,14 @@ const pendingActions = [
 ]
 
 export default function AdminDashboard() {
+  return (
+    <RouteGuard requireAuth requiredRole="admin" redirectTo="/dashboard">
+      <AdminDashboardContent />
+    </RouteGuard>
+  )
+}
+
+function AdminDashboardContent() {
   const [selectedTimeframe, setSelectedTimeframe] = useState("7d")
   const { stats, loading } = useAdminOverview()
 

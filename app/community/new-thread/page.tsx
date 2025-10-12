@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import { RouteGuard } from "@/components/auth/route-guard"
 import {
   Dialog,
   DialogAction,
@@ -55,6 +56,14 @@ const suggestedTags = [
 ]
 
 export default function NewThreadPage() {
+  return (
+    <RouteGuard requireAuth>
+      <NewThreadPageContent />
+    </RouteGuard>
+  )
+}
+
+function NewThreadPageContent() {
   const { withLoading } = useLoading()
   const [formData, setFormData] = useState({
     title: "",

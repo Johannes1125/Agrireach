@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { AppLayout } from "@/components/layout/app-layout"
 import { PageTransition } from "@/components/ui/page-transition"
+import { RouteGuard } from "@/components/auth/route-guard"
 import {
   Bell,
   Briefcase,
@@ -33,6 +34,14 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
+  return (
+    <RouteGuard requireAuth>
+      <NotificationsPageContent />
+    </RouteGuard>
+  )
+}
+
+function NotificationsPageContent() {
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: "1",

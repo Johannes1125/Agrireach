@@ -1,8 +1,9 @@
 import { EditProductForm } from "@/components/marketplace/edit-product-form"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { headers } from "next/headers"
+import { requireBuyer, getCurrentUser } from "@/lib/auth-server"
 
 interface EditProductPageProps {
   params: Promise<{ id: string }>
@@ -31,11 +32,20 @@ async function fetchProductData(id: string) {
 }
 
 export default async function EditProductPage({ params }: EditProductPageProps) {
+  // Require buyer role to edit products
+  const user = await requireBuyer()
+  
   const { id } = await params
   const product = await fetchProductData(id)
 
   if (!product) {
     notFound()
+  }
+
+  // Check if user is the owner of the product or is an admin
+  const isAdmin = user.roles?.includes("admin")
+  if (product.seller_id !== user.id && !isAdmin) {
+    redirect("/marketplace")
   }
 
   return (

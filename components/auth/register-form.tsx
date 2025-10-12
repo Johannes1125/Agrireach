@@ -24,6 +24,51 @@ export function RegisterForm() {
   const [userFullName, setUserFullName] = useState("")
   const [userRole, setUserRole] = useState("worker")
 
+  const validatePassword = (password: string): string[] => {
+    const errors: string[] = []
+    if (password.length < 8) {
+      errors.push("Password must be at least 8 characters long")
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push("Password must contain at least one uppercase letter")
+    }
+    if (!/[a-z]/.test(password)) {
+      errors.push("Password must contain at least one lowercase letter")
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push("Password must contain at least one number")
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      errors.push("Password must contain at least one special character")
+    }
+    return errors
+  }
+
+  const validateName = (name: string): string[] => {
+    const errors: string[] = []
+    if (!name.trim()) {
+      errors.push("Name is required")
+    }
+    if (/[0-9]/.test(name)) {
+      errors.push("Name cannot contain numbers")
+    }
+    return errors
+  }
+
+  const validateEmail = (email: string): string[] => {
+    const errors: string[] = []
+    if (!email.trim()) {
+      errors.push("Email is required")
+    }
+    if (!email.includes("@")) {
+      errors.push("Email must contain @ symbol")
+    }
+    if (!email.includes(".com")) {
+      errors.push("Email must include .com")
+    }
+    return errors
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!agreedToTerms) return
@@ -37,6 +82,28 @@ export function RegisterForm() {
     const userType = (formData.get("userType") as string) || "worker"
     const name = [firstName, lastName].filter(Boolean).join(" ")
     const role = userType
+
+    // Validate all fields before proceeding
+    const emailErrors = validateEmail(email)
+    if (emailErrors.length > 0) {
+      toast.error(emailErrors[0])
+      setIsLoading(false)
+      return
+    }
+
+    const nameErrors = validateName(name)
+    if (nameErrors.length > 0) {
+      toast.error(nameErrors[0])
+      setIsLoading(false)
+      return
+    }
+
+    const passwordErrors = validatePassword(password)
+    if (passwordErrors.length > 0) {
+      toast.error(passwordErrors[0])
+      setIsLoading(false)
+      return
+    }
 
     setUserEmail(email)
     setUserPassword(password)

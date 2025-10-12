@@ -50,10 +50,31 @@ export const AuthController = {
       return jsonError("Invalid token", 401);
     }
 
+    // Validate that the presented refresh token corresponds to an active session
     await connectToDatabase();
-    const accessToken = signAccessToken({ sub: String(decoded.sub), role: decoded.role });
-    const res = jsonOk({ accessToken });
-    return setAuthCookies(res, { accessToken });
+    const sessions = await UserSession.find({ user_id: decoded.sub, expires_at: { $gt: new Date() } }).lean();
+
+    let matched = false;
+    for (const session of sessions) {
+      // Compare the presented refresh token with the stored bcrypt hash
+      if (await bcrypt.compare(token, session.token)) {
+        matched = true;
+        // Rotate refresh token: delete old session, issue new one
+        await UserSession.deleteOne({ _id: (session as any)._id });
+        const newAccessToken = signAccessToken({ sub: String(decoded.sub), role: decoded.role });
+        const newRefreshToken = signRefreshToken({ sub: String(decoded.sub), role: decoded.role });
+        const newHash = await bcrypt.hash(newRefreshToken, 10);
+        const newExpiresAt = new Date(Date.now() + (parseInt(process.env.JWT_REFRESH_TTL_DAYS || "7", 10) * 24 * 60 * 60 * 1000));
+        await UserSession.create({ user_id: decoded.sub, token: newHash, expires_at: newExpiresAt });
+        const res = jsonOk({ accessToken: newAccessToken });
+        // Set both new access and refresh cookies (rotation)
+        return setAuthCookies(res, { accessToken: newAccessToken, refreshToken: newRefreshToken });
+      }
+    }
+
+    if (!matched) {
+      return jsonError("Session not found or expired", 401);
+    }
   },
 
   async logout(req: NextRequest) {
@@ -62,7 +83,13 @@ export const AuthController = {
       if (token) {
         const decoded: any = verifyToken(token, "refresh");
         await connectToDatabase();
-        await UserSession.deleteMany({ user_id: decoded.sub });
+        const sessions = await UserSession.find({ user_id: decoded.sub }).lean();
+        for (const session of sessions) {
+          if (await bcrypt.compare(token, session.token)) {
+            await UserSession.deleteOne({ _id: (session as any)._id });
+            break;
+          }
+        }
       }
     } catch {
       // ignore token errors for logout

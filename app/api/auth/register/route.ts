@@ -31,5 +31,8 @@ export async function POST(req: NextRequest) {
 
   // consume codes
   await OtpCode.updateMany({ email, type: "registration" }, { $set: { used: true } });
-  return AuthController.register(req, result.data);
+  
+  // Extract only the fields needed for registration (exclude token)
+  const { token: _, ...registrationData } = result.data;
+  return AuthController.register(req, registrationData);
 }
