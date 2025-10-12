@@ -7,42 +7,40 @@ import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { ApplyJobSchema } from "@/server/validators/opportunitySchemas";
 import { notifyJobApplication } from "@/server/utils/notifications";
-import { hasRole, getRoleErrorMessage } from "@/server/utils/role-validation";
+import { validateUserRole } from "@/server/utils/role-validation";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
-  const token = getAuthToken(req, "access");
-  if (!token) return jsonError("Unauthorized", 401);
-  let decoded: any; try { decoded = verifyToken<any>(token, "access"); } catch { return jsonError("Unauthorized", 401); }
+  
+  // Validate user has worker role
+  let userId: string;
+  try {
+    const { user, userId: validatedUserId } = await validateUserRole(req, ["worker"]);
+    userId = validatedUserId;
+  } catch (error: any) {
+    return jsonError(error.message, 403);
+  }
+  
   await connectToDatabase();
   const { id } = await params;
-  
-  // Check if user has worker role
-  const user = await User.findById(decoded.sub).select("roles role").lean();
-  if (!user) return jsonError("User not found", 404);
-  
-  const userRoles = user.roles || [user.role];
-  if (!hasRole(userRoles, "worker")) {
-    return jsonError(getRoleErrorMessage("worker"), 403);
-  }
   
   const job = await Job.findById(id);
   if (!job) return jsonError("Not found", 404);
   
   // Prevent users from applying to their own job postings
-  if (String(job.recruiter_id) === decoded.sub) {
+  if (String(job.recruiter_id) === userId) {
     return jsonError("You cannot apply to your own job posting", 400);
   }
   
   const validate = validateBody(ApplyJobSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;
-  const app = await JobApplication.create({ opportunity_id: job._id, worker_id: decoded.sub, ...result.data });
+  const app = await JobApplication.create({ opportunity_id: job._id, worker_id: userId, ...result.data });
   await Job.findByIdAndUpdate(job._id, { $inc: { applications_count: 1 } });
 
   // Get applicant info and notify recruiter
-  const applicant = await User.findById(decoded.sub).select("full_name").lean();
+  const applicant = await User.findById(userId).select("full_name").lean();
   if (applicant) {
     await notifyJobApplication(
       job.recruiter_id.toString(),

@@ -6,7 +6,7 @@ import { connectToDatabase } from "@/server/lib/mongodb";
 import { Product } from "@/server/models/Product";
 import { User } from "@/server/models/User";
 import { notifyAllUsersNewProduct } from "@/server/utils/notifications";
-import { hasRole, getRoleErrorMessage } from "@/server/utils/role-validation";
+import { validateUserRole } from "@/server/utils/role-validation";
 import { z } from "zod";
 
 const CreateProductSchema = z.object({
@@ -123,25 +123,13 @@ export async function POST(req: NextRequest) {
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
 
-  const token = getAuthToken(req, "access");
-  if (!token) return jsonError("Unauthorized", 401);
-
-  let decoded: any;
+  // Validate user has buyer role (buyers can sell products too)
+  let userId: string;
   try {
-    decoded = verifyToken<any>(token, "access");
-  } catch {
-    return jsonError("Unauthorized", 401);
-  }
-
-  await connectToDatabase();
-  
-  // Check if user has buyer role (buyers can sell products too)
-  const user = await User.findById(decoded.sub).select("roles role").lean();
-  if (!user) return jsonError("User not found", 404);
-  
-  const userRoles = user.roles || [user.role];
-  if (!hasRole(userRoles, "buyer")) {
-    return jsonError(getRoleErrorMessage("buyer"), 403);
+    const { user, userId: validatedUserId } = await validateUserRole(req, ["buyer"]);
+    userId = validatedUserId;
+  } catch (error: any) {
+    return jsonError(error.message, 403);
   }
 
   const validate = validateBody(CreateProductSchema);
@@ -150,12 +138,12 @@ export async function POST(req: NextRequest) {
   
   const product = await Product.create({
     ...result.data,
-    seller_id: decoded.sub,
+    seller_id: userId,
     status: "active"
   });
 
   // Get seller info for notification
-  const seller = await User.findById(decoded.sub).select("full_name").lean();
+  const seller = await User.findById(userId).select("full_name").lean();
   const sellerName = seller?.full_name || "A seller";
   
   // Notify all users about new product listing (don't await to avoid slowing down the response)

@@ -20,7 +20,7 @@ export default async function OpportunitiesPage() {
           id: user.id,
           name: user.full_name,
           email: user.email,
-          role: user.role,
+          role: (Array.isArray(user.role) ? user.role[0] : user.role) as "worker" | "recruiter" | "buyer",
           avatar: user.avatar_url || "",
           location: user.location || "Not specified",
         }}

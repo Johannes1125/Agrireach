@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNotifications } from "@/components/notifications/notification-provider";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { authFetch } from "@/lib/auth-client";
-import { ImageUpload, UploadedImage } from "@/components/ui/image-upload";
+import { showRoleUpdateSuccess } from "@/lib/role-validation-client";
 import {
   Bell,
   Shield,
@@ -197,7 +197,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
         throw new Error(error.message || "Failed to update roles")
       }
 
-      notifications.showSuccess("Roles Updated", `Your platform roles have been updated successfully.`)
+      showRoleUpdateSuccess(selectedRoles);
       // Update local state
       setFormData({ ...formData, role: selectedRoles as any })
       

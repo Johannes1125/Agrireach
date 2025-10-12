@@ -11,8 +11,9 @@ const PROTECTED_ROUTES = [
   "/settings",
   "/notifications",
   "/reviews/write",
+  "/opportunities",
 ];
-const RECRUITER_ROUTES = ["/opportunities","/opportunities/post", "/opportunities/edit"];
+const RECRUITER_ROUTES = ["/opportunities/post", "/opportunities/edit"];
 const WORKER_ROUTES = ["/opportunities/apply"];
 const COMMUNITY_ROUTES = ["/community","/community/new-thread", "/community/thread", "/community/thread/edit", "/community/thread/delete"];
 const NEWS_ROUTES = ["/news/create", "/news/edit", "/news/delete"];
@@ -109,14 +110,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protect buyer/seller routes (marketplace actions)
+  // Protect marketplace routes (allow buyer, worker, recruiter)
   if (matchesRoute(pathname, MARKETPLACE_ROUTES)) {
     if (!user) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
-    if (!user.roles.includes("buyer")) {
+    if (!user.roles.some(role => ["buyer", "worker", "recruiter"].includes(role))) {
       return NextResponse.redirect(new URL("/marketplace", request.url));
     }
     return NextResponse.next();

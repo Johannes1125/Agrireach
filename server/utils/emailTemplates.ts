@@ -419,7 +419,8 @@ export function passwordResetEmailText(params: {
 }) {
   const appName = params.appName || "AgriReach";
   const expireMinutes = params.expireMinutes ?? 30;
-  return `Reset your ${appName} password by clicking this link: ${params.resetUrl}\n\nThis link will expire in ${expireMinutes} minutes. If you did not request this, you can ignore this email.`;
+  const code = toDigits(params.resetUrl);
+  return `Reset your ${appName} password using this verification code: ${code}\n\nThis code will expire in ${expireMinutes} minutes. If you did not request this, you can ignore this email.`;
 }
 
 export function passwordResetEmailHtml(params: {
@@ -434,6 +435,8 @@ export function passwordResetEmailHtml(params: {
   const baseUrl = params.baseUrl || process.env.BASE_URL || "http://localhost:3000";
   const supportEmail = params.supportEmail || (process.env.SMTP_FROM || "support@agrireach.local");
   const expireMinutes = params.expireMinutes ?? 30;
+  const code = toDigits(params.resetUrl).padEnd(6, "0");
+  const codeChars = code.split("");
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -540,41 +543,61 @@ export function passwordResetEmailHtml(params: {
       text-align: center;
     }
 
-    .reset-button {
-      display: inline-block;
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      color: #ffffff;
-      padding: 16px 32px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 16px;
-      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
-      transition: all 0.3s ease;
-      border: none;
-      font-family: 'Montserrat', sans-serif;
-      margin: 0 auto;
-      display: block;
+    /* Enhanced OTP section */
+    .otp-section {
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);
+      border-radius: 16px;
+      padding: 32px;
+      margin: 32px 0;
+      border: 2px solid rgba(34, 197, 94, 0.1);
       text-align: center;
-      max-width: 300px;
     }
-
-    .reset-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
-      text-decoration: none;
-      color: #ffffff;
+    
+    .otp-label {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
-
-    .expiry-notice {
+    
+    .otp-container { 
+      display: flex; 
+      justify-content: center; 
+      gap: 12px; 
+      margin: 24px 0;
+      flex-wrap: wrap;
+    }
+    
+    .otp-digit { 
+      width: 56px; 
+      height: 64px; 
+      border-radius: 12px; 
+      border: 2px solid #22c55e;
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 28px; 
+      font-weight: 700; 
+      background: #ffffff;
+      color: #22c55e;
+      box-shadow: 0 4px 8px rgba(34, 197, 94, 0.1);
+      transition: all 0.3s ease;
+      font-family: 'Montserrat', monospace;
+    }
+    
+    .otp-expiry {
       background: rgba(251, 191, 36, 0.1);
       border: 1px solid rgba(251, 191, 36, 0.3);
       border-radius: 8px;
-      padding: 16px;
+      padding: 12px 20px;
       margin: 24px 0;
       font-size: 14px;
       color: #92400e;
-      text-align: center;
+      font-weight: 600;
+      display: inline-block;
     }
 
     .email-footer {
@@ -605,6 +628,9 @@ export function passwordResetEmailHtml(params: {
       .email-footer { padding: 24px 20px; }
       .email-title { font-size: 28px; }
       .brand-name { font-size: 24px; }
+      .otp-container { gap: 8px; }
+      .otp-digit { width: 48px; height: 56px; font-size: 24px; }
+      .otp-section { padding: 24px 16px; }
     }
   </style>
 </head>
@@ -630,15 +656,17 @@ export function passwordResetEmailHtml(params: {
       <div class="email-content">
         <h1 class="email-title">Reset Your Password</h1>
         <p class="email-description">
-          We received a request to reset your password. Click the button below to create a new password for your ${appName} account.
+          We received a request to reset your password. Use the verification code below to create a new password for your ${appName} account.
         </p>
 
-        <a href="${params.resetUrl}" class="reset-button">
-          Reset My Password
-        </a>
-
-        <div class="expiry-notice">
-          ⏰ This link will expire in <strong>${expireMinutes} minutes</strong> for security reasons.
+        <div class="otp-section">
+          <div class="otp-label">Your Password Reset Code</div>
+          <div class="otp-container">
+            ${codeChars.map((c) => `<div class="otp-digit">${c}</div>`).join("")}
+          </div>
+          <div class="otp-expiry">
+            ⏰ This code expires in <strong>${expireMinutes} minutes</strong>
+          </div>
         </div>
 
         <p class="email-description" style="margin-top: 32px; font-size: 14px;">

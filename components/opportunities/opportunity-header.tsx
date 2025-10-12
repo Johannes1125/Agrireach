@@ -6,9 +6,40 @@ import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Plus } from "lucide-react";
 import Link from "next/link";
 import { useJobSearch } from "@/contexts/job-search-context";
+import { useEffect, useState } from "react";
+
+interface JobStats {
+  activeJobs: number;
+  newJobsThisWeek: number;
+  companiesHiring: number;
+}
 
 export function OpportunityHeader() {
   const { searchQuery, setSearchQuery, location, setLocation } = useJobSearch();
+  const [stats, setStats] = useState<JobStats>({
+    activeJobs: 0,
+    newJobsThisWeek: 0,
+    companiesHiring: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch("/api/opportunities/stats");
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch job statistics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <div className="bg-card border-b">
@@ -63,13 +94,13 @@ export function OpportunityHeader() {
           {/* Quick Stats */}
           <div className="flex flex-wrap gap-4">
             <Badge variant="secondary" className="text-sm px-3 py-1">
-              247 Active Jobs
+              {loading ? "..." : `${stats.activeJobs} Active Jobs`}
             </Badge>
             <Badge variant="outline" className="text-sm px-3 py-1">
-              89 New This Week
+              {loading ? "..." : `${stats.newJobsThisWeek} New This Week`}
             </Badge>
             <Badge variant="outline" className="text-sm px-3 py-1">
-              156 Companies Hiring
+              {loading ? "..." : `${stats.companiesHiring} Companies Hiring`}
             </Badge>
           </div>
         </div>

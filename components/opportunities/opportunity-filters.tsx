@@ -7,40 +7,52 @@ import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { X, Filter } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+
+interface FilterStats {
+  jobTypes: Array<{ id: string; label: string; count: number }>;
+  categories: Array<{ id: string; label: string; count: number }>;
+  experience: Array<{ id: string; label: string; count: number }>;
+  urgency: Array<{ id: string; label: string; count: number }>;
+  payRange: {
+    minPay: number;
+    maxPay: number;
+    avgMinPay: number;
+    avgMaxPay: number;
+  };
+}
 
 export function OpportunityFilters() {
-  const [payRange, setPayRange] = useState([15, 30])
+  const [payRange, setPayRange] = useState([60, 100])
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
+  const [filterStats, setFilterStats] = useState<FilterStats>({
+    jobTypes: [],
+    categories: [],
+    experience: [],
+    urgency: [],
+    payRange: { minPay: 60, maxPay: 100, avgMinPay: 70, avgMaxPay: 90 }
+  })
+  const [loading, setLoading] = useState(true)
 
-  const jobTypes = [
-    { id: "full-time", label: "Full-time", count: 89 },
-    { id: "part-time", label: "Part-time", count: 45 },
-    { id: "seasonal", label: "Seasonal", count: 156 },
-    { id: "contract", label: "Contract", count: 67 },
-    { id: "temporary", label: "Temporary", count: 34 },
-  ]
+  useEffect(() => {
+    const fetchFilterStats = async () => {
+      try {
+        const response = await fetch("/api/opportunities/filter-stats");
+        if (response.ok) {
+          const data = await response.json();
+          setFilterStats(data.data);
+          // Set initial pay range based on actual data
+          setPayRange([Math.round(data.data.payRange.avgMinPay), Math.round(data.data.payRange.avgMaxPay)]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch filter statistics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const categories = [
-    { id: "crop-farming", label: "Crop Farming", count: 78 },
-    { id: "livestock", label: "Livestock Care", count: 45 },
-    { id: "equipment", label: "Equipment Operation", count: 56 },
-    { id: "harvesting", label: "Harvesting", count: 89 },
-    { id: "packaging", label: "Packaging & Processing", count: 34 },
-    { id: "management", label: "Farm Management", count: 23 },
-  ]
-
-  const experience = [
-    { id: "entry", label: "Entry Level (0-1 years)", count: 67 },
-    { id: "mid", label: "Mid Level (2-5 years)", count: 89 },
-    { id: "senior", label: "Senior Level (5+ years)", count: 45 },
-  ]
-
-  const urgency = [
-    { id: "immediate", label: "Immediate Start", count: 34 },
-    { id: "urgent", label: "Urgent Hiring", count: 56 },
-    { id: "standard", label: "Standard Timeline", count: 123 },
-  ]
+    fetchFilterStats();
+  }, [])
 
   const toggleFilter = (filterId: string) => {
     setSelectedFilters((prev) => (prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [...prev, filterId]))
@@ -48,7 +60,7 @@ export function OpportunityFilters() {
 
   const clearAllFilters = () => {
     setSelectedFilters([])
-    setPayRange([15, 30])
+    setPayRange([Math.round(filterStats.payRange.avgMinPay), Math.round(filterStats.payRange.avgMaxPay)])
   }
 
   return (
@@ -87,11 +99,18 @@ export function OpportunityFilters() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="px-2">
-            <Slider value={payRange} onValueChange={setPayRange} max={50} min={10} step={1} className="w-full" />
+            <Slider 
+              value={payRange} 
+              onValueChange={setPayRange} 
+              max={Math.max(100, filterStats.payRange.maxPay)} 
+              min={Math.min(60, filterStats.payRange.minPay)} 
+              step={1} 
+              className="w-full" 
+            />
           </div>
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>${payRange[0]}/hour</span>
-            <span>${payRange[1]}/hour</span>
+            <span>₱{payRange[0]}/hour</span>
+            <span>₱{payRange[1]}/hour</span>
           </div>
         </CardContent>
       </Card>
@@ -102,21 +121,25 @@ export function OpportunityFilters() {
           <CardTitle className="text-base">Job Type</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {jobTypes.map((type) => (
-            <div key={type.id} className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={type.id}
-                  checked={selectedFilters.includes(type.id)}
-                  onCheckedChange={() => toggleFilter(type.id)}
-                />
-                <Label htmlFor={type.id} className="text-sm font-normal cursor-pointer">
-                  {type.label}
-                </Label>
+          {loading ? (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          ) : (
+            filterStats.jobTypes.map((type) => (
+              <div key={type.id} className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={type.id}
+                    checked={selectedFilters.includes(type.id)}
+                    onCheckedChange={() => toggleFilter(type.id)}
+                  />
+                  <Label htmlFor={type.id} className="text-sm font-normal cursor-pointer">
+                    {type.label}
+                  </Label>
+                </div>
+                <span className="text-xs text-muted-foreground">({type.count})</span>
               </div>
-              <span className="text-xs text-muted-foreground">({type.count})</span>
-            </div>
-          ))}
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -126,21 +149,25 @@ export function OpportunityFilters() {
           <CardTitle className="text-base">Category</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {categories.map((category) => (
-            <div key={category.id} className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={category.id}
-                  checked={selectedFilters.includes(category.id)}
-                  onCheckedChange={() => toggleFilter(category.id)}
-                />
-                <Label htmlFor={category.id} className="text-sm font-normal cursor-pointer">
-                  {category.label}
-                </Label>
+          {loading ? (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          ) : (
+            filterStats.categories.map((category) => (
+              <div key={category.id} className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={category.id}
+                    checked={selectedFilters.includes(category.id)}
+                    onCheckedChange={() => toggleFilter(category.id)}
+                  />
+                  <Label htmlFor={category.id} className="text-sm font-normal cursor-pointer">
+                    {category.label}
+                  </Label>
+                </div>
+                <span className="text-xs text-muted-foreground">({category.count})</span>
               </div>
-              <span className="text-xs text-muted-foreground">({category.count})</span>
-            </div>
-          ))}
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -150,21 +177,25 @@ export function OpportunityFilters() {
           <CardTitle className="text-base">Experience Level</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {experience.map((exp) => (
-            <div key={exp.id} className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={exp.id}
-                  checked={selectedFilters.includes(exp.id)}
-                  onCheckedChange={() => toggleFilter(exp.id)}
-                />
-                <Label htmlFor={exp.id} className="text-sm font-normal cursor-pointer">
-                  {exp.label}
-                </Label>
+          {loading ? (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          ) : (
+            filterStats.experience.map((exp) => (
+              <div key={exp.id} className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={exp.id}
+                    checked={selectedFilters.includes(exp.id)}
+                    onCheckedChange={() => toggleFilter(exp.id)}
+                  />
+                  <Label htmlFor={exp.id} className="text-sm font-normal cursor-pointer">
+                    {exp.label}
+                  </Label>
+                </div>
+                <span className="text-xs text-muted-foreground">({exp.count})</span>
               </div>
-              <span className="text-xs text-muted-foreground">({exp.count})</span>
-            </div>
-          ))}
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -174,21 +205,25 @@ export function OpportunityFilters() {
           <CardTitle className="text-base">Hiring Urgency</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {urgency.map((urg) => (
-            <div key={urg.id} className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id={urg.id}
-                  checked={selectedFilters.includes(urg.id)}
-                  onCheckedChange={() => toggleFilter(urg.id)}
-                />
-                <Label htmlFor={urg.id} className="text-sm font-normal cursor-pointer">
-                  {urg.label}
-                </Label>
+          {loading ? (
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          ) : (
+            filterStats.urgency.map((urg) => (
+              <div key={urg.id} className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={urg.id}
+                    checked={selectedFilters.includes(urg.id)}
+                    onCheckedChange={() => toggleFilter(urg.id)}
+                  />
+                  <Label htmlFor={urg.id} className="text-sm font-normal cursor-pointer">
+                    {urg.label}
+                  </Label>
+                </div>
+                <span className="text-xs text-muted-foreground">({urg.count})</span>
               </div>
-              <span className="text-xs text-muted-foreground">({urg.count})</span>
-            </div>
-          ))}
+            ))
+          )}
         </CardContent>
       </Card>
     </div>

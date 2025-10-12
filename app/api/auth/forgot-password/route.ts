@@ -1,16 +1,12 @@
 import { NextRequest } from "next/server";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { User } from "@/server/models/User";
-import { PasswordResetToken } from "@/server/models/AuthToken";
+import { OtpCode } from "@/server/models/OtpCode";
 import { jsonOk, jsonError } from "@/server/utils/api";
 import { passwordResetEmailHtml, passwordResetEmailSubject, passwordResetEmailText } from "@/server/utils/emailTemplates";
 import { sendMail } from "@/server/utils/mailer";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-
-function randomToken(): string {
-  return [...crypto.getRandomValues(new Uint8Array(32))].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 const ForgotSchema = z.object({ email: z.string().email() });
 
@@ -23,25 +19,22 @@ export async function POST(req: NextRequest) {
   const user = await User.findOne({ email });
   if (!user) return jsonOk({});
 
-  const token = randomToken();
+  // Generate a 6-digit numeric OTP
+  const token = `${Math.floor(100000 + Math.random() * 900000)}`;
   const token_hash = await bcrypt.hash(token, 10);
   const expires_at = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
-  await PasswordResetToken.create({ user_id: user._id, token_hash, expires_at });
+  await OtpCode.create({ email, code: token_hash, type: "password_reset", expires_at, used: false });
 
-  // Create reset URL
-  const baseUrl = process.env.BASE_URL || "http://localhost:3000";
-  const resetUrl = `${baseUrl}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
-
-  // Send beautiful password reset email
+  // Send beautiful password reset email with OTP
   const subject = passwordResetEmailSubject();
   const html = passwordResetEmailHtml({
-    resetUrl,
+    resetUrl: `Your verification code is: ${token}`,
     email,
     appName: "AgriReach",
     expireMinutes: 30
   });
   const text = passwordResetEmailText({
-    resetUrl,
+    resetUrl: `Your verification code is: ${token}`,
     appName: "AgriReach",
     expireMinutes: 30
   });
@@ -52,5 +45,5 @@ export async function POST(req: NextRequest) {
     return jsonError("Failed to send reset email", 500, e?.message);
   }
 
-  return jsonOk({ message: "Password reset email sent successfully" });
+  return jsonOk({ message: "Password reset code sent successfully" });
 }

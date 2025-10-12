@@ -5,6 +5,7 @@ import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/a
 import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { CreatePostSchema } from "@/server/validators/threadSchemas";
+import { validateUserRole } from "@/server/utils/role-validation";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(_req, ["GET"]);
@@ -40,9 +41,16 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
-  const token = getAuthToken(req, "access");
-  if (!token) return jsonError("Unauthorized", 401);
-  let decoded: any; try { decoded = verifyToken<any>(token, "access"); } catch { return jsonError("Unauthorized", 401); }
+  
+  // Validate user is authenticated (any role can post replies)
+  let userId: string;
+  try {
+    const { user, userId: validatedUserId } = await validateUserRole(req, ["worker", "recruiter", "buyer"]);
+    userId = validatedUserId;
+  } catch (error: any) {
+    return jsonError(error.message, 403);
+  }
+  
   await connectToDatabase();
 
   const { id } = await params;
@@ -52,7 +60,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const validate = validateBody(CreatePostSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;
-  const post = await ThreadReply.create({ thread_id: thr._id, author_id: decoded.sub, content: result.data.content, parent_reply_id: result.data.parent_reply_id });
+  const post = await ThreadReply.create({ thread_id: thr._id, author_id: userId, content: result.data.content, parent_reply_id: result.data.parent_reply_id });
   await Thread.findByIdAndUpdate(thr._id, { $inc: { replies_count: 1 }, $set: { last_activity: new Date() } });
   return jsonOk({ id: post._id });
 }

@@ -49,24 +49,49 @@ export function ForgotPasswordModal({
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate sending reset code
-    setTimeout(() => {
-      setIsLoading(false);
+    
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message || "Failed to send reset code");
+      
       setStep("code");
       toast.success("Reset code sent", {
-        description: "Check your email for the verification code.",
+        description: "Check your email for the 6-digit verification code.",
       });
-    }, 1500);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to send reset code");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleVerifyCode = async () => {
     if (code.length !== 6) return;
     setIsLoading(true);
-    // Simulate code verification
-    setTimeout(() => {
-      setIsLoading(false);
+    
+    try {
+      const res = await fetch("/api/auth/verify-reset-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, token: code }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message || "Invalid verification code");
+      
       setStep("reset");
-    }, 1000);
+      toast.success("Code verified", {
+        description: "You can now set your new password.",
+      });
+    } catch (err: any) {
+      toast.error(err?.message || "Invalid verification code");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
@@ -79,20 +104,36 @@ export function ForgotPasswordModal({
     }
 
     setIsLoading(true);
-    // Simulate password reset
-    setTimeout(() => {
-      setIsLoading(false);
+    
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email, 
+          token: code, 
+          new_password: newPassword 
+        }),
+      });
+      
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message || "Password reset failed");
+      
       toast.success("Password reset successful!", {
         description: "You can now sign in with your new password.",
       });
+      
+      // Close modal and redirect to login
       onOpenChange(false);
-      // Reset state
-      setStep("email");
-      setEmail("");
-      setCode("");
-      setNewPassword("");
-      setConfirmPassword("");
-    }, 1500);
+      setTimeout(() => {
+        window.location.href = "/auth/login";
+      }, 1000);
+      
+    } catch (err: any) {
+      toast.error(err?.message || "Password reset failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleClose = () => {

@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner"
 import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
 import { useLoading } from "@/hooks/use-loading"
-import { SlideTransition } from "@/components/ui/page-transition"
+import { handleRoleValidationError } from "@/lib/role-validation-client";
 
 interface Category { _id: string; name: string; icon?: string }
 const defaultCategories: Category[] = [
@@ -159,7 +159,12 @@ function NewThreadPageContent() {
         window.location.href = newId ? `/community/thread/${newId}` : "/community"
       } catch (e: any) {
         console.error(e)
-        toast.error(e?.message || "Failed to post thread")
+        // Check if it's a role validation error
+        if (e?.message?.includes("role") && e?.message?.includes("Settings")) {
+          handleRoleValidationError(e);
+        } else {
+          toast.error(e?.message || "Failed to post thread");
+        }
       } finally {
         setIsSubmitting(false)
       }

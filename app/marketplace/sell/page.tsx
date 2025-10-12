@@ -27,7 +27,7 @@ import { toast } from "sonner"
 import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
 import { authFetch } from "@/lib/auth-client"
 import { useLoading } from "@/hooks/use-loading"
-import { SlideTransition } from "@/components/ui/page-transition"
+import { handleRoleValidationError } from "@/lib/role-validation-client";
 import { RouteGuard } from "@/components/auth/route-guard"
 
 const categories = [
@@ -138,7 +138,12 @@ function SellProductPageContent() {
           window.location.href = `/marketplace/${productId}`
         }
       } catch (error: any) {
-        toast.error(error.message || "Failed to create product listing")
+        // Check if it's a role validation error
+        if (error?.message?.includes("role") && error?.message?.includes("Settings")) {
+          handleRoleValidationError(error);
+        } else {
+          toast.error(error.message || "Failed to create product listing");
+        }
       } finally {
         setIsSubmitting(false)
       }

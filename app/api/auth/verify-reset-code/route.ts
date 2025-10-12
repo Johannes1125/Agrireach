@@ -3,21 +3,19 @@ import { connectToDatabase } from "@/server/lib/mongodb";
 import { User } from "@/server/models/User";
 import { OtpCode } from "@/server/models/OtpCode";
 import { jsonOk, jsonError } from "@/server/utils/api";
-import { hashPassword } from "@/server/utils/auth";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-const ResetSchema = z.object({ 
+const VerifyResetCodeSchema = z.object({ 
   email: z.string().email(), 
-  token: z.string().length(6).regex(/^\d{6}$/), 
-  new_password: z.string().min(8) 
+  token: z.string().length(6).regex(/^\d{6}$/) 
 });
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const parsed = ResetSchema.safeParse(body);
+  const parsed = VerifyResetCodeSchema.safeParse(body);
   if (!parsed.success) return jsonError("Invalid payload", 400);
-  const { email, token, new_password } = parsed.data;
+  const { email, token } = parsed.data;
   
   await connectToDatabase();
   const user = await User.findOne({ email });
@@ -25,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   const records = await OtpCode.find({ email, type: "password_reset", used: false }).sort({ created_at: -1 }).limit(5).lean();
   if (records.length === 0) return jsonError("Invalid or expired code", 400);
-
+  
   let valid = false;
   for (const rec of records) {
     const match = await bcrypt.compare(token, rec.code);
@@ -36,11 +34,6 @@ export async function POST(req: NextRequest) {
   }
   
   if (!valid) return jsonError("Invalid or expired code", 400);
-
-  // Update password and consume all reset codes
-  user.password_hash = await hashPassword(new_password);
-  await user.save();
-  await OtpCode.updateMany({ email, type: "password_reset" }, { $set: { used: true } });
   
-  return jsonOk({ message: "Password reset successfully" });
+  return jsonOk({ message: "Code verified successfully" });
 }

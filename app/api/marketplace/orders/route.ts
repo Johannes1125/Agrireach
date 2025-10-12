@@ -7,7 +7,7 @@ import { Order, CartItem, Product } from "@/server/models/Product";
 import { Notification } from "@/server/models/Notification";
 import { User } from "@/server/models/User";
 import { notifyOrderPlaced } from "@/server/utils/notifications";
-import { hasRole, getRoleErrorMessage } from "@/server/utils/role-validation";
+import { validateUserRole } from "@/server/utils/role-validation";
 import { z } from "zod";
 
 const CreateOrderSchema = z.object({
@@ -71,25 +71,13 @@ export async function POST(req: NextRequest) {
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
 
-  const token = getAuthToken(req, "access");
-  if (!token) return jsonError("Unauthorized", 401);
-
-  let decoded: any;
+  // Validate user has buyer role
+  let userId: string;
   try {
-    decoded = verifyToken<any>(token, "access");
-  } catch {
-    return jsonError("Unauthorized", 401);
-  }
-
-  await connectToDatabase();
-
-  // Check if user has buyer role
-  const user = await User.findById(decoded.sub).select("roles role").lean();
-  if (!user) return jsonError("User not found", 404);
-  
-  const userRoles = user.roles || [user.role];
-  if (!hasRole(userRoles, "buyer")) {
-    return jsonError(getRoleErrorMessage("buyer"), 403);
+    const { user, userId: validatedUserId } = await validateUserRole(req, ["buyer"]);
+    userId = validatedUserId;
+  } catch (error: any) {
+    return jsonError(error.message, 403);
   }
 
   const validate = validateBody(CreateOrderSchema);
@@ -107,7 +95,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check if user is trying to order their own product
-  if (product.seller_id.toString() === decoded.sub) {
+  if (product.seller_id.toString() === userId) {
     return jsonError("Cannot order your own product", 400);
   }
 
@@ -115,7 +103,7 @@ export async function POST(req: NextRequest) {
 
   // Create order
   const order = await Order.create({
-    buyer_id: decoded.sub,
+    buyer_id: userId,
     seller_id: product.seller_id,
     product_id,
     quantity,
@@ -131,7 +119,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Remove from cart if exists
-  await CartItem.deleteOne({ user_id: decoded.sub, product_id });
+  await CartItem.deleteOne({ user_id: userId, product_id });
 
   // Send notification to seller
   await Notification.create({

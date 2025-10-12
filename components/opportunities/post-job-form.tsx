@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ImageUpload } from "@/components/ui/image-upload"
+import { handleRoleValidationError } from "@/lib/role-validation-client";
 
 export function PostJobForm() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
@@ -99,7 +99,12 @@ export function PostJobForm() {
       toast.success("Job posted successfully!")
       window.location.href = id ? `/opportunities/${id}` : "/opportunities"
     } catch (e: any) {
-      toast.error(e?.message || "Failed to post job")
+      // Check if it's a role validation error
+      if (e?.message?.includes("role") && e?.message?.includes("Settings")) {
+        handleRoleValidationError(e);
+      } else {
+        toast.error(e?.message || "Failed to post job");
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -216,13 +221,13 @@ export function PostJobForm() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="pay-min">Minimum Pay ($/hour) *</Label>
-                <Input id="pay-min" type="number" placeholder="15" min="10" required />
+                <Label htmlFor="pay-min">Minimum Pay (₱/hour) *</Label>
+                <Input id="pay-min" type="number" placeholder="60" min="60" required />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="pay-max">Maximum Pay ($/hour) *</Label>
-                <Input id="pay-max" type="number" placeholder="25" min="10" required />
+                <Label htmlFor="pay-max">Maximum Pay (₱/hour) *</Label>
+                <Input id="pay-max" type="number" placeholder="100" min="60" required />
               </div>
             </div>
 

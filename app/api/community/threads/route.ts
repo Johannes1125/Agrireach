@@ -6,7 +6,7 @@ import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/a
 import { verifyToken } from "@/server/utils/auth"
 import { validateBody } from "@/server/middleware/validate"
 import { CreateThreadSchema } from "@/server/validators/threadSchemas"
-import { notifyAllUsersNewThread } from "@/server/utils/notifications"
+import { validateUserRole } from "@/server/utils/role-validation";
 
 export async function GET(req: NextRequest) {
   const mm = requireMethod(req, ["GET"])
@@ -70,14 +70,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const mm = requireMethod(req, ["POST"])
   if (mm) return mm
-  const token = getAuthToken(req, "access")
-  if (!token) return jsonError("Unauthorized", 401)
-  let decoded: any
+  
+  // Validate user is authenticated (any role can post threads)
+  let userId: string;
   try {
-    decoded = verifyToken<any>(token, "access")
-  } catch {
-    return jsonError("Unauthorized", 401)
+    const { user, userId: validatedUserId } = await validateUserRole(req, ["worker", "recruiter", "buyer"]);
+    userId = validatedUserId;
+  } catch (error: any) {
+    return jsonError(error.message, 403);
   }
+  
   const validate = validateBody(CreateThreadSchema)
   const result = await validate(req)
   if (!result.ok) {
@@ -116,7 +118,7 @@ export async function POST(req: NextRequest) {
       content: result.data.content,
       tags: result.data.tags,
       category_id,
-      author_id: decoded.sub,
+      author_id: userId,
       likes_count: 0,
       replies_count: 0,
       views: 0
@@ -125,7 +127,7 @@ export async function POST(req: NextRequest) {
     const thread = await Thread.create(threadData)
     
     // Get author info for notification
-    const author = await User.findById(decoded.sub).select("full_name").lean();
+    const author = await User.findById(userId).select("full_name").lean();
     const authorName = author?.full_name || "A user";
     
     // Notify all users about new community thread (don't await to avoid slowing down the response)

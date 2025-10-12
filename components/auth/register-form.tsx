@@ -128,14 +128,8 @@ export function RegisterForm() {
 
   const handleOTPVerified = () => {
     setShowOTPModal(false)
-    if (userEmail && userPassword) {
-      loginClient(userEmail, userPassword).then((resp) => {
-        if (!resp.success) toast.error(resp.message || "Login failed")
-        window.location.href = "/dashboard"
-      })
-    } else {
-      window.location.href = "/dashboard"
-    }
+    // Redirect to login page instead of auto-login
+    window.location.href = "/auth/login"
   }
 
   return (

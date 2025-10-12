@@ -1,54 +1,110 @@
-import { UserRole } from "../models/User";
+import { NextRequest } from "next/server";
+import { connectToDatabase } from "@/server/lib/mongodb";
+import { User } from "@/server/models/User";
+import { jsonError } from "@/server/utils/api";
+import { getAuthToken } from "@/server/utils/api";
+import { verifyToken } from "@/server/utils/auth";
+
+export type UserRole = "worker" | "recruiter" | "buyer" | "admin";
 
 /**
- * Check if a user has a specific role in their roles array
- * @param userRoles - Array of user roles
- * @param requiredRole - The role to check for
- * @returns true if user has the role, false otherwise
+ * Validates if the authenticated user has the required role(s)
+ * Checks both the legacy 'role' field and the new 'roles' array
+ * 
+ * @param req - NextRequest object
+ * @param requiredRoles - Array of roles that are allowed to access the function
+ * @param options - Additional options for validation
+ * @returns User object if valid, throws error if invalid
  */
-export function hasRole(userRoles: UserRole[] | UserRole, requiredRole: UserRole): boolean {
-  if (Array.isArray(userRoles)) {
-    return userRoles.includes(requiredRole);
+export async function validateUserRole(
+  req: NextRequest,
+  requiredRoles: UserRole[],
+  options: {
+    allowAdmin?: boolean; // Whether admin role can bypass this check
+    requireAuth?: boolean; // Whether authentication is required
+  } = {}
+): Promise<{ user: any; userId: string }> {
+  const { allowAdmin = true, requireAuth = true } = options;
+
+  // Get authentication token
+  const token = getAuthToken(req, "access");
+  if (!token) {
+    if (requireAuth) {
+      throw new Error("Unauthorized - No authentication token");
+    }
+    throw new Error("Authentication required");
   }
-  return userRoles === requiredRole;
+
+  // Verify token
+  let decoded: any;
+  try {
+    decoded = verifyToken<any>(token, "access");
+  } catch {
+    throw new Error("Unauthorized - Invalid token");
+  }
+
+  const userId = decoded.sub;
+  if (!userId) {
+    throw new Error("Unauthorized - Invalid user ID");
+  }
+
+  // Connect to database and get user
+  await connectToDatabase();
+  const user = await User.findById(userId).select("role roles full_name email").lean();
+  
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Get user's roles (check both legacy 'role' and new 'roles' array)
+  const userRoles = user.roles || [user.role];
+  
+  // Check if user has admin role and admin is allowed to bypass
+  if (allowAdmin && userRoles.includes("admin")) {
+    return { user, userId };
+  }
+
+  // Check if user has any of the required roles
+  const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
+  
+  if (!hasRequiredRole) {
+    const roleText = requiredRoles.length === 1 ? requiredRoles[0] : requiredRoles.join(", ");
+    throw new Error(`Access denied - You need ${roleText} role(s) to access this feature. Please update your roles in Settings.`);
+  }
+
+  return { user, userId };
 }
 
 /**
- * Check if a user has any of the specified roles
- * @param userRoles - Array of user roles
- * @param requiredRoles - Array of roles to check for
- * @returns true if user has at least one of the roles, false otherwise
+ * Middleware wrapper for role validation
+ * Returns a function that can be used in API routes
  */
-export function hasAnyRole(userRoles: UserRole[] | UserRole, requiredRoles: UserRole[]): boolean {
-  if (Array.isArray(userRoles)) {
-    return requiredRoles.some(role => userRoles.includes(role));
-  }
-  return requiredRoles.includes(userRoles);
-}
-
-/**
- * Check if a user has all of the specified roles
- * @param userRoles - Array of user roles
- * @param requiredRoles - Array of roles to check for
- * @returns true if user has all of the roles, false otherwise
- */
-export function hasAllRoles(userRoles: UserRole[] | UserRole, requiredRoles: UserRole[]): boolean {
-  if (Array.isArray(userRoles)) {
-    return requiredRoles.every(role => userRoles.includes(role));
-  }
-  return requiredRoles.length === 1 && requiredRoles[0] === userRoles;
-}
-
-/**
- * Get error message for missing role
- */
-export function getRoleErrorMessage(requiredRole: UserRole): string {
-  const roleMessages: Record<UserRole, string> = {
-    worker: "Only workers can perform this action. Please update your profile to include the worker role.",
-    recruiter: "Only recruiters can perform this action. Please update your profile to include the recruiter role.",
-    buyer: "Only buyers can perform this action. Please update your profile to include the buyer role.",
-    admin: "Only administrators can perform this action."
+export function requireRole(requiredRoles: UserRole[], options?: { allowAdmin?: boolean }) {
+  return async (req: NextRequest) => {
+    try {
+      const { user, userId } = await validateUserRole(req, requiredRoles, options);
+      return { user, userId };
+    } catch (error: any) {
+      return jsonError(error.message, 403);
+    }
   };
-  return roleMessages[requiredRole] || "You don't have permission to perform this action.";
 }
 
+/**
+ * Quick role validation for common scenarios
+ */
+export const RoleValidators = {
+  // Job posting functions
+  requireRecruiter: requireRole(["recruiter"]),
+  requireWorker: requireRole(["worker"]),
+  requireBuyer: requireRole(["buyer"]),
+  
+  // Multi-role functions
+  requireWorkerOrRecruiter: requireRole(["worker", "recruiter"]),
+  requireRecruiterOrBuyer: requireRole(["recruiter", "buyer"]),
+  requireWorkerOrBuyer: requireRole(["worker", "buyer"]),
+  requireAnyRole: requireRole(["worker", "recruiter", "buyer"]),
+  
+  // Admin functions (admin can bypass all checks)
+  requireAdmin: requireRole(["admin"], { allowAdmin: false }),
+};

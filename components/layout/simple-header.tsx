@@ -23,7 +23,7 @@ interface SimpleHeaderProps {
     id: string
     name: string
     email: string
-    role: "worker" | "recruiter" | "buyer"
+    role: "worker" | "recruiter" | "buyer" | "admin"
     avatar: string
     location: string
   }
@@ -46,7 +46,7 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
             id: u._id || u.id,
             name: u.full_name || u.name || "",
             email: u.email || "",
-            role: (u.role || "worker") as any,
+            role: (u.role || "worker") as "worker" | "recruiter" | "buyer" | "admin",
             avatar: u.avatar_url || u.avatar || "",
             location: u.location || "",
           })
@@ -62,7 +62,7 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
         id: authUser.id,
         name: authUser.name,
         email: authUser.email,
-        role: authUser.role as "worker" | "recruiter" | "buyer",
+        role: authUser.role as "worker" | "recruiter" | "buyer" | "admin",
         avatar: authUser.avatar || "",
         location: authUser.location || "",
       }
@@ -76,6 +76,8 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
         return <Badge variant="outline">Recruiter</Badge>
       case "buyer":
         return <Badge className="bg-accent text-accent-foreground">Buyer</Badge>
+      case "admin":
+        return <Badge variant="destructive">Admin</Badge>
       default:
         return null
     }
