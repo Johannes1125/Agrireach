@@ -22,6 +22,7 @@ import {
   Settings,
 } from "lucide-react"
 import { useUserProfile } from "@/hooks/use-user-profile"
+import { useBuyerStats } from "@/hooks/use-buyer-stats"
 
 interface User {
   id: string
@@ -42,6 +43,7 @@ interface UnifiedProfileProps {
 
 export function UnifiedProfile({ user }: UnifiedProfileProps) {
   const { profile } = useUserProfile()
+  const { stats: buyerStats, recentOrders, loading: buyerStatsLoading } = useBuyerStats()
   const hasBusiness = !!(profile && (
     profile.company_name || profile.business_type || profile.industry || profile.company_size ||
     profile.website || profile.business_description || (Array.isArray(profile.services_offered) && profile.services_offered.length > 0) ||
@@ -120,10 +122,10 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
       case "buyer":
         return {
           stats: {
-            primary: { label: "Total Orders", value: 234, icon: Package },
-            secondary: { label: "Total Spent", value: "₱3,450,000", icon: DollarSign },
-            tertiary: { label: "Active Orders", value: "12", icon: Clock },
-            quaternary: { label: "Rating", value: 4.9, icon: Star },
+            primary: { label: "Total Orders", value: buyerStats?.totalOrders || 0, icon: Package },
+            secondary: { label: "Total Spent", value: buyerStats ? `₱${(buyerStats.totalSpent / 100).toLocaleString()}` : "₱0", icon: DollarSign },
+            tertiary: { label: "Active Orders", value: buyerStats?.activeOrders || 0, icon: Clock },
+            quaternary: { label: "Rating", value: buyerStats?.averageRating || 0, icon: Star },
           },
           businessInfo: {
             name: "Fresh Market Distribution Co.",
@@ -131,24 +133,14 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             size: "25-50 employees",
             website: "www.freshmarketdist.com",
           },
-          recentActivity: [
-            {
-              title: "Organic Tomatoes",
-              company: "Green Valley Farms",
-              location: "500 kg",
-              status: "delivered",
-              date: "2024-02-20",
-              amount: "₱60,000",
-            },
-            {
-              title: "Fresh Strawberries",
-              company: "Berry Best Farm",
-              location: "200 kg",
-              status: "delivered",
-              date: "2024-02-18",
-              amount: "₱40,000",
-            },
-          ],
+          recentActivity: recentOrders.map(order => ({
+            title: order.productName,
+            company: order.supplier,
+            location: order.quantity,
+            status: order.status,
+            date: order.date,
+            amount: `₱${(order.amount / 100).toLocaleString()}`,
+          })),
         }
 
       default:

@@ -18,6 +18,8 @@ import { Progress } from "@/components/ui/progress";
 import { SimpleHeader } from "@/components/layout/simple-header";
 import { useAuth } from "@/hooks/use-auth";
 import { useReviewsData } from "@/hooks/use-reviews-data";
+import { useTopRatedData } from "@/hooks/use-top-rated-data";
+import { useReviewStatistics } from "@/hooks/use-review-statistics";
 import { InlineLoader } from "@/components/ui/page-loader";
 import { PageTransition } from "@/components/ui/page-transition";
 import { CardSkeleton } from "@/components/ui/skeleton-loader";
@@ -74,6 +76,10 @@ export default function ReviewsPage() {
     status: "active",
     limit: 20,
   });
+
+  const { topRated, loading: topRatedLoading, error: topRatedError } = useTopRatedData();
+
+  const { statistics, loading: statisticsLoading, error: statisticsError } = useReviewStatistics();
 
   // Normalize reviews from the hook to a safe shape
   const normalizedReviews = useMemo(
@@ -387,27 +393,57 @@ export default function ReviewsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {[
-                  { name: "Green Valley Farm", score: 4.9, reviews: 156 },
-                  { name: "John Expert Worker", score: 4.8, reviews: 89 },
-                  { name: "Artisan Crafts Co.", score: 4.8, reviews: 67 },
-                ].map((user, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{user.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {user.reviews} reviews
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{user.score}</span>
-                    </div>
+                {topRatedLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div className="space-y-2">
+                          <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                          <div className="h-3 bg-muted rounded w-16 animate-pulse" />
+                        </div>
+                        <div className="h-4 bg-muted rounded w-8 animate-pulse" />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : topRatedError ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">
+                      Unable to load top rated users
+                    </p>
+                  </div>
+                ) : topRated.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">
+                      No top rated users this month
+                    </p>
+                  </div>
+                ) : (
+                  topRated.slice(0, 3).map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={user.avatar} alt={user.name} />
+                          <AvatarFallback className="text-xs">
+                            {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">{user.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {user.reviews} reviews
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-sm font-medium">{user.rating}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
 
@@ -417,52 +453,80 @@ export default function ReviewsPage() {
                 <CardTitle>Review Statistics</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span>Total Reviews</span>
-                  <span className="font-medium">2,847</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Average Rating</span>
-                  <span className="font-medium">4.6</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Verified Reviews</span>
-                  <span className="font-medium">89%</span>
-                </div>
-
-                <div className="space-y-2 mt-4">
-                  <h4 className="font-medium text-sm">Rating Distribution</h4>
-                  {[5, 4, 3, 2, 1].map((rating) => (
-                    <div
-                      key={rating}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <span className="w-4">{rating}</span>
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <Progress
-                        value={
-                          rating === 5
-                            ? 65
-                            : rating === 4
-                            ? 25
-                            : rating === 3
-                            ? 8
-                            : 2
-                        }
-                        className="flex-1 h-2"
-                      />
-                      <span className="text-muted-foreground w-8 text-right">
-                        {rating === 5
-                          ? "65%"
-                          : rating === 4
-                          ? "25%"
-                          : rating === 3
-                          ? "8%"
-                          : "2%"}
-                      </span>
+                {statisticsLoading ? (
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                      <div className="h-4 bg-muted rounded w-16 animate-pulse" />
                     </div>
-                  ))}
-                </div>
+                    <div className="flex justify-between">
+                      <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                      <div className="h-4 bg-muted rounded w-8 animate-pulse" />
+                    </div>
+                    <div className="flex justify-between">
+                      <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                      <div className="h-4 bg-muted rounded w-12 animate-pulse" />
+                    </div>
+                    <div className="space-y-2 mt-4">
+                      <div className="h-4 bg-muted rounded w-32 animate-pulse" />
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <div className="h-3 bg-muted rounded w-4 animate-pulse" />
+                          <div className="h-3 bg-muted rounded w-3 animate-pulse" />
+                          <div className="h-2 bg-muted rounded flex-1 animate-pulse" />
+                          <div className="h-3 bg-muted rounded w-8 animate-pulse" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : statisticsError ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">
+                      Unable to load review statistics
+                    </p>
+                  </div>
+                ) : statistics ? (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Total Reviews</span>
+                      <span className="font-medium">{statistics.totalReviews.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Average Rating</span>
+                      <span className="font-medium">{statistics.averageRating}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Verified Reviews</span>
+                      <span className="font-medium">{statistics.verifiedPercentage}%</span>
+                    </div>
+
+                    <div className="space-y-2 mt-4">
+                      <h4 className="font-medium text-sm">Rating Distribution</h4>
+                      {statistics.ratingDistribution.map((dist) => (
+                        <div
+                          key={dist.stars}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <span className="w-4">{dist.stars}</span>
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          <Progress
+                            value={dist.percentage}
+                            className="flex-1 h-2"
+                          />
+                          <span className="text-muted-foreground w-8 text-right">
+                            {dist.percentage}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground">
+                      No review statistics available
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
