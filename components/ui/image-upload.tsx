@@ -88,6 +88,30 @@ export function ImageUpload({
     loadCloudinaryScript()
   }, [])
 
+  // Upload a single file via our API (used for drag/drop path)
+  const uploadFile = async (file: File, index: number): Promise<UploadedImage> => {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('type', type)
+    if (entityId) form.append('entityId', entityId)
+    form.append('imageIndex', String((imageIndex || 0) + index))
+
+    const res = await authFetch('/api/upload', { method: 'POST', body: form })
+    const json = await res.json().catch(() => ({} as any))
+    if (!res.ok) {
+      throw new Error(json?.message || 'Upload failed')
+    }
+    const u = (json?.data?.upload || json?.upload) as any
+    return {
+      url: u.secure_url || u.url,
+      publicId: u.publicId || u.public_id,
+      width: u.width || 0,
+      height: u.height || 0,
+      format: u.format || (file.type.split('/')[1] || ''),
+      bytes: u.bytes || file.size,
+    }
+  }
+
   const openCloudinaryWidget = () => {
     if (disabled) return
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME

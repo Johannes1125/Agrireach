@@ -96,21 +96,24 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
 
   const handleStatusChange = async (applicationId: string, newStatus: string) => {
     try {
+      // Optimistic UI update
+      setApplicants(prev => prev.map(a => a._id === applicationId ? { ...a, status: newStatus } : a))
       const res = await authFetch(`/api/opportunities/applications/${applicationId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus })
       })
-
       if (res.ok) {
         toast.success(`Application ${newStatus}`)
-        fetchApplicants() // Refresh the list
       } else {
         toast.error("Failed to update application")
+        // revert on failure
+        setApplicants(prev => prev.map(a => a._id === applicationId ? { ...a, status: "pending" } : a))
       }
     } catch (error) {
       console.error("Error updating application:", error)
       toast.error("Failed to update application")
+      setApplicants(prev => prev.map(a => a._id === applicationId ? { ...a, status: "pending" } : a))
     }
   }
 
@@ -293,6 +296,16 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
                               Download Resume
                             </Button>
                           </a>
+                        )}
+                        {applicant.status !== 'pending' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground"
+                            onClick={() => handleStatusChange(applicant._id, 'pending')}
+                          >
+                            Undo
+                          </Button>
                         )}
                       </div>
                     </div>

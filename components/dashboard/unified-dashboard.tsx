@@ -335,23 +335,37 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {workerData?.recentActivities && workerData.recentActivities.length > 0 ? (
-                      workerData.recentActivities.map((activity) => (
-                        <article
-                          key={activity.timestamp}
-                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
-                        >
-                          <div className="space-y-1 flex-1">
-                            <h4 className="font-medium">{activity.title}</h4>
-                            <p className="text-sm text-muted-foreground">{activity.description}</p>
-                            <span className="text-xs text-muted-foreground">
-                              {formatRelativeTime(activity.timestamp)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{activity.type}</Badge>
-                          </div>
-                        </article>
-                      ))
+                      workerData.recentActivities.map((activity) => {
+                        const getBadge = (type: string) => {
+                          switch (type) {
+                            case 'application_accepted':
+                              return { label: 'Accepted', className: 'bg-green-50 text-green-700 border-green-200' }
+                            case 'application_rejected':
+                              return { label: 'Rejected', className: 'bg-red-50 text-red-700 border-red-200' }
+                            case 'application_submitted':
+                            default:
+                              return { label: 'Submitted', className: 'bg-amber-50 text-amber-700 border-amber-200' }
+                          }
+                        }
+                        const badge = getBadge(activity.type)
+                        return (
+                          <article
+                            key={activity.timestamp}
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 bg-card"
+                          >
+                            <div className="space-y-1 flex-1">
+                              <h4 className="font-medium">{activity.title}</h4>
+                              <p className="text-sm text-muted-foreground">{activity.description}</p>
+                              <span className="text-xs text-muted-foreground">
+                                {formatRelativeTime(activity.timestamp)}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className={badge.className}>{badge.label}</Badge>
+                            </div>
+                          </article>
+                        )
+                      })
                     ) : (
                       <p className="text-sm text-muted-foreground text-center py-8">
                         No recent job activities. Start applying for jobs to see your activity here.

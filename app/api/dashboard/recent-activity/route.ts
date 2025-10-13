@@ -30,8 +30,13 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(new URL(req.url).searchParams.get("limit") || "10", 10);
   const activities: any[] = [];
 
-  // Get recent activities based on user role
-  if (user.role === "recruiter") {
+  // Determine roles (supports multi-role accounts)
+  const userRoles: string[] = (user as any).roles && Array.isArray((user as any).roles)
+    ? (user as any).roles
+    : [user.role]
+
+  // Get recent activities based on user roles
+  if (userRoles.includes("recruiter")) {
     // Recent job postings
     const recentJobs = await Opportunity.find({ recruiter_id: decoded.sub })
       .sort({ created_at: -1 })
@@ -69,7 +74,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  if (user.role === "worker") {
+  if (userRoles.includes("worker")) {
     // Recent applications submitted
     const recentApplications = await JobApplication.find({ worker_id: decoded.sub })
       .populate('opportunity_id', 'title')
@@ -79,16 +84,16 @@ export async function GET(req: NextRequest) {
 
     recentApplications.forEach(app => {
       activities.push({
-        type: 'application_submitted',
-        title: 'Application Submitted',
-        description: `Applied to "${app.opportunity_id.title}"`,
+        type: app.status === 'accepted' ? 'application_accepted' : app.status === 'rejected' ? 'application_rejected' : 'application_submitted',
+        title: app.status === 'accepted' ? 'Application Accepted' : app.status === 'rejected' ? 'Application Rejected' : 'Application Submitted',
+        description: `${app.status} • "${app.opportunity_id.title}"`,
         timestamp: app.created_at,
         data: { application_id: app._id, job_title: app.opportunity_id.title }
       });
     });
   }
 
-  if (user.role === "buyer") {
+  if (userRoles.includes("buyer")) {
     // Recent product listings
     const recentProducts = await Product.find({ seller_id: decoded.sub })
       .sort({ created_at: -1 })

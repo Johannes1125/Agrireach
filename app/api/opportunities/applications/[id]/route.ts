@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       user_id: application.worker_id,
       type: 'application_update',
       title: 'Application Status Updated',
-      message: `Your application for "${opportunity.title}" has been ${result.data.status}`,
+      message: `Your application for "${opportunity.title}" has been ${result.data.status}. Please prepare the required documents and proceed to the job location as instructed.`,
       priority: 'medium',
       action_url: `/opportunities/${opportunity._id}`
     });
