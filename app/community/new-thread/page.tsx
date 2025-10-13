@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { RouteGuard } from "@/components/auth/route-guard"
+import { SlideTransition } from "@/components/ui/page-transition"
 import {
   Dialog,
   DialogAction,

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -13,13 +13,15 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { authFetch } from "@/lib/auth-client"
+import { PhilippineAddressSelector, PhilippineAddress, formatPhilippineAddress, isAddressComplete } from "@/components/ui/philippine-address-selector"
 import { 
   ShoppingCart, 
   CreditCard, 
   Wallet, 
   CheckCircle2, 
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Banknote
 } from "lucide-react"
 
 interface CartItem {
@@ -49,13 +51,55 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
   const [selectedItems, setSelectedItems] = useState<Set<string>>(
     new Set(cartItems.map(item => item._id))
   )
-  const [deliveryAddress, setDeliveryAddress] = useState("")
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash" | "grab_pay" | "paymaya">("gcash")
+  const [deliveryAddress, setDeliveryAddress] = useState<PhilippineAddress>({
+    region: "",
+    province: "",
+    city: "",
+    barangay: "",
+    streetAddress: "",
+    zipCode: ""
+  })
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash" | "grab_pay" | "paymaya" | "cod">("gcash")
   const [billingName, setBillingName] = useState("")
   const [billingEmail, setBillingEmail] = useState("")
   const [billingPhone, setBillingPhone] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [step, setStep] = useState<"select" | "details" | "payment">("select")
+  const [userData, setUserData] = useState<{
+    full_name?: string
+    email?: string
+    phone?: string
+  } | null>(null)
+
+  // Fetch user data when modal opens
+  useEffect(() => {
+    if (open) {
+      fetchUserData()
+    }
+  }, [open])
+
+  const fetchUserData = async () => {
+    try {
+      const res = await authFetch("/api/users/me")
+      if (res.ok) {
+        const data = await res.json()
+        const user = data.data?.user || data.user
+        if (user) {
+          setUserData({
+            full_name: user.full_name || user.name,
+            email: user.email,
+            phone: user.phone
+          })
+          // Auto-populate billing fields
+          setBillingName(user.full_name || user.name || "")
+          setBillingEmail(user.email || "")
+          setBillingPhone(user.phone || "")
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error)
+    }
+  }
 
   const selectedCartItems = cartItems.filter(item => selectedItems.has(item._id))
   
@@ -93,8 +137,8 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
   }
 
   const handleProceedToPayment = () => {
-    if (!deliveryAddress.trim()) {
-      toast.error("Please enter your delivery address")
+    if (!isAddressComplete(deliveryAddress)) {
+      toast.error("Please complete your delivery address")
       return
     }
     if (!billingName.trim()) {
@@ -114,8 +158,8 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
       return
     }
 
-    if (!deliveryAddress.trim()) {
-      toast.error("Please enter your delivery address")
+    if (!isAddressComplete(deliveryAddress)) {
+      toast.error("Please complete your delivery address")
       return
     }
 
@@ -128,7 +172,8 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: Array.from(selectedItems),
-          delivery_address: deliveryAddress,
+          delivery_address: formatPhilippineAddress(deliveryAddress),
+          delivery_address_structured: deliveryAddress,
           payment_method: paymentMethod,
           billing_details: {
             name: billingName,
@@ -144,9 +189,15 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
       }
 
       const paymentData = await paymentRes.json()
+      console.log("Payment API Response:", paymentData)
 
       // Step 2: Handle payment based on type
-      if (paymentData.payment_type === "source") {
+      if (paymentData.payment_type === "cod") {
+        // For Cash on Delivery, show success message
+        toast.success("Order placed successfully! Payment will be collected upon delivery.")
+        onSuccess()
+        onClose()
+      } else if (paymentData.payment_type === "source") {
         // For e-wallet (GCash, GrabPay), redirect to checkout URL
         toast.success("Redirecting to payment...")
         
@@ -179,6 +230,8 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
       case "grab_pay":
       case "paymaya":
         return <Wallet className="h-5 w-5" />
+      case "cod":
+        return <Banknote className="h-5 w-5" />
       default:
         return <CreditCard className="h-5 w-5" />
     }
@@ -194,6 +247,8 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
         return "GrabPay"
       case "paymaya":
         return "PayMaya"
+      case "cod":
+        return "Cash on Delivery"
       default:
         return method
     }
@@ -215,29 +270,6 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Progress Indicator */}
-          <div className="flex items-center justify-center gap-2">
-            <div className={`flex items-center gap-2 ${step === "select" ? "text-primary" : "text-muted-foreground"}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step === "select" ? "bg-primary text-white" : "bg-muted"}`}>
-                1
-              </div>
-              <span className="text-sm font-medium">Select Items</span>
-            </div>
-            <Separator className="w-12" />
-            <div className={`flex items-center gap-2 ${step === "details" ? "text-primary" : "text-muted-foreground"}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step === "details" ? "bg-primary text-white" : "bg-muted"}`}>
-                2
-              </div>
-              <span className="text-sm font-medium">Details</span>
-            </div>
-            <Separator className="w-12" />
-            <div className={`flex items-center gap-2 ${step === "payment" ? "text-primary" : "text-muted-foreground"}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step === "payment" ? "bg-primary text-white" : "bg-muted"}`}>
-                3
-              </div>
-              <span className="text-sm font-medium">Payment</span>
-            </div>
-          </div>
 
           {/* Step 1: Item Selection */}
           {step === "select" && (
@@ -311,13 +343,12 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
           {step === "details" && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="delivery-address">Delivery Address *</Label>
-                <Textarea
-                  id="delivery-address"
-                  placeholder="Enter your complete delivery address"
+                <Label>Delivery Address *</Label>
+                <PhilippineAddressSelector
                   value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
-                  rows={3}
+                  onChange={setDeliveryAddress}
+                  showStreetAddress={true}
+                  showZipCode={true}
                 />
               </div>
 
@@ -380,7 +411,7 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
               <h3 className="font-semibold text-lg">Choose Payment Method</h3>
               
               <RadioGroup value={paymentMethod} onValueChange={(value: any) => setPaymentMethod(value)}>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Card className={`cursor-pointer transition-all ${paymentMethod === "gcash" ? "ring-2 ring-primary" : ""}`}>
                     <CardContent className="p-4">
                       <label className="flex items-center gap-3 cursor-pointer">
@@ -404,6 +435,20 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
                           <p className="font-medium">GrabPay</p>
                           <p className="text-sm text-muted-foreground">Pay via GrabPay e-wallet</p>
                         </div>
+                      </label>
+                    </CardContent>
+                  </Card>
+
+                  <Card className={`cursor-pointer transition-all ${paymentMethod === "cod" ? "ring-2 ring-primary" : ""}`}>
+                    <CardContent className="p-4">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <RadioGroupItem value="cod" id="cod" />
+                        {getPaymentIcon("cod")}
+                        <div className="flex-1">
+                          <p className="font-medium">Cash on Delivery</p>
+                          <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
+                        </div>
+                        <Badge variant="outline">Popular</Badge>
                       </label>
                     </CardContent>
                   </Card>
@@ -483,7 +528,7 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
               <Button
                 className="flex-1"
                 onClick={handleProceedToPayment}
-                disabled={!deliveryAddress.trim() || !billingName.trim() || !billingEmail.trim()}
+                disabled={!isAddressComplete(deliveryAddress) || !billingName.trim() || !billingEmail.trim()}
               >
                 Proceed to Payment
               </Button>

@@ -8,7 +8,10 @@ const PAYMONGO_PUBLIC_KEY = process.env.PAYMONGO_PUBLIC_KEY || '';
 
 // Base64 encode the secret key for API authentication
 const getAuthHeader = () => {
-  const encoded = Buffer.from(PAYMONGO_SECRET_KEY).toString('base64');
+  if (!PAYMONGO_SECRET_KEY) {
+    throw new Error('PayMongo secret key is not configured');
+  }
+  const encoded = Buffer.from(`${PAYMONGO_SECRET_KEY}:`).toString('base64');
   return `Basic ${encoded}`;
 };
 
@@ -134,7 +137,7 @@ export async function attachPaymentIntent(paymentIntentId: string, paymentMethod
           attributes: {
             payment_method: paymentMethodId,
             client_key: clientKey,
-            return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/marketplace/payment/success`,
+            return_url: `${process.env.BASE_URL || 'http://localhost:3000'}/marketplace/payment/success`,
           },
         },
       }),

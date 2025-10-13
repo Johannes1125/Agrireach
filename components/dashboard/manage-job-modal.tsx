@@ -252,7 +252,8 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
                           </div>
                         </div>
 
-                        <div className="flex gap-2">
+                        {applicant.status === 'pending' && (
+                          <div className="flex gap-2">
                             <Button
                               size="sm"
                               variant="outline"
@@ -271,7 +272,8 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
                               <X className="h-4 w-4 mr-1" />
                               Reject
                             </Button>
-                        </div>
+                          </div>
+                        )}
                       </div>
 
                       {applicant.cover_letter && (

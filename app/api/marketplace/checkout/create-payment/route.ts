@@ -8,10 +8,20 @@ import { createPaymentIntent, createSource } from "@/lib/paymongo";
 import { validateUserRole } from "@/server/utils/role-validation";
 import { z } from "zod";
 
+const PhilippineAddressSchema = z.object({
+  region: z.string().min(1, "Region is required"),
+  province: z.string().min(1, "Province is required"),
+  city: z.string().min(1, "City/Municipality is required"),
+  barangay: z.string().min(1, "Barangay is required"),
+  streetAddress: z.string().optional(),
+  zipCode: z.string().optional(),
+});
+
 const CheckoutSchema = z.object({
   items: z.array(z.string()).min(1, "At least one item required"),
   delivery_address: z.string().min(5, "Delivery address is required"),
-  payment_method: z.enum(["card", "gcash", "grab_pay", "paymaya"]),
+  delivery_address_structured: PhilippineAddressSchema.optional(),
+  payment_method: z.enum(["card", "gcash", "grab_pay", "paymaya", "cod"]),
   billing_details: z.object({
     name: z.string(),
     email: z.string().email(),
@@ -41,7 +51,9 @@ export async function POST(req: NextRequest) {
       return jsonError(result.error.issues[0].message, 400);
     }
 
-    const { items: cartItemIds, delivery_address, payment_method, billing_details } = result.data;
+    const { items: cartItemIds, delivery_address, delivery_address_structured, payment_method, billing_details } = result.data;
+    
+    console.log("Payment method received:", payment_method);
 
     await connectToDatabase();
 
@@ -100,8 +112,26 @@ export async function POST(req: NextRequest) {
     // Convert to centavos (PayMongo uses centavos)
     const amountInCentavos = Math.round(totalAmount * 100);
 
+    // Check if PayMongo is configured
+    if (!process.env.PAYMONGO_SECRET_KEY && payment_method !== "cod") {
+      return jsonError("Payment gateway not configured. Please contact support.", 500);
+    }
+
     // Create payment based on method
-    if (payment_method === "card") {
+    if (payment_method === "cod") {
+      // For Cash on Delivery, create a simple order record
+      return jsonOk({
+        payment_type: "cod",
+        order_id: `COD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        amount: totalAmount,
+        currency: "PHP",
+        status: "pending",
+        message: "Order created successfully. Payment will be collected upon delivery.",
+        order_items: orderItems,
+        delivery_address: delivery_address_structured || delivery_address,
+        billing_details,
+      });
+    } else if (payment_method === "card") {
       // For card payments, create a PaymentIntent
       const paymentIntent = await createPaymentIntent({
         amount: amountInCentavos,
@@ -131,8 +161,8 @@ export async function POST(req: NextRequest) {
         amount: amountInCentavos,
         currency: "PHP",
         redirect: {
-          success: `${process.env.NEXT_PUBLIC_BASE_URL}/marketplace/payment/success`,
-          failed: `${process.env.NEXT_PUBLIC_BASE_URL}/marketplace/payment/failed`,
+          success: `${process.env.BASE_URL || 'http://localhost:3000'}/marketplace/payment/success`,
+          failed: `${process.env.BASE_URL || 'http://localhost:3000'}/marketplace/payment/failed`,
         },
         billing: {
           name: billing_details.name,

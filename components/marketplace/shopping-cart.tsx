@@ -45,23 +45,22 @@ export function ShoppingCartComponent({ items, onUpdateQuantity, onRemoveItem, o
         </Button>
       </SheetTrigger>
 
-      <SheetContent className="w-full sm:max-w-md p-0">
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="px-6 py-4 border-b bg-background">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ShoppingCart className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">Shopping Cart</h2>
-                {totalItems > 0 && (
-                  <Badge variant="secondary" className="bg-primary/10 text-primary">
-                    {totalItems} {totalItems === 1 ? 'item' : 'items'}
-                  </Badge>
-                )}
-              </div>
+      <SheetContent className="w-full sm:max-w-md p-0 h-full">
+        <SheetHeader className="px-6 py-4 border-b bg-background">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              <SheetTitle className="text-lg font-semibold">Shopping Cart</SheetTitle>
+              {totalItems > 0 && (
+                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                  {totalItems} {totalItems === 1 ? 'item' : 'items'}
+                </Badge>
+              )}
             </div>
           </div>
-
+        </SheetHeader>
+        
+        <div className="flex flex-col h-[calc(100vh-5rem)]">
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-6 py-6">
             {items.length === 0 ? (
