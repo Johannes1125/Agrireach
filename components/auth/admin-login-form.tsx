@@ -36,8 +36,12 @@ export function AdminLoginForm() {
       }
 
       toast.success("Admin login successful!")
-      router.push("/admin")
-      router.refresh()
+      
+      // Add a small delay to ensure cookies are set before redirect
+      setTimeout(() => {
+        router.push("/admin")
+        router.refresh()
+      }, 100)
     } catch (error: any) {
       toast.error(error.message || "Failed to login")
     } finally {

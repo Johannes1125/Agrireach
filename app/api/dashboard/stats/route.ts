@@ -48,23 +48,17 @@ export async function GET(req: NextRequest) {
 
   // Get user roles (support both single role and multiple roles)
   const userRoles = (user as any).roles || [user.role];
-  console.log("DEBUG - User ID:", decoded.sub);
-  console.log("DEBUG - User role:", user.role);
-  console.log("DEBUG - User roles array:", userRoles);
 
   // Role-specific stats - check if user has recruiter role
   if (userRoles.includes("recruiter")) {
     // Get all opportunities posted by this recruiter (any status)
     const allRecruiterJobs = await Opportunity.find({ recruiter_id: decoded.sub }).lean();
-    console.log("DEBUG - All recruiter jobs:", allRecruiterJobs.length);
-    console.log("DEBUG - Job statuses:", allRecruiterJobs.map(j => ({ id: j._id, status: j.status })));
     
     // Get all job IDs posted by this recruiter
     const recruiterJobIds = allRecruiterJobs.map(j => j._id);
     
     // Count active jobs
     const activeJobs = allRecruiterJobs.filter(j => j.status === "active").length;
-    console.log("DEBUG - Active jobs count:", activeJobs);
     
     const [totalApplications, pendingApplications, acceptedApplications] = await Promise.all([
       JobApplication.countDocuments({ 
@@ -86,10 +80,6 @@ export async function GET(req: NextRequest) {
       pendingApplications,
       hiredWorkers: acceptedApplications
     };
-    
-    console.log("DEBUG - Final recruiter stats:", stats.recruiter);
-  } else {
-    console.log("DEBUG - User does not have recruiter role, skipping recruiter stats");
   }
 
   // Check if user has worker role
@@ -143,6 +133,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.log("DEBUG - Returning final stats:", JSON.stringify(stats, null, 2));
   return jsonOk({ stats });
 }

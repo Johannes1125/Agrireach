@@ -108,9 +108,13 @@ export async function PUT(
 
   if (!user) return jsonError("User not found", 404);
 
+  // Invalidate all user sessions to force re-login with new roles
+  const { UserSession } = await import("@/server/models/UserSession");
+  await UserSession.deleteMany({ user_id: id });
+
   return jsonOk({ 
     roles: user.roles,
-    message: "Roles updated successfully"
+    message: "Roles updated successfully. Please log in again to refresh your permissions."
   });
 }
 

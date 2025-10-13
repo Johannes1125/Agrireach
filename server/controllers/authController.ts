@@ -31,8 +31,16 @@ export const AuthController = {
     if (!user) return jsonError("Invalid credentials", 401);
     const valid = await verifyPassword(payload.password, user.password_hash);
     if (!valid) return jsonError("Invalid credentials", 401);
-    const accessToken = signAccessToken({ sub: String(user._id), role: user.role });
-    const refreshToken = signRefreshToken({ sub: String(user._id), role: user.role });
+    const accessToken = signAccessToken({ 
+      sub: String(user._id), 
+      role: user.role,
+      roles: user.roles || [user.role]
+    });
+    const refreshToken = signRefreshToken({ 
+      sub: String(user._id), 
+      role: user.role,
+      roles: user.roles || [user.role]
+    });
     const tokenHash = await bcrypt.hash(refreshToken, 10);
     const expiresAt = new Date(Date.now() + (parseInt(process.env.JWT_REFRESH_TTL_DAYS || "7", 10) * 24 * 60 * 60 * 1000));
     await UserSession.create({ user_id: user._id, token: tokenHash, expires_at: expiresAt });
@@ -61,8 +69,20 @@ export const AuthController = {
         matched = true;
         // Rotate refresh token: delete old session, issue new one
         await UserSession.deleteOne({ _id: (session as any)._id });
-        const newAccessToken = signAccessToken({ sub: String(decoded.sub), role: decoded.role });
-        const newRefreshToken = signRefreshToken({ sub: String(decoded.sub), role: decoded.role });
+        // Fetch fresh user data for token generation
+        const user = await User.findById(decoded.sub).select("roles role").lean();
+        if (!user) return jsonError("User not found", 401);
+        
+        const newAccessToken = signAccessToken({ 
+          sub: String(decoded.sub), 
+          role: user.role,
+          roles: user.roles || [user.role]
+        });
+        const newRefreshToken = signRefreshToken({ 
+          sub: String(decoded.sub), 
+          role: user.role,
+          roles: user.roles || [user.role]
+        });
         const newHash = await bcrypt.hash(newRefreshToken, 10);
         const newExpiresAt = new Date(Date.now() + (parseInt(process.env.JWT_REFRESH_TTL_DAYS || "7", 10) * 24 * 60 * 60 * 1000));
         await UserSession.create({ user_id: decoded.sub, token: newHash, expires_at: newExpiresAt });

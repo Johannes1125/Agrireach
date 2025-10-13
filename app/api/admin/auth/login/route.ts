@@ -6,6 +6,7 @@ import { User } from "@/server/models/User";
 import { UserSession } from "@/server/models/UserSession";
 import { verifyPassword, signAccessToken, signRefreshToken } from "@/server/utils/auth";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 
 const AdminLoginSchema = z.object({ 
   email: z.string().email(), 
@@ -33,6 +34,15 @@ export async function POST(req: NextRequest) {
     return jsonError("Access denied. Admin privileges required.", 403);
   }
 
+  // Ensure admin user has roles field initialized
+  if (!user.roles || !Array.isArray(user.roles)) {
+    await User.findByIdAndUpdate(user._id, { 
+      roles: ["admin"],
+      role: "admin" 
+    });
+    user.roles = ["admin"];
+  }
+
   // Verify password
   const valid = await verifyPassword(password, user.password_hash);
   if (!valid) return jsonError("Invalid email or password", 401);
@@ -43,13 +53,22 @@ export async function POST(req: NextRequest) {
   }
 
   // Generate tokens
-  const accessToken = signAccessToken({ sub: user._id.toString(), role: user.role });
-  const refreshToken = signRefreshToken({ sub: user._id.toString(), role: user.role });
+  const accessToken = signAccessToken({ 
+    sub: user._id.toString(), 
+    role: user.role,
+    roles: user.roles || [user.role]
+  });
+  const refreshToken = signRefreshToken({ 
+    sub: user._id.toString(), 
+    role: user.role,
+    roles: user.roles || [user.role]
+  });
 
   // Save session
+  const tokenHash = await bcrypt.hash(refreshToken, 10);
   await UserSession.create({
     user_id: user._id,
-    token: refreshToken,
+    token: tokenHash,
     expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
   });
 
@@ -63,6 +82,7 @@ export async function POST(req: NextRequest) {
       email: user.email,
       full_name: user.full_name,
       role: user.role,
+      roles: user.roles || [user.role],
     }
   });
 

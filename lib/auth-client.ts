@@ -21,6 +21,24 @@ export function clearTokens() {
   localStorage.removeItem(REFRESH_KEY);
 }
 
+export async function logout(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: 'include', // Send cookies
+    });
+    
+    // Clear localStorage tokens as fallback
+    clearTokens();
+    
+    return res.ok;
+  } catch {
+    // Even if the request fails, clear local tokens
+    clearTokens();
+    return false;
+  }
+}
+
 async function safeJson(res: Response): Promise<any> {
   try {
     return await res.json();
@@ -34,12 +52,14 @@ export async function login(email: string, password: string): Promise<LoginRespo
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
+    credentials: 'include', // Ensure cookies are received
   });
   const json = await safeJson(res);
   if (!res.ok) return { success: false, message: json?.message || "Login failed" };
-  const { accessToken, refreshToken } = json.data || {};
-  setTokens(accessToken, refreshToken);
-  return { success: true, data: { accessToken, refreshToken } };
+  
+  // Tokens are now automatically set as HTTP cookies by the server
+  // No need to store them in localStorage
+  return { success: true, data: json.data };
 }
 
 export async function register(payload: { name: string; email: string; password: string; role: string }) {
@@ -47,6 +67,7 @@ export async function register(payload: { name: string; email: string; password:
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    credentials: 'include', // Ensure cookies are received
   });
   const json = await safeJson(res);
   if (!res.ok) return { success: false, message: json?.message || "Registration failed" };
@@ -54,36 +75,41 @@ export async function register(payload: { name: string; email: string; password:
 }
 
 export async function refreshAccessToken(): Promise<string | null> {
-  const refresh = getRefreshToken();
-  if (!refresh) return null;
   const res = await fetch("/api/auth/refresh", {
     method: "POST",
-    headers: { Authorization: `Bearer ${refresh}` },
+    credentials: 'include', // Send refresh cookie
   });
   const json = await safeJson(res);
   if (!res.ok) return null;
-  const token = json?.data?.accessToken;
-  if (token) setTokens(token);
-  return token || null;
+  
+  // The new access token is automatically set as a cookie by the server
+  // We don't need to store it in localStorage anymore
+  return json?.data?.accessToken || null;
 }
 
 export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
-  const addAuth = async () => {
-    let token = getAccessToken();
-    if (!token) token = await refreshAccessToken();
-    const headers = new Headers(init.headers || {});
-    if (token) headers.set("Authorization", `Bearer ${token}`);
-    return { ...init, headers };
-  };
-  const req = await addAuth();
-  let res = await fetch(input, req);
+  // Use cookies for authentication - no need to manually add Bearer headers
+  // The server will automatically read the JWT from the 'agrireach_at' cookie
+  const res = await fetch(input, {
+    ...init,
+    credentials: 'include', // Ensure cookies are sent with the request
+  });
+  
+  // If we get a 401, try to refresh the token
   if (res.status === 401) {
-    const newToken = await refreshAccessToken();
-    if (newToken) {
-      const headers = new Headers(req.headers || {});
-      headers.set("Authorization", `Bearer ${newToken}`);
-      res = await fetch(input, { ...req, headers });
+    const refreshRes = await fetch("/api/auth/refresh", {
+      method: "POST",
+      credentials: 'include', // Send refresh cookie
+    });
+    
+    if (refreshRes.ok) {
+      // Retry the original request with the new access token cookie
+      return fetch(input, {
+        ...init,
+        credentials: 'include',
+      });
     }
   }
+  
   return res;
 }

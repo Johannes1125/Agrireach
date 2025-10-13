@@ -7,7 +7,14 @@ export type JwtKinds = "access" | "refresh";
 export interface JwtPayloadBase {
   sub: string; // user id
   role: string;
+  roles?: string[]; // array of roles
   kind: JwtKinds;
+}
+
+export interface JwtTokenPayload {
+  sub: string; // user id
+  role: string;
+  roles?: string[]; // array of roles
 }
 
 const ACCESS_TTL_MIN = parseInt(process.env.JWT_ACCESS_TTL_MIN || "15", 10);
@@ -22,12 +29,12 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
   return bcrypt.compare(plain, hash);
 }
 
-export function signAccessToken(payload: Omit<JwtPayloadBase, "kind">): string {
+export function signAccessToken(payload: JwtTokenPayload): string {
   const secret = process.env.JWT_ACCESS_SECRET as string;
   return jwt.sign({ ...payload, kind: "access" }, secret, { expiresIn: `${ACCESS_TTL_MIN}m` });
 }
 
-export function signRefreshToken(payload: Omit<JwtPayloadBase, "kind">): string {
+export function signRefreshToken(payload: JwtTokenPayload): string {
   const secret = process.env.JWT_REFRESH_SECRET as string;
   return jwt.sign({ ...payload, kind: "refresh" }, secret, { expiresIn: `${REFRESH_TTL_DAYS}d` });
 }

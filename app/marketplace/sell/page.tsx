@@ -46,7 +46,7 @@ const units = ["kg", "liter", "piece", "dozen", "bundle", "bag", "box"]
 
 export default function SellProductPage() {
   return (
-    <RouteGuard requireAuth requiredRole="buyer" redirectTo="/auth/login">
+    <RouteGuard requireAuth redirectTo="/auth/login">
       <SellProductPageContent />
     </RouteGuard>
   )
@@ -102,7 +102,7 @@ function SellProductPageContent() {
     setShowConfirmDialog(false)
     setIsSubmitting(true)
 
-    await withLoading(async () => {
+    const submitPromise = (async () => {
       try {
         const payload = {
           title: formData.name.trim(),
@@ -147,12 +147,13 @@ function SellProductPageContent() {
       } finally {
         setIsSubmitting(false)
       }
-    }, "Creating your product listing...")
+    })()
+
+    await withLoading(submitPromise, "Creating your product listing...")
   }
 
   return (
     <>
-      <SlideTransition>
       <div className="min-h-screen bg-background">
         {/* Header */}
         <div className="bg-white border-b">
@@ -372,7 +373,6 @@ function SellProductPageContent() {
           </form>
         </div>
       </div>
-      </SlideTransition>
 
       {/* Confirmation Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>

@@ -54,7 +54,8 @@ export function setAuthCookies(res: NextResponse, tokens: { accessToken?: string
       sameSite: "lax",
       secure: COOKIE_SECURE,
       path: "/",
-      domain: COOKIE_DOMAIN,
+      // Don't set domain for localhost development
+      ...(COOKIE_DOMAIN !== "localhost" && { domain: COOKIE_DOMAIN }),
       maxAge: 60 * parseInt(process.env.JWT_ACCESS_TTL_MIN || "15", 10),
     });
   }
@@ -64,7 +65,8 @@ export function setAuthCookies(res: NextResponse, tokens: { accessToken?: string
       sameSite: "lax",
       secure: COOKIE_SECURE,
       path: "/",
-      domain: COOKIE_DOMAIN,
+      // Don't set domain for localhost development
+      ...(COOKIE_DOMAIN !== "localhost" && { domain: COOKIE_DOMAIN }),
       maxAge: 60 * 60 * 24 * parseInt(process.env.JWT_REFRESH_TTL_DAYS || "7", 10),
     });
   }
@@ -72,8 +74,18 @@ export function setAuthCookies(res: NextResponse, tokens: { accessToken?: string
 }
 
 export function clearAuthCookies(res: NextResponse) {
-  res.cookies.set(ACCESS_COOKIE, "", { httpOnly: true, expires: new Date(0), path: "/", domain: COOKIE_DOMAIN });
-  res.cookies.set(REFRESH_COOKIE, "", { httpOnly: true, expires: new Date(0), path: "/", domain: COOKIE_DOMAIN });
+  res.cookies.set(ACCESS_COOKIE, "", { 
+    httpOnly: true, 
+    expires: new Date(0), 
+    path: "/", 
+    ...(COOKIE_DOMAIN !== "localhost" && { domain: COOKIE_DOMAIN })
+  });
+  res.cookies.set(REFRESH_COOKIE, "", { 
+    httpOnly: true, 
+    expires: new Date(0), 
+    path: "/", 
+    ...(COOKIE_DOMAIN !== "localhost" && { domain: COOKIE_DOMAIN })
+  });
   return res;
 }
 

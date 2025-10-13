@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { handleRoleValidationError } from "@/lib/role-validation-client";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 export function PostJobForm() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])

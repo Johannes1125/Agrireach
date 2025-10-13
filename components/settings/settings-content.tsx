@@ -201,6 +201,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
       // Update local state
       setFormData({ ...formData, role: selectedRoles as any })
       
+      // Show message about re-login requirement
+      notifications.showInfo("Re-login Required", "Your roles have been updated. Please log out and log back in to refresh your permissions.");
+      
       // Refresh the page to update the UI with new roles
       setTimeout(() => window.location.reload(), 1500)
     } catch (error: any) {

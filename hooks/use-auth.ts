@@ -8,6 +8,7 @@ export interface AuthUser {
   name: string
   email: string
   role: string
+  roles?: string[]
   avatar?: string
   location?: string
 }
@@ -28,13 +29,14 @@ export function useAuth() {
           return
         }
         const json = await res.json()
-        const u = json?.user
+        const u = json?.data?.user || json?.user
         if (isMounted && u) {
           setUser({
             id: u._id || u.id,
             name: u.full_name || u.name || "",
             email: u.email || "",
             role: u.role || "user",
+            roles: u.roles || [u.role || "user"],
             avatar: u.avatar_url || u.avatar || "",
             location: u.location || "",
           })
