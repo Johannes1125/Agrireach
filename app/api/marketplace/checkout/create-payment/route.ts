@@ -5,7 +5,7 @@ import { connectToDatabase } from "@/server/lib/mongodb";
 import { CartItem, Product } from "@/server/models/Product";
 import { User } from "@/server/models/User";
 import { createPaymentIntent, createSource } from "@/lib/paymongo";
-import { hasRole, getRoleErrorMessage } from "@/server/utils/role-validation";
+import { validateUserRole } from "@/server/utils/role-validation";
 import { z } from "zod";
 
 const CheckoutSchema = z.object({
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const result = CheckoutSchema.safeParse(body);
 
     if (!result.success) {
-      return jsonError(result.error.errors[0].message, 400);
+      return jsonError(result.error.issues[0].message, 400);
     }
 
     const { items: cartItemIds, delivery_address, payment_method, billing_details } = result.data;
@@ -46,19 +46,14 @@ export async function POST(req: NextRequest) {
     await connectToDatabase();
 
     // Check if user has buyer role
-    const user = await User.findById(decoded.sub).select("roles role").lean();
-    if (!user) return jsonError("User not found", 404);
-    
-    const userRoles = user.roles || [user.role];
-    if (!hasRole(userRoles, "buyer")) {
-      return jsonError(getRoleErrorMessage("buyer"), 403);
-    }
-
-    // Fetch cart items with product details
-    const cartItems = await CartItem.find({
-      _id: { $in: cartItemIds },
-      user_id: decoded.sub,
-    }).populate("product_id");
+    try {
+      const { user, userId } = await validateUserRole(req, ["buyer"]);
+      
+      // Fetch cart items with product details
+      const cartItems = await CartItem.find({
+        _id: { $in: cartItemIds },
+        user_id: userId,
+      }).populate("product_id");
 
     if (cartItems.length === 0) {
       return jsonError("No valid items found in cart", 400);
@@ -114,7 +109,7 @@ export async function POST(req: NextRequest) {
         description: `AgriReach Marketplace Order - ${orderItems.map(i => i.title).join(", ")}`,
         statement_descriptor: "AgriReach Purchase",
         metadata: {
-          user_id: decoded.sub,
+          user_id: userId,
           cart_item_ids: cartItemIds.join(","),
           delivery_address,
           order_items: JSON.stringify(orderItems),
@@ -154,6 +149,9 @@ export async function POST(req: NextRequest) {
         currency: "PHP",
         status: source.attributes.status,
       });
+    }
+  } catch (roleError: any) {
+      return jsonError(roleError.message, 403);
     }
   } catch (error: any) {
     console.error("Checkout error:", error);

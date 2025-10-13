@@ -27,8 +27,6 @@ export async function GET(req: NextRequest) {
 
   await connectToDatabase();
   
-  console.log("Fetching cart for user_id:", decoded.sub);
-  
   const cartItems = await CartItem.find({ user_id: decoded.sub })
     .populate({
       path: 'product_id',
@@ -39,17 +37,12 @@ export async function GET(req: NextRequest) {
     })
     .lean();
 
-  console.log("Cart items found (before filtering):", cartItems.length);
-
   // Filter out items where product_id is null (deleted products)
   const validCartItems = cartItems.filter((item: any) => item.product_id !== null);
-  
-  console.log("Valid cart items (after filtering):", validCartItems.length);
 
   // If any items had null products, delete them from database
   const invalidItems = cartItems.filter((item: any) => item.product_id === null);
   if (invalidItems.length > 0) {
-    console.log("Removing invalid cart items:", invalidItems.length);
     const invalidIds = invalidItems.map((item: any) => item._id);
     await CartItem.deleteMany({ _id: { $in: invalidIds } });
   }

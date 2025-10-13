@@ -11,6 +11,9 @@ import { Heart, Share2, Flag, Send, CheckCircle, AlertCircle } from "lucide-reac
 import { useState } from "react"
 import { toast } from "sonner"
 import { authFetch } from "@/lib/auth-client"
+import { useAuth } from "@/hooks/use-auth"
+import Link from "next/link"
+import { UserX } from "lucide-react"
 
 interface Job {
   id: string
@@ -33,7 +36,7 @@ export function JobApplication({ job }: JobApplicationProps) {
   const matchingSkills = job.skills.filter((skill) => userSkills.includes(skill))
   const matchPercentage = Math.round((matchingSkills.length / job.skills.length) * 100)
 
-  const canApply = user && userHasRole(user, "worker")
+  const canApply = user && user.roles?.includes("worker")
 
   const handleApply = async () => {
     if (!user) {

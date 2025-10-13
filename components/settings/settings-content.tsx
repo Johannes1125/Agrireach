@@ -23,6 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { useNotifications } from "@/components/notifications/notification-provider";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { authFetch } from "@/lib/auth-client";

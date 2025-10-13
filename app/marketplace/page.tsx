@@ -25,6 +25,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { authFetch } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { CheckoutModal } from "@/components/marketplace/checkout-modal";
+import { ShoppingCartComponent } from "@/components/marketplace/shopping-cart";
 import { PageTransition } from "@/components/ui/page-transition";
 import { InlineLoader } from "@/components/ui/page-loader";
 import { ProductCardSkeleton } from "@/components/ui/skeleton-loader";
@@ -62,7 +63,7 @@ export default function MarketplacePage() {
       if (res.ok) {
         const data = await res.json();
         console.log("Cart data received:", data); // Debug log
-        setCartItems(data.items || []);
+        setCartItems(data.data?.items || data.items || []);
       } else if (res.status === 401) {
         // User not logged in, just clear cart
         setCartItems([]);
@@ -107,6 +108,44 @@ export default function MarketplacePage() {
     }
   };
 
+  const updateCartItem = async (itemId: string, quantity: number) => {
+    try {
+      const res = await authFetch(`/api/marketplace/cart/${itemId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update cart item");
+      }
+
+      toast.success("Cart updated!");
+      fetchCart(); // Refresh cart
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update cart item");
+    }
+  };
+
+  const removeFromCart = async (itemId: string) => {
+    try {
+      const res = await authFetch(`/api/marketplace/cart/${itemId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to remove from cart");
+      }
+
+      toast.success("Item removed from cart!");
+      fetchCart(); // Refresh cart
+    } catch (error: any) {
+      toast.error(error.message || "Failed to remove from cart");
+    }
+  };
+
   const handleCheckoutSuccess = () => {
     setShowCheckout(false);
     fetchCart(); // Refresh cart after successful checkout
@@ -147,22 +186,31 @@ export default function MarketplacePage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  console.log("Cart items:", cartItems); // Debug log
+              <ShoppingCartComponent 
+                items={cartItems.map(item => ({
+                  id: item._id,
+                  name: item.product_id?.title || 'Unknown Product',
+                  price: item.product_id?.price || 0,
+                  quantity: item.quantity,
+                  image: item.product_id?.images?.[0] || '/placeholder.svg',
+                  seller: item.product_id?.seller_id?.full_name || 'Unknown Seller'
+                }))}
+                onUpdateQuantity={(id, quantity) => {
+                  // Handle quantity update
+                  updateCartItem(id, quantity);
+                }}
+                onRemoveItem={(id) => {
+                  // Handle item removal
+                  removeFromCart(id);
+                }}
+                onCheckout={() => {
                   if (cartItems.length === 0) {
                     toast.info("Your cart is empty");
                     return;
                   }
                   setShowCheckout(true);
                 }}
-                disabled={cartLoading}
-              >
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Cart ({cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0)})
-              </Button>
+              />
               <Link href="/marketplace/sell">
                 <Button className="bg-primary hover:bg-primary/90">
                   Sell Products

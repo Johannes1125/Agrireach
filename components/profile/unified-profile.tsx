@@ -391,8 +391,8 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {user.role === "buyer" && (
               <>
                 <Link href="/marketplace">
-                  <Button className="w-full" size="sm">
-                    <Package className="mr-2 h-4 w-4" />
+                  <Button variant="outline" className="w-full bg-transparent mb-3" size="sm">
+                    <Package className="mr-2 h-4 w-4 " />
                     Browse Products
                   </Button>
                 </Link>
