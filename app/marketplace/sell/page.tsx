@@ -156,7 +156,7 @@ function SellProductPageContent() {
     <>
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <div className="bg-white border-b">
+<div className="sticky top-0 z-40 border-b bg-white/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-zinc-900/60">
           <div className="container mx-auto px-4 py-4">
             <Link href="/marketplace" className="inline-flex items-center text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4 mr-2" />
