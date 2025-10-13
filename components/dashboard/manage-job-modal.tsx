@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { authFetch } from "@/lib/auth-client"
 import { useNotifications } from "@/components/notifications/notification-provider"
+import { getRoleDisplay } from "@/lib/role-utils"
 import { formatDate } from "@/lib/utils"
 import { 
   Users, 
@@ -38,6 +39,7 @@ interface JobApplicant {
   status: string
   created_at: string
   cover_letter?: string
+  resume_url?: string
 }
 
 interface ManageJobModalProps {
@@ -63,6 +65,7 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
   const [applicants, setApplicants] = useState<JobApplicant[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedApplicant, setSelectedApplicant] = useState<JobApplicant | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const notifications = useNotifications()
 
@@ -197,7 +200,7 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
                 {applicants.map((applicant) => {
                   const rating = (applicant.worker.trust_score / 20).toFixed(1)
                   return (
-                    <div key={applicant._id} className="border rounded-lg p-4 space-y-3">
+                    <div key={applicant._id} className="rounded-xl p-4 space-y-3 border bg-card hover:shadow-sm transition-shadow">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-12 w-12">
@@ -246,8 +249,7 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
                           </div>
                         </div>
 
-                        {applicant.status === "pending" && (
-                          <div className="flex gap-2">
+                        <div className="flex gap-2">
                             <Button
                               size="sm"
                               variant="outline"
@@ -266,8 +268,7 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
                               <X className="h-4 w-4 mr-1" />
                               Reject
                             </Button>
-                          </div>
-                        )}
+                        </div>
                       </div>
 
                       {applicant.cover_letter && (
@@ -281,19 +282,18 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => window.open(`/profile/${applicant.worker._id}`, '_blank')}
+                          onClick={() => { setSelectedApplicant(applicant); setPreviewOpen(true); }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           View Profile
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.location.href = `mailto:${applicant.worker.email}`}
-                        >
-                          <Mail className="h-4 w-4 mr-1" />
-                          Send Email
-                        </Button>
+                        {applicant.resume_url && (
+                          <a href={applicant.resume_url} target="_blank" className="inline-flex">
+                            <Button variant="outline" size="sm" className="bg-transparent">
+                              Download Resume
+                            </Button>
+                          </a>
+                        )}
                       </div>
                     </div>
                   )
@@ -302,6 +302,49 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
             )}
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Applicant Preview Modal */}
+    <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Applicant Profile</DialogTitle>
+        </DialogHeader>
+        {selectedApplicant && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                {selectedApplicant.worker.avatar_url ? (
+                  <img src={selectedApplicant.worker.avatar_url} alt={selectedApplicant.worker.full_name} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-sm text-muted-foreground">{selectedApplicant.worker.full_name.split(' ').map(n=>n[0]).join('')}</span>
+                )}
+              </div>
+              <div>
+                <div className="font-medium">{selectedApplicant.worker.full_name}</div>
+                <div className="text-sm text-muted-foreground">{selectedApplicant.worker.email}</div>
+                {selectedApplicant.worker.location && (
+                  <div className="text-xs text-muted-foreground">{selectedApplicant.worker.location}</div>
+                )}
+              </div>
+            </div>
+            <div className="text-sm">
+              <div className="mb-1"><span className="text-muted-foreground">Trust score:</span> {selectedApplicant.worker.trust_score}</div>
+              {selectedApplicant.cover_letter && (
+                <div className="mt-2">
+                  <div className="text-muted-foreground text-sm font-medium">Cover Letter</div>
+                  <div className="p-3 bg-muted/40 rounded-md text-sm">{selectedApplicant.cover_letter}</div>
+                </div>
+              )}
+              {selectedApplicant.resume_url && (
+                <div className="mt-2">
+                  <a href={selectedApplicant.resume_url} target="_blank" className="text-primary text-sm underline">Download Resume</a>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
 

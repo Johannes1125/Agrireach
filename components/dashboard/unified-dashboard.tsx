@@ -154,21 +154,21 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
     switch (role) {
       case "worker":
         return {
-          title: "Worker Dashboard",
+          title: "Member Dashboard",
           subtitle: "Find jobs and track your agricultural work",
           primaryAction: "Find New Jobs",
           primaryIcon: Briefcase,
         }
       case "recruiter":
         return {
-          title: "Recruiter Dashboard",
+          title: "Employer Dashboard",
           subtitle: "Post jobs and manage your hiring process",
           primaryAction: "Post New Job",
           primaryIcon: Plus,
         }
       case "buyer":
         return {
-          title: "Buyer Dashboard",
+          title: "Trader Dashboard",
           subtitle: "Discover and purchase from local farmers",
           primaryAction: "Browse Marketplace",
           primaryIcon: ShoppingCart,
@@ -264,15 +264,15 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
           <TabsList className="grid w-full grid-cols-3 lg:w-fit">
             <TabsTrigger value="worker" className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
-              Worker
+              Member
             </TabsTrigger>
             <TabsTrigger value="recruiter" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Recruiter
+              Employer
             </TabsTrigger>
             <TabsTrigger value="buyer" className="flex items-center gap-2">
               <ShoppingCart className="h-4 w-4" />
-              Buyer
+              Trader
             </TabsTrigger>
           </TabsList>
 

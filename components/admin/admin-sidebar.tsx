@@ -49,18 +49,21 @@ const navigation = [
     href: "/admin/content/community",
     icon: MessageSquare,
     badge: 12,
+    badgeKey: "badge:community",
   },
   {
     name: "Marketplace Content",
     href: "/admin/content/marketplace",
     icon: Package,
     badge: 5,
+    badgeKey: "badge:marketplace",
   },
   {
     name: "Reports",
     href: "/admin/reports",
     icon: AlertTriangle,
     badge: 8,
+    badgeKey: "badge:reports",
   },
 ]
 
@@ -74,6 +77,17 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
+  // Persistent badge counts that can be updated by other parts of the app
+  const [badges, setBadges] = useState<Record<string, number>>(() => {
+    const initial: Record<string, number> = {}
+    navigation.forEach((n: any) => {
+      if (n.badgeKey) {
+        const stored = typeof window !== 'undefined' ? window.localStorage.getItem(n.badgeKey) : null
+        initial[n.badgeKey] = stored !== null ? Number(stored) : (n.badge || 0)
+      }
+    })
+    return initial
+  })
   const handleLogout = () => {
     toast.success("Logged out successfully")
     router.push("/admin/login")
@@ -113,7 +127,17 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={() => setMobileOpen(false)}
+                onClick={() => {
+                  setMobileOpen(false)
+                  if ((item as any).badgeKey) {
+                    const key = (item as any).badgeKey as string
+                    setBadges((prev) => {
+                      const next = { ...prev, [key]: 0 }
+                      if (typeof window !== 'undefined') window.localStorage.setItem(key, '0')
+                      return next
+                    })
+                  }
+                }}
                 className={cn(
                   "flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -125,9 +149,9 @@ export function AdminSidebar({ className }: AdminSidebarProps) {
                   <item.icon className="h-4 w-4 flex-shrink-0" />
                   {!collapsed && <span>{item.name}</span>}
                 </div>
-                {!collapsed && item.badge && (
+                {!collapsed && (item as any).badgeKey && (badges[(item as any).badgeKey as string] || 0) > 0 && (
                   <Badge variant={isActive ? "secondary" : "default"} className="text-xs">
-                    {item.badge}
+                    {badges[(item as any).badgeKey as string]}
                   </Badge>
                 )}
               </Link>

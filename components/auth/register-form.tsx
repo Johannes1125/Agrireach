@@ -255,9 +255,9 @@ export function RegisterForm() {
                 <SelectValue placeholder="Select your role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="worker">Rural Worker (Farmer, Fisher, Artisan)</SelectItem>
-                <SelectItem value="recruiter">Recruiter/Employer</SelectItem>
-                <SelectItem value="buyer">Buyer/Business</SelectItem>
+                <SelectItem value="worker">Member</SelectItem>
+                <SelectItem value="recruiter">Employer</SelectItem>
+                <SelectItem value="buyer">Trader (Buyer/Business)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -292,14 +292,14 @@ export function RegisterForm() {
             </div>
           </div>
 
-          <div className="flex items-start space-x-3 pt-2">
+          <div className="flex items-center gap-3 pt-2">
             <Checkbox
               id="terms"
               checked={agreedToTerms}
               onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-              className="mt-0.5"
+              className="h-4 w-4"
             />
-            <Label htmlFor="terms" className="text-sm leading-relaxed text-muted-foreground">
+            <Label htmlFor="terms" className="text-sm leading-none text-muted-foreground">
               I agree to the{" "}
               <Button variant="link" className="px-0 text-sm text-primary h-auto font-medium">
                 Terms of Service

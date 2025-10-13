@@ -7,17 +7,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Settings, Globe, Mail, Shield, Database, Bell, Users, Server, LogOut } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 export default function AdminSettingsPage() {
-  const { toast } = useToast()
 
   const handleLogout = () => {
     // Simulate logout
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of the admin panel.",
-    })
+    toast.success("Logged out successfully")
     window.location.href = "/admin/login"
   }
 

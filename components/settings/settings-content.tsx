@@ -374,7 +374,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       >
                         <div className="flex items-center gap-3 mb-2">
                           {getRoleIcon(role)}
-                          <h4 className="font-medium capitalize">{role}</h4>
+                          <h4 className="font-medium capitalize">{role === "worker" ? "Member" : role === "recruiter" ? "Employer" : role === "buyer" ? "Trader" : role}</h4>
                           {isSelected && <Badge variant="secondary">Selected</Badge>}
                         </div>
                         <p className="text-sm text-muted-foreground">{getRoleDescription(role)}</p>

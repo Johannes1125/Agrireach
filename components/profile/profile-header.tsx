@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { getRoleDisplay } from "@/lib/role-utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { MapPin, Calendar, Star, Shield, Edit, Share, MessageSquare, ArrowLeft, Settings } from "lucide-react"
 import Link from "next/link"
@@ -27,24 +28,11 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ user }: ProfileHeaderProps) {
   const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "worker":
-        return (
-          <Badge variant="secondary" className="text-sm">
-            Rural Worker
-          </Badge>
-        )
-      case "recruiter":
-        return (
-          <Badge variant="outline" className="text-sm">
-            Recruiter
-          </Badge>
-        )
-      case "buyer":
-        return <Badge className="bg-accent text-accent-foreground text-sm">Buyer</Badge>
-      default:
-        return null
-    }
+    const label = getRoleDisplay(role)
+    if (!label) return null
+    if (role === "buyer") return <Badge className="bg-accent text-accent-foreground text-sm">{label}</Badge>
+    if (role === "recruiter") return <Badge variant="outline" className="text-sm">{label}</Badge>
+    return <Badge variant="secondary" className="text-sm">{label}</Badge>
   }
 
   const formatJoinDate = (dateString: string) => {

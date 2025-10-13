@@ -116,7 +116,9 @@ export function ImageUpload({
         folder: folderByType[type] || 'agrireach/general',
         sources: ['local', 'camera', 'url'],
         clientAllowedFormats: acceptedTypes.map(t => t.split('/')[1]).filter(Boolean),
-        maxImageFileSize: maxSizeMB * 1024 * 1024,
+        // Allow both images and raw files (e.g., PDF/DOCX)
+        resourceType: 'auto',
+        maxFileSize: maxSizeMB * 1024 * 1024,
         cropping: false,
         tags: [type, ...(entityId ? [entityId] : [])],
       },

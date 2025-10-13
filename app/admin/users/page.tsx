@@ -150,9 +150,9 @@ export default function AdminUsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="Worker">Workers</SelectItem>
-                  <SelectItem value="Recruiter">Recruiters</SelectItem>
-                  <SelectItem value="Buyer">Buyers</SelectItem>
+                  <SelectItem value="Worker">Member</SelectItem>
+                  <SelectItem value="Recruiter">Employer</SelectItem>
+                  <SelectItem value="Buyer">Trader</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -160,21 +160,21 @@ export default function AdminUsersPage() {
         </Card>
 
         {/* Users Table */}
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
             <CardTitle>Users ({filteredUsers.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 z-10 bg-muted/40 backdrop-blur supports-[backdrop-filter]:bg-muted/30">
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Trust Score</TableHead>
-                  <TableHead>Last Active</TableHead>
-                  <TableHead>Reports</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="uppercase tracking-wide text-xs">User</TableHead>
+                  <TableHead className="uppercase tracking-wide text-xs">Role</TableHead>
+                  <TableHead className="uppercase tracking-wide text-xs">Status</TableHead>
+                  <TableHead className="uppercase tracking-wide text-xs">Trust Score</TableHead>
+                  <TableHead className="uppercase tracking-wide text-xs">Last Active</TableHead>
+                  <TableHead className="uppercase tracking-wide text-xs">Reports</TableHead>
+                  <TableHead className="uppercase tracking-wide text-xs">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -198,7 +198,7 @@ export default function AdminUsersPage() {
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
-                    <TableRow key={user._id}>
+                    <TableRow key={user._id} className="hover:bg-muted/40 transition-colors">
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
@@ -210,17 +210,36 @@ export default function AdminUsersPage() {
                         <div>
                           <p className="font-medium">{user.full_name || "User"}</p>
                           <p className="text-sm text-muted-foreground">{user.email}</p>
-                          {user.verified && (
+                          {user.verified ? (
                             <Badge variant="outline" className="text-xs mt-1">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Verified
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="text-xs mt-1 bg-amber-50 text-amber-700 border-amber-200">
+                              Pending
                             </Badge>
                           )}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{user.role}</Badge>
+                      {(() => {
+                        const r = String(user.role || "").toLowerCase()
+                        const roleClass =
+                          r === "buyer"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : r === "recruiter"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : r === "worker"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : "bg-purple-50 text-purple-700 border-purple-200"
+                        return (
+                          <Badge variant="secondary" className={roleClass + " capitalize"}>
+                            {r === "admin" ? "Admin" : r === "worker" ? "Member" : r === "recruiter" ? "Employer" : r === "buyer" ? "Trader" : (r || "user")}
+                          </Badge>
+                        )
+                      })()}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">

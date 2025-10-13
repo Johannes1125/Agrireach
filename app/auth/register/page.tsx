@@ -86,15 +86,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Back to home */}
-            <div className="mt-6 text-center">
-              <Link href="/">
-                <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to home
-                </Button>
-              </Link>
-            </div>
+            {/* Back to home removed per request */}
           </div>
         </div>
       </div>

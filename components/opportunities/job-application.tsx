@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
+import { ImageUpload } from "@/components/ui/image-upload"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Heart, Share2, Flag, Send, CheckCircle, AlertCircle } from "lucide-react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { authFetch } from "@/lib/auth-client"
 import { useAuth } from "@/hooks/use-auth"
@@ -28,8 +30,10 @@ interface JobApplicationProps {
 
 export function JobApplication({ job }: JobApplicationProps) {
   const [coverLetter, setCoverLetter] = useState("")
+  const [resumeUrl, setResumeUrl] = useState<string | undefined>(undefined)
   const [isApplied, setIsApplied] = useState(false)
   const { user, loading } = useAuth()
+  const router = useRouter()
 
   // Mock user skills and match calculation
   const userSkills = ["Crop Harvesting", "Team Leadership", "Safety Protocols", "Equipment Operation"]
@@ -53,7 +57,7 @@ export function JobApplication({ job }: JobApplicationProps) {
       const res = await authFetch(`/api/opportunities/${job.id}/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cover_letter: coverLetter }),
+        body: JSON.stringify({ cover_letter: coverLetter, resume_url: resumeUrl }),
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
@@ -61,6 +65,10 @@ export function JobApplication({ job }: JobApplicationProps) {
       }
       setIsApplied(true)
       toast.success("Application submitted successfully!")
+      // Redirect to Opportunities page after a brief delay
+      setTimeout(() => {
+        router.push("/opportunities")
+      }, 800)
     } catch (e: any) {
       console.error("Application error:", e)
       toast.error(e?.message || "Failed to apply. Please check your connection and try again.")
@@ -193,6 +201,20 @@ export function JobApplication({ job }: JobApplicationProps) {
               onChange={(e) => setCoverLetter(e.target.value)}
               className="min-h-24"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Attach Resume (PDF, DOCX or image up to 10MB)</Label>
+            <ImageUpload
+              type="general"
+              maxFiles={1}
+              acceptedTypes={['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','image/jpeg','image/png']}
+              onUploadComplete={(imgs) => setResumeUrl(imgs[0]?.url)}
+              onUploadError={(err) => toast.error(err)}
+            />
+            {resumeUrl && (
+              <p className="text-xs text-muted-foreground">Attached: {resumeUrl.split('/').pop()}</p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

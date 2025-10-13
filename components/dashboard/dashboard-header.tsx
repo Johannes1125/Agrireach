@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { getRoleDisplay } from "@/lib/role-utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,16 +28,11 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "worker":
-        return <Badge variant="secondary">Rural Worker</Badge>
-      case "recruiter":
-        return <Badge variant="outline">Recruiter</Badge>
-      case "buyer":
-        return <Badge className="bg-accent text-accent-foreground">Buyer</Badge>
-      default:
-        return null
-    }
+    const label = getRoleDisplay(role)
+    if (!label) return null
+    if (role === "buyer") return <Badge className="bg-accent text-accent-foreground">{label}</Badge>
+    if (role === "recruiter") return <Badge variant="outline">{label}</Badge>
+    return <Badge variant="secondary">{label}</Badge>
   }
 
   return (

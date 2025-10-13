@@ -35,6 +35,7 @@ export function userHasAllRoles(user: any, roles: UserRole[]): boolean {
  * Check if user can apply to jobs (must be a worker)
  */
 export function canApplyToJobs(user: any): boolean {
+  // Member (worker)
   return userHasRole(user, "worker");
 }
 
@@ -42,6 +43,7 @@ export function canApplyToJobs(user: any): boolean {
  * Check if user can post jobs (must be a recruiter)
  */
 export function canPostJobs(user: any): boolean {
+  // Employer (recruiter)
   return userHasRole(user, "recruiter");
 }
 
@@ -49,6 +51,7 @@ export function canPostJobs(user: any): boolean {
  * Check if user can buy/sell products (must be a buyer)
  */
 export function canBuySellProducts(user: any): boolean {
+  // Trader (buyer)
   return userHasRole(user, "buyer");
 }
 
@@ -66,7 +69,27 @@ export function getUserRolesDisplay(user: any): string {
   if (!user) return "";
   
   const roles = user.roles && Array.isArray(user.roles) ? user.roles : [user.role];
-  return roles.map((role: string) => role.charAt(0).toUpperCase() + role.slice(1)).join(", ");
+  const roleMap: Record<string, string> = {
+    admin: "Admin",
+    worker: "Member",
+    recruiter: "Employer",
+    buyer: "Trader",
+  };
+  return roles.map((role: string) => roleMap[role] || (role?.charAt(0).toUpperCase() + role?.slice(1))).join(", ");
+}
+
+/**
+ * Get display name for a single role key
+ */
+export function getRoleDisplay(roleKey: string): string {
+  const roleMap: Record<string, string> = {
+    admin: "Admin",
+    worker: "Member",
+    recruiter: "Employer",
+    buyer: "Trader",
+  };
+  const key = String(roleKey || "").toLowerCase();
+  return roleMap[key] || (key ? key.charAt(0).toUpperCase() + key.slice(1) : "");
 }
 
 /**

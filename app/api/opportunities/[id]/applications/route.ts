@@ -44,6 +44,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     },
     status: app.status,
     cover_letter: app.cover_letter,
+    resume_url: app.resume_url,
     created_at: app.created_at
   }));
   

@@ -67,8 +67,9 @@ export function useAdminUsers(filters: { status?: string; role?: string; search?
         }
 
         const data = await res.json()
-        setUsers(data.users || data.items || [])
-        setTotal(data.total || data.count || 0)
+        const d = data?.data || data
+        setUsers(d.users || d.items || [])
+        setTotal(d.total || d.count || 0)
       } catch (err: any) {
         setError(err.message)
       } finally {

@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get("limit") || "50", 10), 100)
   const skip = (page - 1) * limit
 
-  const filter: any = { role: { $in: ["worker", "recruiter", "buyer"] } }
+  // Return all users by default; optionally filter by role/status/search
+  const filter: any = {}
   if (status && status !== "all") filter.status = status
   if (role && role !== "all") filter.role = role.toLowerCase()
   if (search) {

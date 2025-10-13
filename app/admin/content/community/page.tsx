@@ -77,56 +77,56 @@ export default function CommunityContentPage() {
   }, [])
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="container mx-auto px-4 py-6 space-y-8">
+      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold">Community Content</h1>
-          <p className="text-muted-foreground">Manage forum posts, discussions, and community content</p>
+          <h1 className="font-heading text-3xl font-bold tracking-tight">Community Content</h1>
+          <p className="text-muted-foreground mt-1">Manage forum posts, discussions, and community content</p>
         </div>
-        <Button>Create Announcement</Button>
+        <Button className="self-start md:self-auto">Create Announcement</Button>
       </header>
 
       {/* Stats Grid */}
-      <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
             <CardTitle className="text-sm font-medium">Total Posts</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="text-2xl font-bold">{((stats as any)?.total || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">All community posts</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
             <CardTitle className="text-sm font-medium">Active Posts</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="text-2xl font-bold">{((stats as any)?.active || 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Currently visible</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
             <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="text-2xl font-bold">{(stats as any)?.pending || 0}</div>
             <p className="text-xs text-muted-foreground">Awaiting moderation</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
             <CardTitle className="text-sm font-medium">Flagged Posts</CardTitle>
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="text-2xl font-bold">{(stats as any)?.flagged || 0}</div>
             <p className="text-xs text-muted-foreground">Need attention</p>
           </CardContent>
@@ -138,12 +138,12 @@ export default function CommunityContentPage() {
         <div className="lg:col-span-3 space-y-6">
           {/* Filters and Search */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle>Post Management</CardTitle>
               <CardDescription>Search, filter, and moderate community posts</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <CardContent className="pt-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center">
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -151,11 +151,11 @@ export default function CommunityContentPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="bg-transparent">
                     <Filter className="mr-2 h-4 w-4" />
                     Filter
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="bg-transparent">
                     Export
                   </Button>
                 </div>
