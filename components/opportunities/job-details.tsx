@@ -23,6 +23,7 @@ interface Job {
   urgency: string
   skills: string[]
   poster?: { id: string; name: string; location?: string }
+  schedule?: string
   companyInfo: {
     name: string
     size: string
@@ -153,6 +154,17 @@ export function JobDetails({ job }: JobDetailsProps) {
           <p className="text-muted-foreground leading-relaxed">{job.description}</p>
         </CardContent>
       </Card>
+
+      {job.schedule && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading">Work Schedule</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground leading-relaxed">{job.schedule}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Requirements */}
       <Card>

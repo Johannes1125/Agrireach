@@ -8,6 +8,7 @@ export const CreateJobSchema = z.object({
   category: z.string().min(1),
   location: z.string().min(1),
   pay_rate: z.coerce.number().positive(),
+  pay_rate_max: z.preprocess((v) => (v === undefined || v === null || v === "" ? undefined : v), z.coerce.number().positive().optional()),
   pay_type: z.enum(["hourly", "daily", "weekly", "monthly", "project"]),
   duration: z.string().optional(),
   urgency: z.enum(["low", "medium", "high", "urgent"]),
@@ -17,6 +18,7 @@ export const CreateJobSchema = z.object({
   images: z.array(z.string().url()).optional(),
   contact_email: z.string().email().optional(),
   experience_level: z.string().optional(),
+  work_schedule: z.string().optional(),
   start_date: z.preprocess((v) => (typeof v === "string" && v.length ? v : undefined), z.string().optional()),
 });
 

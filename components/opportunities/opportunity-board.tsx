@@ -50,15 +50,21 @@ export function OpportunityBoard() {
         title: j.title,
         company: j.company_name || "",
         location: j.location,
-        type: j.duration || j.pay_type,
-        payRange: `₱${j.pay_rate}/${j.pay_type}`,
+        type: j.duration || j.pay_type || "",
+        payRange: ((): string => {
+          const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
+          const hasMax = typeof j.pay_rate_max === "number" && j.pay_rate_max > j.pay_rate
+          if (!hasMin) return ""
+          const base = hasMax ? `₱${j.pay_rate}–₱${j.pay_rate_max}` : `₱${j.pay_rate}`
+          return j.pay_type ? `${base}/${j.pay_type}` : base
+        })(),
         urgency: j.urgency,
         postedDate: j.created_at,
         deadline: j.start_date || j.created_at,
         applicants: j.applications_count || 0,
         description: j.description,
         skills: Array.isArray(j.required_skills) ? j.required_skills : [],
-        companyLogo: "/placeholder.svg",
+        companyLogo: j.company_logo || "/placeholder.svg",
         companyRating: 0,
         matchScore: 0,
       }));
@@ -156,7 +162,8 @@ export function OpportunityBoard() {
       </header>
 
       {/* Job Listings */}
-      <section className="space-y-4" aria-label="Job Listings">
+      <section aria-label="Job Listings">
+        <div className="space-y-4 max-h-[900px] overflow-y-auto pr-2">
         {jobs.length === 0 ? (
           <div className="text-center py-12">
             <Search className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
@@ -318,14 +325,8 @@ export function OpportunityBoard() {
             </article>
           ))
         )}
-      </section>
-
-      {/* Load More */}
-      <footer className="text-center pt-6">
-        <Button variant="outline" size="lg">
-          Load More Jobs
-        </Button>
-      </footer>
-    </section>
+        </div>
+  </section>
+</section>
   );
 }

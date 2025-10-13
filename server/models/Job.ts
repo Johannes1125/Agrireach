@@ -11,6 +11,7 @@ export interface IOpportunity extends Document {
   category: string;
   location: string;
   pay_rate: number;
+  pay_rate_max?: number;
   pay_type: PayType;
   duration?: string;
   urgency: UrgencyLevel;
@@ -23,6 +24,7 @@ export interface IOpportunity extends Document {
   requirements?: string[];
   benefits?: string[];
   images?: string[];
+  work_schedule?: string;
   status: OpportunityStatus;
   views: number;
   applications_count: number;
@@ -43,6 +45,7 @@ const OpportunitySchema = new Schema<IOpportunity>(
     category: { type: String, required: true, index: true },
     location: { type: String, required: true },
     pay_rate: { type: Number, required: true },
+    pay_rate_max: { type: Number },
     pay_type: {
       type: String,
       required: true,
@@ -65,6 +68,7 @@ const OpportunitySchema = new Schema<IOpportunity>(
     requirements: { type: [String], default: [] },
     benefits: { type: [String], default: [] },
     images: { type: [String], default: [] },
+    work_schedule: { type: String },
     status: {
       type: String,
       default: "active",

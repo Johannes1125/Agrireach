@@ -33,6 +33,8 @@ export function PostJobForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [companyLogo, setCompanyLogo] = useState<string | undefined>(undefined)
+  const [jobType, setJobType] = useState<string | undefined>(undefined)
+  const [urgency, setUrgency] = useState<string | undefined>(undefined)
 
   const availableSkills = [
     "Crop Harvesting",
@@ -88,11 +90,51 @@ export function PostJobForm() {
       const benefits = benefitsText.split(/\n|,|;/).map((s) => s.trim()).filter(Boolean)
       const requirements = requirementsText.split(/\n|,|;/).map((s) => s.trim()).filter(Boolean)
       const pay_rate = Number((document.getElementById("pay-min") as HTMLInputElement)?.value || 0)
+      const pay_rate_max_raw = (document.getElementById("pay-max") as HTMLInputElement)?.value
+      const pay_rate_max = pay_rate_max_raw ? Number(pay_rate_max_raw) : undefined
       const pay_type = "hourly"
-      const urgency = "low"
+      // Map UI urgency values to API schema values
+      const mappedUrgency = ((): string => {
+        switch (urgency) {
+          case "standard":
+            return "low"
+          case "medium":
+            return "medium"
+          case "high":
+            return "high"
+          case "urgent":
+            return "urgent"
+          default:
+            return "low"
+        }
+      })()
       const start_date = (document.getElementById("deadline") as HTMLInputElement)?.value || undefined
       const contact_email = (document.getElementById("contact-email") as HTMLInputElement)?.value || undefined
-      const payload: any = { title, description, category: "general", location, company_name, company_logo: companyLogo, contact_email, pay_rate, pay_type, urgency, required_skills: selectedSkills, requirements, benefits, start_date }
+      const work_schedule = (document.getElementById("schedule") as HTMLTextAreaElement)?.value || undefined
+      // Ensure required selections exist
+      if (!jobType) {
+        throw new Error("Please select a job type")
+      }
+      const payload: any = {
+        title,
+        description,
+        category: "general",
+        location,
+        company_name,
+        company_logo: companyLogo,
+        contact_email,
+        pay_rate,
+        pay_type,
+        pay_rate_max,
+        // Save UI job type as duration (string) in backend
+        duration: jobType,
+        urgency: mappedUrgency,
+        required_skills: selectedSkills,
+        requirements,
+        benefits,
+        work_schedule,
+        start_date,
+      }
       const res = await fetch("/api/opportunities", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json?.message || "Failed to post job")
@@ -132,8 +174,8 @@ export function PostJobForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="job-type">Job Type *</Label>
-                <Select required>
-                  <SelectTrigger>
+              <Select value={jobType} onValueChange={setJobType}>
+                <SelectTrigger>
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -322,8 +364,8 @@ export function PostJobForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="urgency">Hiring Urgency</Label>
-                <Select>
-                  <SelectTrigger>
+              <Select value={urgency} onValueChange={setUrgency}>
+                <SelectTrigger>
                     <SelectValue placeholder="Select urgency" />
                   </SelectTrigger>
                   <SelectContent>

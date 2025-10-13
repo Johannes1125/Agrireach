@@ -77,15 +77,19 @@ export function EditJobForm({ job }: EditJobFormProps) {
         location: formData.get("location"),
         company_name: formData.get("company_name"),
         contact_email: formData.get("contact_email"),
-        job_type: formData.get("job_type"),
-        urgency: formData.get("urgency"),
-        salary_range: {
-          min: Number(formData.get("salary_min")) || 0,
-          max: Number(formData.get("salary_max")) || 0,
-        },
+        // Save selected job type as `duration` (string)
+        duration: formData.get("job_type") || undefined,
+        urgency: formData.get("urgency") || undefined,
+        // Persist pay min/max to new fields
+        pay_rate: Number(formData.get("salary_min")) || 0,
+        pay_rate_max: ((): number | undefined => {
+          const v = Number(formData.get("salary_max")) || 0
+          return v > 0 ? v : undefined
+        })(),
         required_skills: selectedSkills,
         requirements,
         benefits,
+        work_schedule: (formData.get("work_schedule") as string) || undefined,
         start_date: formData.get("start_date") || undefined,
       }
 
@@ -172,7 +176,7 @@ export function EditJobForm({ job }: EditJobFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="job_type">Job Type *</Label>
-              <Select name="job_type" defaultValue={job.job_type || "full-time"}>
+              <Select name="job_type" defaultValue={job.duration || job.job_type || "full-time"}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -181,6 +185,7 @@ export function EditJobForm({ job }: EditJobFormProps) {
                   <SelectItem value="part-time">Part-time</SelectItem>
                   <SelectItem value="seasonal">Seasonal</SelectItem>
                   <SelectItem value="contract">Contract</SelectItem>
+                  <SelectItem value="temporary">Temporary</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -194,7 +199,8 @@ export function EditJobForm({ job }: EditJobFormProps) {
                 <SelectContent>
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High - Urgent Hiring</SelectItem>
+                  <SelectItem value="high">High Priority</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -206,7 +212,7 @@ export function EditJobForm({ job }: EditJobFormProps) {
           <h3 className="text-lg font-semibold mb-4">Compensation</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="salary_min">Minimum Salary (₱) *</Label>
+              <Label htmlFor="salary_min">Minimum Pay (₱) *</Label>
               <Input
                 id="salary_min"
                 name="salary_min"
@@ -214,19 +220,18 @@ export function EditJobForm({ job }: EditJobFormProps) {
                 min="0"
                 placeholder="e.g., 15000"
                 required
-                defaultValue={job.salary_range?.min || 0}
+                defaultValue={job.pay_rate || job.salary_range?.min || 0}
               />
             </div>
             <div>
-              <Label htmlFor="salary_max">Maximum Salary (₱) *</Label>
+              <Label htmlFor="salary_max">Maximum Pay (₱)</Label>
               <Input
                 id="salary_max"
                 name="salary_max"
                 type="number"
                 min="0"
                 placeholder="e.g., 25000"
-                required
-                defaultValue={job.salary_range?.max || 0}
+                defaultValue={job.pay_rate_max || job.salary_range?.max || 0}
               />
             </div>
           </div>
@@ -334,6 +339,16 @@ export function EditJobForm({ job }: EditJobFormProps) {
                 type="email"
                 placeholder="recruiting@yourfarm.com"
                 defaultValue={job.contact_email}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="work_schedule">Work Schedule</Label>
+              <Textarea
+                id="work_schedule"
+                name="work_schedule"
+                placeholder="Describe the work schedule, hours, and any flexibility..."
+                rows={4}
+                defaultValue={job.work_schedule}
               />
             </div>
           </div>

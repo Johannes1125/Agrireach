@@ -38,7 +38,13 @@ async function fetchJob(id: string) {
         : "Company"),
     location: j.location,
     type: j.duration || j.pay_type || "",
-    payRange: j.pay_rate && j.pay_type ? `₱${j.pay_rate}/${j.pay_type}` : "",
+    payRange: ((): string => {
+      const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
+      const hasMax = typeof j.pay_rate_max === "number" && j.pay_rate_max > j.pay_rate
+      if (!hasMin) return ""
+      const base = hasMax ? `₱${j.pay_rate}–₱${j.pay_rate_max}` : `₱${j.pay_rate}`
+      return j.pay_type ? `${base}/${j.pay_type}` : base
+    })(),
     description: j.description,
     companyLogo: j.company_logo || "",
     images: Array.isArray(j.images) ? j.images : [],
@@ -55,6 +61,7 @@ async function fetchJob(id: string) {
     deadline: j.start_date || j.created_at,
     urgency: j.urgency,
     skills: Array.isArray(j.required_skills) ? j.required_skills : [],
+    schedule: j.work_schedule || "",
     companyInfo: {
       name: j.company_name || "",
       size: j.contact_email || "",
