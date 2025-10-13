@@ -142,7 +142,7 @@ export default function MarketplaceContentPage() {
               </thead>
               <tbody>
                 {filteredProducts.map((product: any) => (
-                  <tr key={product.id} className="border-b hover:bg-muted/50 transition-colors">
+                  <tr key={product._id || product.id} className="border-b hover:bg-muted/50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         {product.images?.[0] ? (

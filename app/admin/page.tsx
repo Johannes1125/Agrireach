@@ -100,51 +100,69 @@ function AdminDashboardContent() {
 
       <div className="container mx-auto px-4 py-6 lg:px-6">
         <div className="space-y-6">
-          {/* Key Metrics */}
+          {/* Enhanced Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{(stats?.totalUsers || 0).toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">+{stats?.newUsersToday || 0} new today</p>
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-blue-600">Total Users</p>
+                    <p className="text-3xl font-bold text-blue-900">{(stats?.totalUsers || 0).toLocaleString()}</p>
+                    <p className="text-xs text-blue-500">+{stats?.newUsersToday || 0} new today</p>
+                  </div>
+                  <div className="p-3 bg-blue-500/10 rounded-xl">
+                    <Users className="h-8 w-8 text-blue-600" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{(stats?.activeUsers || 0).toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  {stats && stats.totalUsers ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}% of total
-                </p>
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-green-600">Active Users</p>
+                    <p className="text-3xl font-bold text-green-900">{(stats?.activeUsers || 0).toLocaleString()}</p>
+                    <p className="text-xs text-green-500">
+                      {stats && stats.totalUsers ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}% of total
+                    </p>
+                  </div>
+                  <div className="p-3 bg-green-500/10 rounded-xl">
+                    <TrendingUp className="h-8 w-8 text-green-600" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Listings</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{(stats?.totalListings || 0).toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">Marketplace + Jobs</p>
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-purple-600">Total Listings</p>
+                    <p className="text-3xl font-bold text-purple-900">{(stats?.totalListings || 0).toLocaleString()}</p>
+                    <p className="text-xs text-purple-500">Marketplace + Jobs</p>
+                  </div>
+                  <div className="p-3 bg-purple-500/10 rounded-xl">
+                    <Package className="h-8 w-8 text-purple-600" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Platform Health</CardTitle>
-                <Shield className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats?.platformHealth || 0}%</div>
-                <Progress value={stats?.platformHealth || 0} className="mt-2" />
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-emerald-100/50 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-emerald-600">Platform Health</p>
+                    <p className="text-3xl font-bold text-emerald-900">{stats?.platformHealth || 0}%</p>
+                    <div className="mt-2">
+                      <Progress value={stats?.platformHealth || 0} className="h-2 bg-emerald-100" />
+                    </div>
+                  </div>
+                  <div className="p-3 bg-emerald-500/10 rounded-xl">
+                    <Shield className="h-8 w-8 text-emerald-600" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
