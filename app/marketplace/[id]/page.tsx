@@ -212,7 +212,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Product Images */}
           <div className="space-y-4">
-            <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+            <div className="aspect-square rounded-lg overflow-hidden bg-muted dark:bg-muted/20 ring-1 ring-border">
               <img
                 src={product.images[selectedImage] || "/placeholder.svg"}
                 alt={product.title}
@@ -225,8 +225,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   key={index}
                   type="button"
                   onClick={() => setSelectedImage(index)}
-                  className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 ${
-                    selectedImage === index ? "border-primary" : "border-gray-200"
+                  className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-colors ${
+                    selectedImage === index 
+                      ? "border-primary ring-2 ring-primary/20" 
+                      : "border-border hover:border-primary/50"
                   }`}
                 >
                   <img
@@ -259,10 +261,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <MapPin className="h-4 w-4" />
                   <span className="text-sm">{product.seller_id.location || "Location not specified"}</span>
                 </div>
-                <Badge variant="secondary">{product.category}</Badge>
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                  {product.category}
+                </Badge>
                 {product.organic && (
-                  <Badge variant="outline" className="text-green-600">
-                    Organic
+                  <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-200 dark:border-green-800">
+                    🌱 Organic
                   </Badge>
                 )}
               </div>
@@ -277,10 +281,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Stock Info */}
             <div>
-              <h3 className="font-semibold mb-3">Availability</h3>
+              <h3 className="font-semibold mb-3 text-foreground">Availability</h3>
               <div className="flex items-center gap-4">
-                <Badge variant="outline" className={product.status === "active" && product.quantity_available > 0 ? "text-green-600" : "text-red-600"}>
-                  {product.status === "active" && product.quantity_available > 0 ? "In Stock" : "Out of Stock"}
+                <Badge 
+                  variant="outline" 
+                  className={
+                    product.status === "active" && product.quantity_available > 0 
+                      ? "text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20" 
+                      : "text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20"
+                  }
+                >
+                  {product.status === "active" && product.quantity_available > 0 ? "✅ In Stock" : "❌ Out of Stock"}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
                   {product.quantity_available} {product.unit} available
@@ -292,7 +303,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <label htmlFor="quantity" className="text-sm font-medium">
+                  <label htmlFor="quantity" className="text-sm font-medium text-foreground">
                     Quantity:
                   </label>
                   <Input
@@ -302,7 +313,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     max={product.quantity_available}
                     value={quantity}
                     onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
-                    className="w-20"
+                    className="w-20 bg-background border-border focus:border-primary focus:ring-primary/20"
                     disabled={product.status !== "active" || product.quantity_available === 0}
                   />
                   <span className="text-sm text-muted-foreground">{product.unit}</span>
@@ -333,18 +344,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Seller Info */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <Avatar>
+              <CardTitle className="flex items-center gap-3 text-foreground">
+                <Avatar className="ring-2 ring-primary/20">
                   <AvatarImage src={product.seller_id.avatar_url || "/placeholder.svg"} />
-                  <AvatarFallback>
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                     {product.seller_id.full_name ? product.seller_id.full_name.split(" ").map((n) => n[0]).join("") : "S"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold">{product.seller_id.full_name}</p>
-                  <p className="text-sm text-muted-foreground">Seller</p>
+                  <p className="font-semibold text-foreground">{product.seller_id.full_name}</p>
+                  <p className="text-sm text-muted-foreground">👤 Seller</p>
                 </div>
               </CardTitle>
             </CardHeader>
@@ -354,37 +365,52 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 {product.seller_id.location || "Location not specified"}
               </div>
               <div className="text-sm text-muted-foreground">
-                Listed on {new Date(product.created_at).toLocaleDateString()}
+                📅 Listed on {new Date(product.created_at).toLocaleDateString()}
               </div>
-              <Separator />
-              <Button variant="outline" className="w-full bg-transparent" onClick={handleContactSeller}>
-                Contact Seller
+              <Separator className="bg-border" />
+              <Button 
+                variant="outline" 
+                className="w-full bg-transparent hover:bg-primary/10 border-border hover:border-primary/50 text-foreground" 
+                onClick={handleContactSeller}
+              >
+                💬 Contact Seller
               </Button>
             </CardContent>
           </Card>
 
           {/* Product Details */}
-          <Card>
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle>Product Details</CardTitle>
+              <CardTitle className="text-foreground">📋 Product Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm">Category</span>
-                <span className="text-sm font-medium">{product.category}</span>
+                <span className="text-sm text-muted-foreground">Category</span>
+                <span className="text-sm font-medium text-foreground">{product.category}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm">Unit</span>
-                <span className="text-sm font-medium">{product.unit}</span>
+                <span className="text-sm text-muted-foreground">Unit</span>
+                <span className="text-sm font-medium text-foreground">{product.unit}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm">Status</span>
-                <span className="text-sm font-medium capitalize">{product.status}</span>
+                <span className="text-sm text-muted-foreground">Status</span>
+                <Badge 
+                  variant="outline" 
+                  className={
+                    product.status === "active" 
+                      ? "text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20" 
+                      : "text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20"
+                  }
+                >
+                  {product.status === "active" ? "✅ Active" : "❌ Inactive"}
+                </Badge>
               </div>
               {product.organic && (
                 <div className="flex justify-between">
-                  <span className="text-sm">Organic</span>
-                  <span className="text-sm font-medium text-green-600">Yes</span>
+                  <span className="text-sm text-muted-foreground">Certification</span>
+                  <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20">
+                    🌱 Organic
+                  </Badge>
                 </div>
               )}
             </CardContent>
