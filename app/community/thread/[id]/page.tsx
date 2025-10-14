@@ -270,7 +270,24 @@ export default function ThreadPage({
                     <span className="font-medium">
                       {threadData?.author?.name || "User"}
                     </span>
-                    <Badge variant="outline">
+                    <Badge 
+                      className={
+                        threadData?.author?.role === "admin" 
+                          ? "bg-red-50 text-red-700 border-red-200 font-medium"
+                          : threadData?.author?.role === "worker"
+                          ? "bg-blue-50 text-blue-700 border-blue-200 font-medium"
+                          : threadData?.author?.role === "buyer"
+                          ? "bg-green-50 text-green-700 border-green-200 font-medium"
+                          : threadData?.author?.role === "recruiter"
+                          ? "bg-purple-50 text-purple-700 border-purple-200 font-medium"
+                          : "bg-gray-50 text-gray-700 border-gray-200 font-medium"
+                      }
+                      variant="secondary"
+                    >
+                      {threadData?.author?.role === "admin" && "👑 "}
+                      {threadData?.author?.role === "worker" && "🔧 "}
+                      {threadData?.author?.role === "buyer" && "🛒 "}
+                      {threadData?.author?.role === "recruiter" && "💼 "}
                       {threadData?.author?.role || "Member"}
                     </Badge>
                     <span>•</span>
@@ -391,7 +408,24 @@ export default function ThreadPage({
                           <span className="font-medium">
                             {reply.author?.name || "User"}
                           </span>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge 
+                            className={
+                              reply.author?.role === "admin" 
+                                ? "bg-red-50 text-red-700 border-red-200 font-medium text-xs"
+                                : reply.author?.role === "worker"
+                                ? "bg-blue-50 text-blue-700 border-blue-200 font-medium text-xs"
+                                : reply.author?.role === "buyer"
+                                ? "bg-green-50 text-green-700 border-green-200 font-medium text-xs"
+                                : reply.author?.role === "recruiter"
+                                ? "bg-purple-50 text-purple-700 border-purple-200 font-medium text-xs"
+                                : "bg-gray-50 text-gray-700 border-gray-200 font-medium text-xs"
+                            }
+                            variant="secondary"
+                          >
+                            {reply.author?.role === "admin" && "👑 "}
+                            {reply.author?.role === "worker" && "🔧 "}
+                            {reply.author?.role === "buyer" && "🛒 "}
+                            {reply.author?.role === "recruiter" && "💼 "}
                             {reply.author?.role || "Member"}
                           </Badge>
                           <span className="text-sm text-muted-foreground">

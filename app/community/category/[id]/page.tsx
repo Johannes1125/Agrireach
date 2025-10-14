@@ -183,7 +183,24 @@ function ThreadCard({ thread, isPinned = false }: { thread: any; isPinned?: bool
               <span>
                 by <span className="font-medium">{thread.author?.name || "User"}</span>
               </span>
-              <Badge variant="outline" className="text-xs">
+              <Badge 
+                className={
+                  thread.author?.role === "admin" 
+                    ? "bg-red-50 text-red-700 border-red-200 font-medium text-xs"
+                    : thread.author?.role === "worker"
+                    ? "bg-blue-50 text-blue-700 border-blue-200 font-medium text-xs"
+                    : thread.author?.role === "buyer"
+                    ? "bg-green-50 text-green-700 border-green-200 font-medium text-xs"
+                    : thread.author?.role === "recruiter"
+                    ? "bg-purple-50 text-purple-700 border-purple-200 font-medium text-xs"
+                    : "bg-gray-50 text-gray-700 border-gray-200 font-medium text-xs"
+                }
+                variant="secondary"
+              >
+                {thread.author?.role === "admin" && "👑 "}
+                {thread.author?.role === "worker" && "🔧 "}
+                {thread.author?.role === "buyer" && "🛒 "}
+                {thread.author?.role === "recruiter" && "💼 "}
                 {thread.author?.role || "Member"}
               </Badge>
               <span>{thread.created_at ? formatRelativeTime(thread.created_at) : ""}</span>
