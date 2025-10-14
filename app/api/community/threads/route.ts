@@ -7,6 +7,7 @@ import { verifyToken } from "@/server/utils/auth"
 import { validateBody } from "@/server/middleware/validate"
 import { CreateThreadSchema } from "@/server/validators/threadSchemas"
 import { validateUserRole } from "@/server/utils/role-validation";
+import { notifyAllUsersNewThread } from "@/server/utils/notifications";
 
 export async function GET(req: NextRequest) {
   const mm = requireMethod(req, ["GET"])

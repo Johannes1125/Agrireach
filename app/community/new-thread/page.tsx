@@ -27,7 +27,8 @@ import {
 import { toast } from "sonner"
 import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
 import { useLoading } from "@/hooks/use-loading"
-import { handleRoleValidationError } from "@/lib/role-validation-client";
+import { handleRoleValidationError } from "@/lib/role-validation-client"
+import { authFetch } from "@/lib/auth-client";
 
 interface Category { _id: string; name: string; icon?: string }
 const defaultCategories: Category[] = [
@@ -123,16 +124,46 @@ function NewThreadPageContent() {
   }
 
   const handleSubmit = (e: React.FormEvent) => {
+    console.log("Form submitted!")
+    console.log("Form data:", formData)
+    console.log("Form validity:", e.currentTarget.checkValidity())
+    console.log("Form validation message:", e.currentTarget.validationMessage)
     e.preventDefault()
+    console.log("Setting confirm dialog to true")
     setShowConfirmDialog(true)
   }
 
   const handleConfirmedSubmit = async () => {
+    console.log("Confirmed submit clicked!")
+    console.log("Cookies:", document.cookie)
+    console.log("Has agrireach_at cookie:", document.cookie.includes('agrireach_at'))
+    
+    // Test authentication first
+    try {
+      console.log("Testing authentication with /api/users/me")
+      const authTest = await authFetch("/api/users/me")
+      console.log("Auth test status:", authTest.status)
+      console.log("Auth test ok:", authTest.ok)
+      if (!authTest.ok) {
+        const authError = await authTest.json().catch(() => ({}))
+        console.error("Authentication failed:", authError)
+        toast.error("Please log in again")
+        return
+      }
+      console.log("Authentication successful, proceeding with thread creation...")
+    } catch (authError) {
+      console.error("Auth test error:", authError)
+      toast.error("Authentication error")
+      return
+    }
+    
     setShowConfirmDialog(false)
     setIsSubmitting(true)
     
-    await withLoading(async () => {
-      try {
+    console.log("About to call withLoading...")
+    try {
+      const promise = (async () => {
+        console.log("Inside withLoading callback...")
         const payload: any = {
           title: formData.title,
           content: formData.content,
@@ -146,30 +177,44 @@ function NewThreadPageContent() {
           else payload.category = formData.category
         }
 
-        const res = await fetch("/api/community/threads", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-        const json = await res.json().catch(() => ({}))
+         console.log("Making API call to /api/community/threads")
+         console.log("Payload:", payload)
+         console.log("Request headers will include cookies automatically")
+         const res = await authFetch("/api/community/threads", {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify(payload),
+         })
+         console.log("API Response status:", res.status)
+         console.log("API Response ok:", res.ok)
+         const json = await res.json().catch(() => ({}))
+         console.log("API Response JSON:", json)
         if (!res.ok) throw new Error(json?.message || "Failed to post thread")
         const newId = json?.data?.id
+        console.log("New thread ID:", newId)
         toast.success("Thread posted successfully!")
         // Add delay to show loading for at least 5 seconds
         await new Promise(resolve => setTimeout(resolve, 3000))
         window.location.href = newId ? `/community/thread/${newId}` : "/community"
-      } catch (e: any) {
-        console.error(e)
-        // Check if it's a role validation error
-        if (e?.message?.includes("role") && e?.message?.includes("Settings")) {
-          handleRoleValidationError(e);
-        } else {
-          toast.error(e?.message || "Failed to post thread");
-        }
-      } finally {
-        setIsSubmitting(false)
+      })()
+      
+      await withLoading(promise, "Posting your discussion...")
+    } catch (e: any) {
+      console.error("Thread creation error:", e)
+      console.error("Error message:", e?.message)
+      console.error("Error stack:", e?.stack)
+      console.error("Error type:", typeof e)
+      console.error("Error constructor:", e?.constructor?.name)
+      // Check if it's a role validation error
+      if (e?.message?.includes("role") && e?.message?.includes("Settings")) {
+        handleRoleValidationError(e);
+      } else {
+        toast.error(e?.message || "Failed to post thread");
       }
-    }, "Posting your discussion...")
+    } finally {
+      console.log("Setting isSubmitting to false")
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -369,7 +414,12 @@ function NewThreadPageContent() {
             </Card>
 
             {/* Submit */}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isSubmitting}
+              onClick={() => console.log("Submit button clicked!")}
+            >
               {isSubmitting ? "Posting..." : "Post Discussion"}
             </Button>
           </form>
@@ -387,10 +437,13 @@ function NewThreadPageContent() {
               and they can start responding.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <DialogCancel>Cancel</DialogCancel>
-            <DialogAction onClick={handleConfirmedSubmit}>Post Discussion</DialogAction>
-          </DialogFooter>
+           <DialogFooter>
+             <DialogCancel>Cancel</DialogCancel>
+             <DialogAction onClick={() => {
+               console.log("DialogAction clicked!")
+               handleConfirmedSubmit()
+             }}>Post Discussion</DialogAction>
+           </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
