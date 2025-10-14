@@ -217,13 +217,14 @@ export default function CommunityContentPage() {
                         <td className="p-4">
                           <div className="flex flex-col gap-1">
                             <Badge
-                              variant={
+                              className={
                                 post.status === "active"
-                                  ? "secondary"
+                                  ? "bg-green-50 text-green-700 border-green-200"
                                   : post.status === "pending"
-                                    ? "outline"
-                                    : "destructive"
+                                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                                    : "bg-red-50 text-red-700 border-red-200"
                               }
+                              variant="secondary"
                             >
                               {post.status}
                             </Badge>

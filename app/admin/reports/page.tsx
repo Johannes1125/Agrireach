@@ -35,8 +35,14 @@ const reportTypes = {
 
 const priorityColors = {
   high: "destructive",
-  medium: "default",
-  low: "secondary",
+  medium: "secondary", 
+  low: "outline",
+}
+
+const statusColors = {
+  pending: "secondary",
+  resolved: "default",
+  dismissed: "outline",
 }
 
   // Filter reports based on search query
@@ -274,110 +280,208 @@ const priorityColors = {
                                   <Eye className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Report Details</DialogTitle>
+                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader className="pb-6">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <DialogTitle className="text-2xl font-bold text-gray-900">Report Details</DialogTitle>
+                                  <p className="text-sm text-gray-500 mt-1">Review and manage this report</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge 
+                                    variant={statusColors[selectedReport?.status as keyof typeof statusColors] || 'outline'}
+                                    className="px-3 py-1 text-sm font-medium"
+                                  >
+                                    {selectedReport?.status || 'Unknown'}
+                                  </Badge>
+                                  <Badge 
+                                    variant={priorityColors[selectedReport?.priority as keyof typeof priorityColors] || 'secondary'}
+                                    className="px-3 py-1 text-sm font-medium"
+                                  >
+                                    {selectedReport?.priority || 'Unknown'} Priority
+                                  </Badge>
+                                </div>
+                              </div>
                             </DialogHeader>
                             {selectedReport && (
-                              <div className="space-y-4">
-                                    {/* Reporter Information */}
-                                    <div>
-                                      <h4 className="font-medium mb-2">Reporter</h4>
-                                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                                        <Avatar className="h-10 w-10">
-                                          <AvatarImage src={selectedReport.reporter?.avatar_url || "/placeholder.svg"} />
-                                          <AvatarFallback>{(selectedReport.reporter?.full_name || 'U')[0]}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                          <p className="text-sm font-medium">{selectedReport.reporter?.full_name || 'Unknown'}</p>
-                                          <p className="text-xs text-muted-foreground">{selectedReport.reporter?.email || ''}</p>
-                                          <Badge variant="outline" className="text-xs mt-1">{selectedReport.reporter?.role || 'user'}</Badge>
+                              <div className="space-y-6">
+                                {/* Reporter Information */}
+                                <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50">
+                                  <CardContent className="p-6">
+                                    <div className="flex items-center gap-4">
+                                      <Avatar className="h-16 w-16 ring-4 ring-white shadow-lg">
+                                        <AvatarImage src={selectedReport.reporter?.avatar_url || "/placeholder.svg"} />
+                                        <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                                          {(selectedReport.reporter?.full_name || 'U')[0]}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                          {selectedReport.reporter?.full_name || 'Unknown User'}
+                                        </h3>
+                                        <p className="text-sm text-gray-600 mb-2">{selectedReport.reporter?.email || 'No email provided'}</p>
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline" className="px-3 py-1 text-xs font-medium bg-white/80">
+                                            {selectedReport.reporter?.role || 'user'}
+                                          </Badge>
+                                          <span className="text-xs text-gray-500">•</span>
+                                          <span className="text-xs text-gray-500">Reporter</span>
                                         </div>
                                       </div>
                                     </div>
+                                  </CardContent>
+                                </Card>
 
-                                    {/* Report Details Grid */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div>
-                                        <h4 className="font-medium mb-2">Type</h4>
-                                        <Badge variant="outline">{selectedReport.type}</Badge>
+                                {/* Report Details Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <Card className="border-0 shadow-sm">
+                                    <CardContent className="p-4">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <Flag className="h-4 w-4 text-blue-600" />
+                                        <h4 className="font-semibold text-gray-900">Type</h4>
                                       </div>
-                                      <div>
-                                        <h4 className="font-medium mb-2">Priority</h4>
-                                        <Badge variant={priorityColors[selectedReport.priority as keyof typeof priorityColors] || 'secondary'}>
-                                          {selectedReport.priority}
-                                        </Badge>
+                                      <Badge variant="outline" className="px-3 py-1 text-sm font-medium">
+                                        {selectedReport.type || 'Unknown'}
+                                      </Badge>
+                                    </CardContent>
+                                  </Card>
+
+                                  <Card className="border-0 shadow-sm">
+                                    <CardContent className="p-4">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <AlertTriangle className="h-4 w-4 text-orange-600" />
+                                        <h4 className="font-semibold text-gray-900">Priority</h4>
                                       </div>
-                                      <div>
-                                        <h4 className="font-medium mb-2">Status</h4>
-                                        <Badge variant={selectedReport.status === "resolved" ? "default" : selectedReport.status === "pending" ? "secondary" : "outline"}>
-                                          {selectedReport.status}
-                                        </Badge>
+                                      <Badge 
+                                        variant={priorityColors[selectedReport.priority as keyof typeof priorityColors] || 'secondary'}
+                                        className="px-3 py-1 text-sm font-medium"
+                                      >
+                                        {selectedReport.priority || 'Unknown'}
+                                      </Badge>
+                                    </CardContent>
+                                  </Card>
+
+                                  <Card className="border-0 shadow-sm">
+                                    <CardContent className="p-4">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                        <h4 className="font-semibold text-gray-900">Created</h4>
                                       </div>
-                                      <div>
-                                        <h4 className="font-medium mb-2">Created</h4>
-                                        <p className="text-sm text-muted-foreground">{selectedReport.createdAt}</p>
-                                      </div>
+                                      <p className="text-sm text-gray-600 font-medium">{selectedReport.createdAt}</p>
+                                    </CardContent>
+                                  </Card>
+                                </div>
+
+                                {/* Reason */}
+                                <Card className="border-0 shadow-sm">
+                                  <CardContent className="p-4">
+                                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                                      Reason
+                                    </h4>
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                      <p className="text-sm text-red-800 font-medium">{selectedReport.reason || 'No reason provided'}</p>
                                     </div>
+                                  </CardContent>
+                                </Card>
 
-                                    {/* Reason */}
-                                <div>
-                                      <h4 className="font-medium mb-2">Reason</h4>
-                                      <p className="text-sm text-muted-foreground">{selectedReport.reason}</p>
-                                </div>
+                                {/* Description */}
+                                <Card className="border-0 shadow-sm">
+                                  <CardContent className="p-4">
+                                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                      <Eye className="h-4 w-4 text-gray-600" />
+                                      Description
+                                    </h4>
+                                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                      <p className="text-sm text-gray-700 leading-relaxed">
+                                        {selectedReport.description || 'No description provided'}
+                                      </p>
+                                    </div>
+                                  </CardContent>
+                                </Card>
 
-                                    {/* Description */}
-                                <div>
-                                      <h4 className="font-medium mb-2">Description</h4>
-                                      <p className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg">{selectedReport.description}</p>
-                                </div>
-
-                                    {/* Content ID (if needed) */}
-                                    {selectedReport.content_id && (
-                                      <div>
-                                        <h4 className="font-medium mb-2">Content ID</h4>
-                                        <p className="text-xs text-muted-foreground font-mono">{selectedReport.content_id}</p>
+                                {/* Content ID */}
+                                {selectedReport.content_id && (
+                                  <Card className="border-0 shadow-sm">
+                                    <CardContent className="p-4">
+                                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <span className="text-gray-600">#</span>
+                                        Content ID
+                                      </h4>
+                                      <div className="bg-gray-100 border border-gray-200 rounded-lg p-3">
+                                        <code className="text-xs text-gray-600 font-mono break-all">
+                                          {selectedReport.content_id}
+                                        </code>
                                       </div>
-                                    )}
-
-                                    {selectedReport.admin_notes && (
-                                  <div>
-                                        <h4 className="font-medium mb-2">Admin Notes</h4>
-                                        <p className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg">{selectedReport.admin_notes}</p>
-                                  </div>
+                                    </CardContent>
+                                  </Card>
                                 )}
 
-                                {selectedReport.status === "pending" && (
-                                  <div className="space-y-4">
-                                    <div>
-                                      <h4 className="font-medium mb-2">Resolution Notes</h4>
-                                          <Textarea id="resolution-notes" placeholder="Add resolution notes..." rows={3} />
-                                    </div>
+                                {/* Admin Notes */}
+                                {selectedReport.admin_notes && (
+                                  <Card className="border-0 shadow-sm bg-gradient-to-r from-yellow-50 to-amber-50">
+                                    <CardContent className="p-4">
+                                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <span className="text-amber-600">📝</span>
+                                        Admin Notes
+                                      </h4>
+                                      <div className="bg-white/80 border border-amber-200 rounded-lg p-4">
+                                        <p className="text-sm text-gray-700 leading-relaxed">
+                                          {selectedReport.admin_notes}
+                                        </p>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                )}
 
-                                    <div className="flex gap-2">
-                                      <Button
+                                {/* Action Section */}
+                                {selectedReport.status === "pending" && (
+                                  <Card className="border-0 shadow-sm bg-gradient-to-r from-gray-50 to-slate-50">
+                                    <CardContent className="p-6">
+                                      <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <span className="text-blue-600">⚡</span>
+                                        Resolution Actions
+                                      </h4>
+                                      
+                                      <div className="space-y-4">
+                                        <div>
+                                          <label htmlFor="resolution-notes" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Resolution Notes
+                                          </label>
+                                          <Textarea 
+                                            id="resolution-notes" 
+                                            placeholder="Add your resolution notes here..." 
+                                            rows={3}
+                                            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                          />
+                                        </div>
+
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                          <Button
                                             onClick={() => {
                                               const notes = (document.getElementById('resolution-notes') as HTMLTextAreaElement)?.value
                                               handleReportAction(selectedReport._id || selectedReport.id, "resolve", notes)
                                             }}
-                                            className="flex-1 bg-red-600 hover:bg-red-700"
-                                      >
-                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                            className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+                                          >
+                                            <CheckCircle className="h-5 w-5 mr-2" />
                                             Resolve & Delete Content
-                                      </Button>
-                                      <Button
-                                        variant="outline"
+                                          </Button>
+                                          <Button
+                                            variant="outline"
                                             onClick={() => {
                                               const notes = (document.getElementById('resolution-notes') as HTMLTextAreaElement)?.value
                                               handleReportAction(selectedReport._id || selectedReport.id, "dismiss", notes)
                                             }}
-                                        className="flex-1"
-                                      >
-                                        <X className="h-4 w-4 mr-2" />
+                                            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium py-3 px-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                                          >
+                                            <X className="h-5 w-5 mr-2" />
                                             Dismiss (Keep Content)
-                                      </Button>
-                                    </div>
-                                  </div>
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
                                 )}
                               </div>
                             )}

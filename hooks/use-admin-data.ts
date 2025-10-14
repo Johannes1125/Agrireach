@@ -156,11 +156,15 @@ export function useAdminCommunity() {
         setLoading(true)
         const [threadsRes, statsRes] = await Promise.all([
           authFetch('/api/community/threads?limit=50'),
-          authFetch('/api/community/stats')
+          authFetch('/api/admin/community-stats')
         ])
         if (!threadsRes.ok) throw new Error('Failed to fetch threads')
         const threadsJson = await threadsRes.json()
         const statsJson = statsRes.ok ? await statsRes.json() : {}
+        
+        console.log('Admin community stats response:', statsRes.status, statsJson)
+        console.log('Threads response:', threadsRes.status, threadsJson)
+        
         setThreads(threadsJson.data?.items || threadsJson.items || [])
         setStats(statsJson.data || statsJson || null)
       } catch (e: any) {
