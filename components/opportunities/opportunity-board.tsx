@@ -20,7 +20,10 @@ import {
   ExternalLink,
   Users,
   Search,
+  Filter,
 } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { OpportunityFilters } from "./opportunity-filters";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { useJobSearch } from "@/contexts/job-search-context";
@@ -133,21 +136,37 @@ export function OpportunityBoard() {
   }
 
   return (
-    <section className="space-y-6" aria-label="Job Opportunities">
+    <section className="space-y-4 sm:space-y-6" aria-label="Job Opportunities">
       {/* Sort and View Options */}
-      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <header className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="font-heading text-xl font-semibold">
+          <h2 className="font-heading text-lg sm:text-xl font-semibold">
             {total} Job Opportunities
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Showing jobs matching your profile and preferences
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* Mobile Filter Button */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="lg:hidden">
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-full sm:w-96 overflow-y-auto">
+              <div className="py-4">
+                <h3 className="text-lg font-semibold mb-4">Filters</h3>
+                <OpportunityFilters />
+              </div>
+            </SheetContent>
+          </Sheet>
+
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-32 sm:w-48">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -163,7 +182,7 @@ export function OpportunityBoard() {
 
       {/* Job Listings */}
       <section aria-label="Job Listings">
-        <div className="space-y-4 max-h-[900px] overflow-y-auto pr-2">
+        <div className="space-y-3 sm:space-y-4 max-h-[900px] overflow-y-auto pr-1 sm:pr-2">
         {jobs.length === 0 ? (
           <div className="text-center py-12">
             <Search className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
@@ -177,11 +196,11 @@ export function OpportunityBoard() {
           jobs.map((job) => (
             <article key={job.id} className="hover:shadow-md transition-shadow">
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+                <CardContent className="p-3 sm:p-4 md:p-6">
+                  <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start">
                     {/* Company Logo and Match Score */}
-                    <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-2">
-                      <Avatar className="h-12 w-12 lg:h-16 lg:w-16">
+                    <div className="flex items-start gap-3 sm:gap-4 lg:flex-col lg:items-center lg:gap-2">
+                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16">
                         <AvatarImage
                           src={job.companyLogo || "/placeholder.svg"}
                           alt={job.company}
@@ -190,7 +209,7 @@ export function OpportunityBoard() {
                           {job.company
                             ? job.company
                                 .split(" ")
-                                .map((n) => n[0])
+                                .map((n: string) => n[0])
                                 .join("")
                             : "C"}
                         </AvatarFallback>
@@ -206,9 +225,9 @@ export function OpportunityBoard() {
                     </div>
 
                     {/* Job Details */}
-                    <div className="flex-1 space-y-3">
-                      <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-                        <div>
+                    <div className="flex-1 space-y-2 sm:space-y-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex-1 min-w-0">
                           <Link href={`/opportunities/${job.id}`}>
                             <h3 className="font-heading text-lg font-semibold hover:text-primary transition-colors">
                               {job.title}
@@ -287,7 +306,7 @@ export function OpportunityBoard() {
                         </span>
 
                         <div className="flex flex-wrap gap-1">
-                          {job.skills.slice(0, 3).map((skill) => (
+                          {job.skills.slice(0, 3).map((skill: string) => (
                             <Badge
                               key={skill}
                               variant="outline"

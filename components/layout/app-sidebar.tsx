@@ -29,6 +29,7 @@ import {
   ChevronLeft,
   Sprout,
   LogOut,
+  MessageCircle,
 } from "lucide-react";
 
 const navigation = [
@@ -36,6 +37,7 @@ const navigation = [
   { name: "Opportunities", href: "/opportunities", icon: Briefcase },
   { name: "Marketplace", href: "/marketplace", icon: ShoppingBag },
   { name: "Community", href: "/community", icon: MessageSquare },
+  { name: "Messages", href: "/chat", icon: MessageCircle },
   { name: "Reviews", href: "/reviews", icon: Star },
   { name: "Profile", href: "/profile", icon: User },
 ];

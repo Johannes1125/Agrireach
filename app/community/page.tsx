@@ -75,18 +75,18 @@ export default function CommunityPage() {
       <PageTransition>
       {/* Header */}
       <div className="bg-background border-b">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground font-sans">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground font-sans">
                 Community Forums
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Connect, share knowledge, and grow together
               </p>
             </div>
             <Link href="/community/new-thread">
-              <Button className="bg-primary hover:bg-primary/90">
+              <Button className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 New Discussion
               </Button>
@@ -95,8 +95,8 @@ export default function CommunityPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
             {/* Search */}

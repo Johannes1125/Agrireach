@@ -1,0 +1,269 @@
+'use client'
+
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
+import { pusherClient, subscribeToPrivateChannel, unsubscribeFromPrivateChannel } from '@/lib/pusher'
+import { useAuth } from '@/hooks/use-auth'
+
+export interface ChatUser {
+  id: string
+  name: string
+  avatar?: string
+  email?: string
+}
+
+export interface ChatMessage {
+  id: string
+  sender_id: string
+  recipient_id: string
+  content: string
+  message_type: 'text' | 'image' | 'file'
+  created_at: string
+  read_at?: string
+  sender?: ChatUser
+}
+
+export interface ChatConversation {
+  id: string
+  other_user: ChatUser
+  last_message?: ChatMessage
+  last_message_at?: string
+  created_at: string
+}
+
+interface ChatState {
+  conversations: ChatConversation[]
+  currentConversation: ChatConversation | null
+  messages: ChatMessage[]
+  loading: boolean
+  error: string | null
+  isConnected: boolean
+}
+
+type ChatAction =
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'SET_CONVERSATIONS'; payload: ChatConversation[] }
+  | { type: 'SET_CURRENT_CONVERSATION'; payload: ChatConversation | null }
+  | { type: 'SET_MESSAGES'; payload: ChatMessage[] }
+  | { type: 'ADD_MESSAGE'; payload: ChatMessage }
+  | { type: 'UPDATE_CONVERSATION'; payload: ChatConversation }
+  | { type: 'SET_CONNECTION_STATUS'; payload: boolean }
+
+const initialState: ChatState = {
+  conversations: [],
+  currentConversation: null,
+  messages: [],
+  loading: false,
+  error: null,
+  isConnected: false,
+}
+
+function chatReducer(state: ChatState, action: ChatAction): ChatState {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload }
+    case 'SET_ERROR':
+      return { ...state, error: action.payload }
+    case 'SET_CONVERSATIONS':
+      return { ...state, conversations: action.payload }
+    case 'SET_CURRENT_CONVERSATION':
+      return { ...state, currentConversation: action.payload }
+    case 'SET_MESSAGES':
+      return { ...state, messages: action.payload }
+    case 'ADD_MESSAGE':
+      return { ...state, messages: [...state.messages, action.payload] }
+    case 'UPDATE_CONVERSATION':
+      return {
+        ...state,
+        conversations: state.conversations.map(conv =>
+          conv.id === action.payload.id ? action.payload : conv
+        ),
+      }
+    case 'SET_CONNECTION_STATUS':
+      return { ...state, isConnected: action.payload }
+    default:
+      return state
+  }
+}
+
+interface ChatContextType {
+  state: ChatState
+  sendMessage: (recipientId: string, content: string, messageType?: 'text' | 'image' | 'file') => Promise<void>
+  loadConversations: () => Promise<void>
+  loadMessages: (userId: string) => Promise<void>
+  selectConversation: (conversation: ChatConversation) => void
+  searchUsers: (query: string) => Promise<ChatUser[]>
+}
+
+const ChatContext = createContext<ChatContextType | undefined>(undefined)
+
+export function ChatProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(chatReducer, initialState)
+  const { user } = useAuth()
+
+  // Initialize Pusher connection
+  useEffect(() => {
+    if (!user) return
+
+    pusherClient.connection.bind('connected', () => {
+      dispatch({ type: 'SET_CONNECTION_STATUS', payload: true })
+    })
+
+    pusherClient.connection.bind('disconnected', () => {
+      dispatch({ type: 'SET_CONNECTION_STATUS', payload: false })
+    })
+
+    pusherClient.connection.bind('error', (error: any) => {
+      console.error('Pusher connection error:', error)
+      dispatch({ type: 'SET_ERROR', payload: 'Connection error' })
+    })
+
+    return () => {
+      pusherClient.disconnect()
+    }
+  }, [user])
+
+  // Subscribe to new messages
+  useEffect(() => {
+    if (!user || !state.currentConversation) return
+
+    const channel = subscribeToPrivateChannel(user.id, state.currentConversation.other_user.id)
+    
+    channel.bind('new-message', (data: ChatMessage) => {
+      dispatch({ type: 'ADD_MESSAGE', payload: data })
+      
+      // Update conversation with new message
+      const updatedConversation = {
+        ...state.currentConversation!,
+        last_message: data,
+        last_message_at: data.created_at,
+      }
+      dispatch({ type: 'UPDATE_CONVERSATION', payload: updatedConversation })
+    })
+
+    return () => {
+      unsubscribeFromPrivateChannel(user.id, state.currentConversation!.other_user.id)
+    }
+  }, [user, state.currentConversation])
+
+  const sendMessage = useCallback(async (
+    recipientId: string,
+    content: string,
+    messageType: 'text' | 'image' | 'file' = 'text'
+  ) => {
+    if (!user) return
+
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      
+      const response = await fetch('/api/chat/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipient_id: recipientId,
+          content,
+          message_type: messageType,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send message')
+      }
+
+      const result = await response.json()
+      dispatch({ type: 'ADD_MESSAGE', payload: result.data.message })
+    } catch (error) {
+      console.error('Send message error:', error)
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to send message' })
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }, [user])
+
+  const loadConversations = useCallback(async () => {
+    if (!user) return
+
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      
+      const response = await fetch('/api/chat/conversations')
+      if (!response.ok) {
+        throw new Error('Failed to load conversations')
+      }
+
+      const result = await response.json()
+      dispatch({ type: 'SET_CONVERSATIONS', payload: result.data.conversations })
+    } catch (error) {
+      console.error('Load conversations error:', error)
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to load conversations' })
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }, [user])
+
+  const loadMessages = useCallback(async (userId: string) => {
+    if (!user) return
+
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      
+      const response = await fetch(`/api/chat/messages?user_id=${userId}`)
+      if (!response.ok) {
+        throw new Error('Failed to load messages')
+      }
+
+      const result = await response.json()
+      dispatch({ type: 'SET_MESSAGES', payload: result.data.messages })
+    } catch (error) {
+      console.error('Load messages error:', error)
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to load messages' })
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }, [user])
+
+  const selectConversation = useCallback((conversation: ChatConversation) => {
+    dispatch({ type: 'SET_CURRENT_CONVERSATION', payload: conversation })
+    dispatch({ type: 'SET_MESSAGES', payload: [] })
+    loadMessages(conversation.other_user.id)
+  }, [loadMessages])
+
+  const searchUsers = useCallback(async (query: string): Promise<ChatUser[]> => {
+    if (!user || !query.trim()) return []
+
+    try {
+      const response = await fetch(`/api/chat/users?q=${encodeURIComponent(query)}`)
+      if (!response.ok) {
+        throw new Error('Failed to search users')
+      }
+
+      const result = await response.json()
+      return result.data.users
+    } catch (error) {
+      console.error('Search users error:', error)
+      dispatch({ type: 'SET_ERROR', payload: 'Failed to search users' })
+      return []
+    }
+  }, [user])
+
+  const value: ChatContextType = {
+    state,
+    sendMessage,
+    loadConversations,
+    loadMessages,
+    selectConversation,
+    searchUsers,
+  }
+
+  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>
+}
+
+export function useChat() {
+  const context = useContext(ChatContext)
+  if (context === undefined) {
+    throw new Error('useChat must be used within a ChatProvider')
+  }
+  return context
+}

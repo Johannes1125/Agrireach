@@ -175,17 +175,17 @@ export default function MarketplacePage() {
 
       {/* Header */}
       <div className="bg-background border-b">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground font-sans">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground font-sans">
                 AgriReach Marketplace
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Fresh products directly from farmers, fishers, and artisans
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <ShoppingCartComponent 
                 items={cartItems.map(item => ({
                   id: item._id,
@@ -193,15 +193,16 @@ export default function MarketplacePage() {
                   price: item.product_id?.price || 0,
                   quantity: item.quantity,
                   image: item.product_id?.images?.[0] || '/placeholder.svg',
-                  seller: item.product_id?.seller_id?.full_name || 'Unknown Seller'
+                  seller: item.product_id?.seller_id?.full_name || 'Unknown Seller',
+                  unit: item.product_id?.unit || 'kg'
                 }))}
-                onUpdateQuantity={(id, quantity) => {
+                onUpdateQuantity={(id: number, quantity: number) => {
                   // Handle quantity update
-                  updateCartItem(id, quantity);
+                  updateCartItem(String(id), quantity);
                 }}
-                onRemoveItem={(id) => {
+                onRemoveItem={(id: number) => {
                   // Handle item removal
-                  removeFromCart(id);
+                  removeFromCart(String(id));
                 }}
                 onCheckout={() => {
                   if (cartItems.length === 0) {
@@ -221,9 +222,9 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
         {/* Search and Filters */}
-        <div className="flex flex-col lg:flex-row gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -241,7 +242,7 @@ export default function MarketplacePage() {
               value={selectedCategory}
               onValueChange={setSelectedCategory}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -265,7 +266,7 @@ export default function MarketplacePage() {
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -301,8 +302,8 @@ export default function MarketplacePage() {
         <div
           className={
             viewMode === "grid"
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-              : "space-y-4"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6"
+              : "space-y-3 sm:space-y-4"
           }
         >
           {loading ? (
