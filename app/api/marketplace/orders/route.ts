@@ -14,6 +14,7 @@ const CreateOrderSchema = z.object({
   product_id: z.string().min(1),
   quantity: z.number().min(1),
   delivery_address: z.string().min(1),
+  payment_method: z.enum(["gcash", "grabpay", "card", "cod"]).default("gcash"),
 });
 
 export async function GET(req: NextRequest) {
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
   const result = await validate(req);
   if (!result.ok) return result.res;
 
-  const { product_id, quantity, delivery_address } = result.data;
+  const { product_id, quantity, delivery_address, payment_method } = result.data;
 
   // Check if product exists and is available
   const product = await Product.findById(product_id);
@@ -99,7 +100,19 @@ export async function POST(req: NextRequest) {
     return jsonError("Cannot order your own product", 400);
   }
 
+  // Validate payment method
+  const allowedMethods = ["gcash", "grabpay", "card", "cod"];
+  if (!allowedMethods.includes(payment_method)) {
+    return jsonError("Invalid payment method", 400);
+  }
+
   const totalPrice = product.price * quantity;
+
+  // Set payment status for COD
+  let paymentStatus: "pending" | "paid" = "pending";
+  if (payment_method !== "cod") {
+    paymentStatus = "pending";
+  }
 
   // Create order
   const order = await Order.create({
@@ -110,7 +123,8 @@ export async function POST(req: NextRequest) {
     total_price: totalPrice,
     delivery_address,
     status: "pending",
-    payment_status: "pending"
+    payment_status: paymentStatus,
+    payment_method
   });
 
   // Update product quantity

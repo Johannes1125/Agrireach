@@ -110,8 +110,8 @@ export interface IPostVote extends Document {
 
 const PostVoteSchema = new Schema<IPostVote>(
   {
-    post_id: { type: Schema.Types.ObjectId, ref: "ForumPost", required: true, index: true },
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    post_id: { type: Schema.Types.ObjectId, ref: "ForumPost", required: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     vote_type: { type: String, required: true, enum: ["like", "dislike"] },
   },
   { timestamps: { createdAt: "created_at", updatedAt: false } }

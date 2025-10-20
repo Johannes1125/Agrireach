@@ -10,8 +10,8 @@ export interface IVerificationToken extends Document {
 
 const VerificationTokenSchema = new Schema<IVerificationToken>(
   {
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    token_hash: { type: String, required: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    token_hash: { type: String, required: true },
     expires_at: { type: Date, required: true },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
@@ -32,8 +32,8 @@ export interface IPasswordResetToken extends Document {
 
 const PasswordResetTokenSchema = new Schema<IPasswordResetToken>(
   {
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    token_hash: { type: String, required: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    token_hash: { type: String, required: true },
     expires_at: { type: Date, required: true },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }

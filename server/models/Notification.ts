@@ -15,12 +15,12 @@ export interface INotification extends Document {
 
 const NotificationSchema = new Schema<INotification>(
   {
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     type: { type: String, required: true },
     title: { type: String, required: true },
     message: { type: String, required: true },
     priority: { type: String, default: "medium", enum: ["low", "medium", "high"] },
-    read: { type: Boolean, default: false, index: true },
+    read: { type: Boolean, default: false },
     action_url: { type: String },
   },
   { timestamps: { createdAt: "created_at", updatedAt: false } }
@@ -43,7 +43,7 @@ export interface INotificationPreference extends Document {
 
 const NotificationPreferenceSchema = new Schema<INotificationPreference>(
   {
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
     email_enabled: { type: Boolean, default: true },
     push_enabled: { type: Boolean, default: true },
     sms_enabled: { type: Boolean, default: false },

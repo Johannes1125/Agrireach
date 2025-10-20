@@ -78,6 +78,26 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
     }
   }, [open])
 
+  // Sync selectedItems with current cartItems when cartItems change
+  useEffect(() => {
+    if (open && cartItems.length > 0) {
+      // Only select items that still exist in the cart
+      const validItemIds = cartItems.map(item => item._id)
+      setSelectedItems(prev => {
+        const newSet = new Set<string>()
+        prev.forEach(id => {
+          if (validItemIds.includes(id)) {
+            newSet.add(id)
+          }
+        })
+        return newSet
+      })
+    } else if (open && cartItems.length === 0) {
+      // Clear selected items if cart is empty
+      setSelectedItems(new Set())
+    }
+  }, [cartItems, open])
+
   const fetchUserData = async () => {
     try {
       const res = await authFetch("/api/users/me")
@@ -158,58 +178,140 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
       return
     }
 
+    // Check if selected items still exist in cart
+    const validSelectedItems = cartItems.filter(item => selectedItems.has(item._id))
+    if (validSelectedItems.length === 0) {
+      toast.error("Selected items are no longer available. Please refresh and try again.")
+      return
+    }
+
     if (!isAddressComplete(deliveryAddress)) {
       toast.error("Please complete your delivery address")
+      return
+    }
+
+    if (!billingName.trim()) {
+      toast.error("Please enter your name")
+      return
+    }
+
+    if (!billingEmail.trim()) {
+      toast.error("Please enter your email")
+      return
+    }
+
+    if (!paymentMethod) {
+      toast.error("Please select a payment method")
+      return
+    }
+
+    // Map Philippine address to validation schema format
+    const mappedDeliveryAddress = {
+      line1: deliveryAddress.streetAddress || deliveryAddress.barangay || "",
+      line2: "", // Optional field
+      city: deliveryAddress.city || "",
+      state: deliveryAddress.province || "",
+      postal_code: deliveryAddress.zipCode || "",
+      country: "PH"
+    }
+
+    // Validate mapped address has required fields
+    if (!mappedDeliveryAddress.line1 || !mappedDeliveryAddress.city || !mappedDeliveryAddress.state || !mappedDeliveryAddress.postal_code) {
+      toast.error("Please complete all required address fields (street address, city, province, and postal code)")
       return
     }
 
     setIsProcessing(true)
 
     try {
+
+      // Debug logging
+      const requestData = {
+        items: validSelectedItems.map(item => item._id),
+        delivery_address: formatPhilippineAddress(deliveryAddress) || "Incomplete address",
+        delivery_address_structured: mappedDeliveryAddress,
+        payment_method: paymentMethod,
+        billing_details: {
+          name: billingName,
+          email: billingEmail,
+          ...(billingPhone && { phone: billingPhone }),
+        },
+      }
+      
+      console.log("Checkout data:", requestData)
+      console.log("Individual field validation:", {
+        itemsValid: validSelectedItems.length > 0,
+        deliveryAddressValid: formatPhilippineAddress(deliveryAddress).length > 0,
+        paymentMethodValid: !!paymentMethod,
+        billingNameValid: !!billingName?.trim(),
+        billingEmailValid: !!billingEmail?.trim(),
+        mappedAddressValid: !!(mappedDeliveryAddress.line1 && mappedDeliveryAddress.city && mappedDeliveryAddress.state && mappedDeliveryAddress.postal_code),
+      })
+
       // Step 1: Create payment
       const paymentRes = await authFetch("/api/marketplace/checkout/create-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: Array.from(selectedItems),
-          delivery_address: formatPhilippineAddress(deliveryAddress),
-          delivery_address_structured: deliveryAddress,
-          payment_method: paymentMethod,
-          billing_details: {
-            name: billingName,
-            email: billingEmail,
-            phone: billingPhone,
-          },
-        }),
+        body: JSON.stringify(requestData),
       })
 
+      console.log("Payment response status:", paymentRes.status)
+      console.log("Payment response headers:", Object.fromEntries(paymentRes.headers.entries()))
+
       if (!paymentRes.ok) {
-        const error = await paymentRes.json()
-        throw new Error(error.message || "Failed to create payment")
+        let error
+        try {
+          error = await paymentRes.json()
+        } catch (parseError) {
+          console.error("Failed to parse error response:", parseError)
+          error = { message: `HTTP ${paymentRes.status}: ${paymentRes.statusText}` }
+        }
+        console.error("Payment API Error:", error)
+        
+        // Handle different error response formats
+        let errorMessage = "Failed to create payment"
+        if (error && typeof error === 'object') {
+          if (error.message && typeof error.message === 'string') {
+            errorMessage = error.message
+          } else if (error.error && typeof error.error === 'string') {
+            errorMessage = error.error
+          }
+        } else if (typeof error === 'string') {
+          errorMessage = error
+        }
+        
+        // Ensure we always have a valid string
+        const finalErrorMessage = errorMessage || "Failed to create payment"
+        console.error("Final error message:", finalErrorMessage)
+        throw new Error(finalErrorMessage)
       }
 
       const paymentData = await paymentRes.json()
       console.log("Payment API Response:", paymentData)
 
+      // Extract the actual data from the response
+      const actualData = paymentData.data || paymentData
+      console.log("Actual payment data:", actualData)
+
       // Step 2: Handle payment based on type
-      if (paymentData.payment_type === "cod") {
+      if (actualData.payment_type === "cod") {
         // For Cash on Delivery, show success message
         toast.success("Order placed successfully! Payment will be collected upon delivery.")
         onSuccess()
         onClose()
-      } else if (paymentData.payment_type === "source") {
+      } else if (actualData.payment_type === "source") {
         // For e-wallet (GCash, GrabPay), redirect to checkout URL
         toast.success("Redirecting to payment...")
         
         // Store cart items and delivery address in sessionStorage for confirmation later
         sessionStorage.setItem("pending_payment", JSON.stringify({
-          source_id: paymentData.source_id,
+          source_id: actualData.source_id,
           cart_item_ids: Array.from(selectedItems),
           delivery_address: deliveryAddress,
         }))
 
         // Redirect to PayMongo checkout page
-        window.location.href = paymentData.checkout_url
+        window.location.href = actualData.checkout_url
       } else {
         // For card payments, you would integrate PayMongo.js here
         toast.info("Card payment integration coming soon. Please use GCash or GrabPay for now.")

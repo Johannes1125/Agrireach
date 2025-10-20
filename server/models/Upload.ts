@@ -15,13 +15,13 @@ export interface IUpload extends Document {
 
 const UploadSchema = new Schema<IUpload>(
   {
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     filename: { type: String, required: true },
     original_name: { type: String, required: true },
     mime_type: { type: String, required: true },
     size: { type: Number, required: true },
     url: { type: String, required: true },
-    type: { type: String, required: true, enum: ["avatar", "product_image", "resume", "document"], index: true },
+    type: { type: String, required: true, enum: ["avatar", "product_image", "resume", "document"] },
   },
   { timestamps: { createdAt: "created_at", updatedAt: false } }
 );

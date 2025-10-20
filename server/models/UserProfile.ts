@@ -24,7 +24,7 @@ export interface IUserProfile extends Document {
 
 const UserProfileSchema = new Schema<IUserProfile>(
   {
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     phone: { type: String },
     website: { type: String },
     company_name: { type: String },

@@ -99,8 +99,7 @@ export async function GET(req: NextRequest) {
 
   // Check if user has buyer role
   if (userRoles.includes("buyer")) {
-    const [activeProducts, totalOrders, pendingOrders, totalSpent] = await Promise.all([
-      Product.countDocuments({ seller_id: decoded.sub, status: "active" }),
+    const [totalOrders, pendingOrders, totalSpent] = await Promise.all([
       Order.countDocuments({ buyer_id: decoded.sub }),
       Order.countDocuments({ buyer_id: decoded.sub, status: "pending" }),
       Order.aggregate([
@@ -110,14 +109,16 @@ export async function GET(req: NextRequest) {
     ]);
 
     stats.buyer = {
-      activeProducts,
       totalOrders,
       pendingOrders,
       totalSpent: totalSpent[0]?.total || 0
     };
+  }
 
-    // Also get seller stats if they have products
-    const [sellerOrders, totalEarnings] = await Promise.all([
+  // Check if user has seller role (separate from buyer)
+  if (userRoles.includes("seller") || userRoles.includes("buyer")) {
+    const [activeProducts, sellerOrders, totalEarnings] = await Promise.all([
+      Product.countDocuments({ seller_id: decoded.sub, status: "active" }),
       Order.countDocuments({ seller_id: decoded.sub }),
       Order.aggregate([
         { $match: { seller_id: decoded.sub, payment_status: "paid" } },
@@ -125,12 +126,11 @@ export async function GET(req: NextRequest) {
       ])
     ]);
 
-    if (sellerOrders > 0) {
-      stats.seller = {
-        totalOrders: sellerOrders,
-        totalEarnings: totalEarnings[0]?.total || 0
-      };
-    }
+    stats.seller = {
+      activeProducts,
+      totalOrders: sellerOrders,
+      totalEarnings: totalEarnings[0]?.total || 0
+    };
   }
 
   return jsonOk({ stats });

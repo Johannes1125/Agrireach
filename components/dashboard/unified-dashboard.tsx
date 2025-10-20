@@ -10,6 +10,8 @@ import { useNotifications } from "@/components/notifications/notification-provid
 import { useDashboardData } from "@/hooks/use-dashboard-data"
 import { useRecruiterData } from "@/hooks/use-recruiter-data"
 import { useBuyerData } from "@/hooks/use-buyer-data"
+import { useOrdersData } from "@/hooks/use-orders-data"
+import { useFeaturedProductsData } from "@/hooks/use-featured-products-data"
 import { ManageJobModal } from "@/components/dashboard/manage-job-modal"
 import { ManageProductModal } from "@/components/marketplace/manage-product-modal"
 import { formatDate, formatRelativeTime } from "@/lib/utils"
@@ -57,6 +59,15 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
   const { stats, activities, loading, error } = useDashboardData()
   const { jobs: recruiterJobs, applicants: recentApplicants, loading: recruiterLoading } = useRecruiterData()
   const { products: buyerProducts, loading: buyerLoading, refetch: refetchProducts } = useBuyerData()
+  const { orders: buyerOrders, loading: buyerOrdersLoading } = useOrdersData("buyer", 5)
+  const { orders: sellerOrders, loading: sellerOrdersLoading } = useOrdersData("seller", 5)
+  const { products: featuredProducts, loading: featuredProductsLoading } = useFeaturedProductsData(12)
+  
+  // Debug featured products data
+  useEffect(() => {
+    console.log("Featured products in dashboard:", featuredProducts)
+    console.log("Featured products loading:", featuredProductsLoading)
+  }, [featuredProducts, featuredProductsLoading])
 
   const getWorkerData = () => {
     if (!stats?.worker) return null
@@ -93,10 +104,24 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
 
     return {
       stats: {
-        activeProducts: stats.buyer.activeProducts,
         totalOrders: stats.buyer.totalOrders,
         pendingOrders: stats.buyer.pendingOrders,
         totalSpent: stats.buyer.totalSpent,
+        trustScore: stats.user.trust_score,
+        verified: stats.user.verified,
+      },
+      recentActivities: activities.filter(a => a.type.includes('order') || a.type.includes('product')).slice(0, 5),
+    }
+  }
+
+  const getSellerData = () => {
+    if (!stats?.seller) return null
+
+    return {
+      stats: {
+        activeProducts: stats.seller.activeProducts,
+        totalOrders: stats.seller.totalOrders,
+        totalEarnings: stats.seller.totalEarnings,
         trustScore: stats.user.trust_score,
         verified: stats.user.verified,
       },
@@ -652,23 +677,23 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Monthly Spend</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">My Products</CardTitle>
+                  <Package className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₱{(stats?.buyer?.totalSpent || 0).toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">Total spent</p>
+                  <div className="text-2xl font-bold">{stats?.seller?.activeProducts || 0}</div>
+                  <p className="text-xs text-muted-foreground">Active listings</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Saved Suppliers</CardTitle>
-                  <Star className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.buyer?.activeProducts || 0}</div>
-                  <p className="text-xs text-muted-foreground">Products listed</p>
+                  <div className="text-2xl font-bold">₱{(stats?.seller?.totalEarnings || 0).toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">From sales</p>
                 </CardContent>
               </Card>
             </section>
@@ -679,7 +704,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
                     <CardTitle className="font-heading">My Products</CardTitle>
-                    <CardDescription>Manage your posted products</CardDescription>
+                    <CardDescription>Manage your product listings</CardDescription>
                   </div>
                   <Link href="/marketplace/sell">
                     <Button size="sm">
@@ -771,97 +796,235 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
               </Card>
             </section>
 
-            <div className="grid gap-6 lg:grid-cols-3">
-              {/* Recent Orders */}
-              <section className="lg:col-span-2">
+            <div className="flex gap-6 lg:flex-row">
+              {/* Left Column - Orders and Sales */}
+              <div className="flex-1 space-y-6">
+                {/* Recent Orders */}
+                <section>
                 <Card>
                   <CardHeader>
                     <CardTitle className="font-heading">Recent Orders</CardTitle>
                     <CardDescription>Track your current and recent purchases</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {(Array.isArray((buyerData as any)?.recentOrders) ? (buyerData as any).recentOrders : []).map((order) => (
-                      <article
-                        key={order.id}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
-                      >
-                        <div className="space-y-1 flex-1">
-                          <h4 className="font-medium">{order.product}</h4>
-                          <p className="text-sm text-muted-foreground">from {order.supplier}</p>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Package className="h-3 w-3" />
-                              {order.quantity}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Truck className="h-3 w-3" />
-                              Delivery {order.deliveryDate}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={order.status === "in-transit" ? "default" : "secondary"}>
-                              {order.status}
-                            </Badge>
-                            <span className="text-sm font-medium text-primary">{order.price}</span>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full sm:w-auto bg-transparent"
-                          onClick={() => handleQuickAction("track-order", activeRole)}
-                        >
-                          Track Order
-                        </Button>
-                      </article>
-                    ))}
+                  <CardContent className="space-y-4 max-h-96 overflow-y-auto scrollbar-thin">
+                    {buyerOrdersLoading ? (
+                      <div className="text-center py-8 text-muted-foreground">Loading orders...</div>
+                    ) : buyerOrders.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="mb-4">No recent orders found.</p>
+                        <Link href="/marketplace">
+                          <Button>
+                            <ShoppingCart className="mr-2 h-4 w-4" />
+                            Browse Products
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      buyerOrders.map((order) => {
+                        const daysAgo = formatRelativeTime(order.created_at)
+                        const imageUrl = order.product_id?.images?.[0] || "/placeholder.svg"
+                        return (
+                          <article
+                            key={order._id}
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
+                          >
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-start gap-3">
+                                <img
+                                  src={imageUrl}
+                                  alt={order.product_id?.title || "Product"}
+                                  className="w-12 h-12 object-cover rounded-md"
+                                />
+                                <div className="space-y-1">
+                                  <h4 className="font-medium">{order.product_id?.title || "Unknown Product"}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    Quantity: {order.quantity} {order.product_id?.unit || "units"}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Seller: {order.seller_id?.full_name || "Unknown"}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col sm:items-end gap-2">
+                              <div className="text-right">
+                                <div className="font-medium">₱{order.total_price.toLocaleString()}</div>
+                                <div className="text-sm text-muted-foreground">{daysAgo}</div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Badge variant={
+                                  order.status === "delivered" ? "default" :
+                                  order.status === "shipped" ? "secondary" :
+                                  order.status === "confirmed" ? "outline" :
+                                  order.status === "cancelled" ? "destructive" :
+                                  "secondary"
+                                }>
+                                  {order.status}
+                                </Badge>
+                                <Badge variant={
+                                  order.payment_status === "paid" ? "default" :
+                                  order.payment_status === "failed" ? "destructive" :
+                                  "secondary"
+                                }>
+                                  {order.payment_status}
+                                </Badge>
+                              </div>
+                            </div>
+                          </article>
+                        )
+                      })
+                    )}
                   </CardContent>
                 </Card>
-              </section>
+                </section>
+
+                {/* Recent Sales */}
+                <section>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="font-heading">Recent Sales</CardTitle>
+                    <CardDescription>Track your recent product sales</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4 max-h-96 overflow-y-auto scrollbar-thin">
+                    {sellerOrdersLoading ? (
+                      <div className="text-center py-8 text-muted-foreground">Loading sales...</div>
+                    ) : sellerOrders.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="mb-4">No recent sales found.</p>
+                        <Link href="/marketplace">
+                          <Button>
+                            <Plus className="mr-2 h-4 w-4" />
+                            List Products
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      sellerOrders.map((order) => {
+                        const daysAgo = formatRelativeTime(order.created_at)
+                        const imageUrl = order.product_id?.images?.[0] || "/placeholder.svg"
+                        return (
+                          <article
+                            key={order._id}
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
+                          >
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-start gap-3">
+                                <img
+                                  src={imageUrl}
+                                  alt={order.product_id?.title || "Product"}
+                                  className="w-12 h-12 object-cover rounded-md"
+                                />
+                                <div className="space-y-1">
+                                  <h4 className="font-medium">{order.product_id?.title || "Unknown Product"}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    Quantity: {order.quantity} {order.product_id?.unit || "units"}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Buyer: {order.buyer_id?.full_name || "Unknown"}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex flex-col sm:items-end gap-2">
+                              <div className="text-right">
+                                <div className="font-medium">₱{order.total_price.toLocaleString()}</div>
+                                <div className="text-sm text-muted-foreground">{daysAgo}</div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Badge variant={
+                                  order.status === "delivered" ? "default" :
+                                  order.status === "shipped" ? "secondary" :
+                                  order.status === "confirmed" ? "outline" :
+                                  order.status === "cancelled" ? "destructive" :
+                                  "secondary"
+                                }>
+                                  {order.status}
+                                </Badge>
+                                <Badge variant={
+                                  order.payment_status === "paid" ? "default" :
+                                  order.payment_status === "failed" ? "destructive" :
+                                  "secondary"
+                                }>
+                                  {order.payment_status}
+                                </Badge>
+                              </div>
+                            </div>
+                          </article>
+                        )
+                      })
+                    )}
+                  </CardContent>
+                </Card>
+                </section>
+              </div>
 
               {/* Featured Products */}
-              <aside>
-                <Card>
+              <section className="lg:w-80">
+                <Card className="h-full">
                   <CardHeader>
                     <CardTitle className="font-heading">Featured Products</CardTitle>
                     <CardDescription>Fresh picks from local suppliers</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {(Array.isArray((buyerData as any)?.featuredProducts) ? (buyerData as any).featuredProducts : []).map((product) => (
-                      <article key={product.id} className="p-3 border rounded-lg space-y-3">
-                        <div className="flex gap-3">
-                          <img
-                            src={product.image || "/placeholder.svg"}
-                            alt={product.name}
-                            className="w-16 h-16 rounded-lg object-cover"
-                          />
-                          <div className="flex-1 space-y-1">
-                            <h5 className="font-medium">{product.name}</h5>
-                            <p className="text-sm text-muted-foreground">{product.supplier}</p>
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1 text-sm">
-                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                <span>{product.rating}</span>
-                              </div>
-                              <span className="text-sm text-muted-foreground">•</span>
-                              <span className="text-sm text-muted-foreground">{product.location}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-primary">{product.price}</span>
-                          <Button
-                            size="sm"
-                            onClick={() => notifications.showInfo("Add to Cart", `Adding ${product.name} to cart...`)}
-                          >
-                            Add to Cart
+                  <CardContent className="space-y-4 max-h-[600px] overflow-y-auto scrollbar-thin">
+                    {featuredProductsLoading ? (
+                      <div className="text-center py-8 text-muted-foreground">Loading products...</div>
+                    ) : featuredProducts.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p className="mb-4">No featured products found.</p>
+                        <Link href="/marketplace">
+                          <Button>
+                            <ShoppingCart className="mr-2 h-4 w-4" />
+                            Browse All Products
                           </Button>
-                        </div>
-                      </article>
-                    ))}
+                        </Link>
+                      </div>
+                    ) : (
+                      featuredProducts.map((product) => {
+                        console.log("Featured product data:", product)
+                        const imageUrl = product.images?.[0] || "/placeholder.svg"
+                        const daysAgo = formatRelativeTime(product.created_at)
+                        return (
+                          <article key={product._id} className="p-4 border rounded-lg space-y-3 hover:bg-muted/50 transition-colors">
+                            <div className="flex gap-3">
+                              <img
+                                src={imageUrl}
+                                alt={product.title}
+                                className="w-16 h-16 rounded-lg object-cover"
+                              />
+                              <div className="flex-1 space-y-2">
+                                <h5 className="font-medium text-base">{product.title}</h5>
+                                <p className="text-sm text-muted-foreground">{product.seller_id?.full_name || "Unknown Seller"}</p>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 text-sm">
+                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                    <span>{product.rating || 4.5}</span>
+                                  </div>
+                                  <span className="text-sm text-muted-foreground">•</span>
+                                  <span className="text-sm text-muted-foreground">{product.seller_id?.location || "Unknown"}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground">{daysAgo}</p>
+                                <p className="text-xs text-muted-foreground">Category: {product.category || "General"}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-primary">₱{product.price.toLocaleString()}/{product.unit}</span>
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  notifications.showInfo("Add to Cart", `Adding ${product.title} to cart...`)
+                                  router.push(`/marketplace/product/${product._id}`)
+                                }}
+                              >
+                                View Product
+                              </Button>
+                            </div>
+                          </article>
+                        )
+                      })
+                    )}
                   </CardContent>
                 </Card>
-              </aside>
+              </section>
             </div>
           </TabsContent>
         </Tabs>

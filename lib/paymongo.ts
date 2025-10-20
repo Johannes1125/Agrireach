@@ -1,10 +1,11 @@
 /**
- * PayMongo Integration for Next.js
+ * Enhanced PayMongo Integration for Next.js
  * Documentation: https://developers.paymongo.com/
  */
 
 const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY || '';
 const PAYMONGO_PUBLIC_KEY = process.env.PAYMONGO_PUBLIC_KEY || '';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 // Base64 encode the secret key for API authentication
 const getAuthHeader = () => {
@@ -15,12 +16,35 @@ const getAuthHeader = () => {
   return `Basic ${encoded}`;
 };
 
+// Enhanced error handling
+class PayMongoError extends Error {
+  constructor(
+    message: string,
+    public code?: string,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'PayMongoError';
+  }
+}
+
+// API response wrapper
+const handleApiResponse = async (response: Response) => {
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    const errorMessage = error.errors?.[0]?.detail || error.message || `HTTP ${response.status}`;
+    throw new PayMongoError(errorMessage, error.errors?.[0]?.code, error);
+  }
+  return response.json();
+};
+
 export interface PaymentIntentData {
   amount: number; // Amount in centavos (e.g., 10000 = ₱100.00)
   currency: string; // 'PHP'
   description: string;
   statement_descriptor?: string;
   metadata?: Record<string, any>;
+  payment_method_allowed?: string[];
 }
 
 export interface PaymentMethodData {
@@ -46,6 +70,21 @@ export interface PaymentMethodData {
   };
 }
 
+export interface SourceData {
+  type: 'gcash' | 'grab_pay';
+  amount: number;
+  currency: string;
+  redirect: {
+    success: string;
+    failed: string;
+  };
+  billing?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+}
+
 /**
  * Create a Payment Intent
  * A PaymentIntent represents an intent to collect payment from a customer
@@ -65,19 +104,14 @@ export async function createPaymentIntent(data: PaymentIntentData) {
             currency: data.currency,
             description: data.description,
             statement_descriptor: data.statement_descriptor || 'AgriReach Purchase',
-            payment_method_allowed: ['card', 'gcash', 'paymaya', 'grab_pay'],
+            payment_method_allowed: data.payment_method_allowed || ['card', 'gcash', 'paymaya', 'grab_pay'],
             metadata: data.metadata || {},
           },
         },
       }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.errors?.[0]?.detail || 'Failed to create payment intent');
-    }
-
-    const result = await response.json();
+    const result = await handleApiResponse(response);
     return result.data;
   } catch (error: any) {
     console.error('PayMongo createPaymentIntent error:', error);
@@ -108,12 +142,7 @@ export async function createPaymentMethod(data: PaymentMethodData) {
       }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.errors?.[0]?.detail || 'Failed to create payment method');
-    }
-
-    const result = await response.json();
+    const result = await handleApiResponse(response);
     return result.data;
   } catch (error: any) {
     console.error('PayMongo createPaymentMethod error:', error);
@@ -137,18 +166,13 @@ export async function attachPaymentIntent(paymentIntentId: string, paymentMethod
           attributes: {
             payment_method: paymentMethodId,
             client_key: clientKey,
-            return_url: `${process.env.BASE_URL || 'http://localhost:3000'}/marketplace/payment/success`,
+            return_url: `${BASE_URL}/marketplace/payment/success`,
           },
         },
       }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.errors?.[0]?.detail || 'Failed to attach payment intent');
-    }
-
-    const result = await response.json();
+    const result = await handleApiResponse(response);
     return result.data;
   } catch (error: any) {
     console.error('PayMongo attachPaymentIntent error:', error);
@@ -168,12 +192,7 @@ export async function retrievePaymentIntent(paymentIntentId: string) {
       },
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.errors?.[0]?.detail || 'Failed to retrieve payment intent');
-    }
-
-    const result = await response.json();
+    const result = await handleApiResponse(response);
     return result.data;
   } catch (error: any) {
     console.error('PayMongo retrievePaymentIntent error:', error);
@@ -184,20 +203,7 @@ export async function retrievePaymentIntent(paymentIntentId: string) {
 /**
  * Create a Source (for e-wallet payments like GCash, GrabPay, etc.)
  */
-export async function createSource(data: {
-  type: 'gcash' | 'grab_pay';
-  amount: number;
-  currency: string;
-  redirect: {
-    success: string;
-    failed: string;
-  };
-  billing?: {
-    name: string;
-    email: string;
-    phone: string;
-  };
-}) {
+export async function createSource(data: SourceData) {
   try {
     const response = await fetch('https://api.paymongo.com/v1/sources', {
       method: 'POST',
@@ -212,12 +218,7 @@ export async function createSource(data: {
       }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.errors?.[0]?.detail || 'Failed to create source');
-    }
-
-    const result = await response.json();
+    const result = await handleApiResponse(response);
     return result.data;
   } catch (error: any) {
     console.error('PayMongo createSource error:', error);
@@ -237,12 +238,7 @@ export async function retrieveSource(sourceId: string) {
       },
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.errors?.[0]?.detail || 'Failed to retrieve source');
-    }
-
-    const result = await response.json();
+    const result = await handleApiResponse(response);
     return result.data;
   } catch (error: any) {
     console.error('PayMongo retrieveSource error:', error);
@@ -250,9 +246,121 @@ export async function retrieveSource(sourceId: string) {
   }
 }
 
+/**
+ * Create a Payment (for completed sources)
+ */
+export async function createPayment(paymentIntentId: string, sourceId: string) {
+  try {
+    const response = await fetch('https://api.paymongo.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': getAuthHeader(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: {
+          attributes: {
+            amount: 0, // Will be taken from payment intent
+            currency: 'PHP',
+            description: 'AgriReach Payment',
+            statement_descriptor: 'AgriReach',
+            source: {
+              id: sourceId,
+              type: 'source'
+            },
+            payment_intent: {
+              id: paymentIntentId
+            }
+          },
+        },
+      }),
+    });
+
+    const result = await handleApiResponse(response);
+    return result.data;
+  } catch (error: any) {
+    console.error('PayMongo createPayment error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Retrieve a Payment
+ */
+export async function retrievePayment(paymentId: string) {
+  try {
+    const response = await fetch(`https://api.paymongo.com/v1/payments/${paymentId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': getAuthHeader(),
+      },
+    });
+
+    const result = await handleApiResponse(response);
+    return result.data;
+  } catch (error: any) {
+    console.error('PayMongo retrievePayment error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a Refund
+ */
+export async function createRefund(paymentId: string, amount?: number, reason?: string) {
+  try {
+    const response = await fetch('https://api.paymongo.com/v1/refunds', {
+      method: 'POST',
+      headers: {
+        'Authorization': getAuthHeader(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        data: {
+          attributes: {
+            amount: amount || 0, // 0 means full refund
+            payment_id: paymentId,
+            reason: reason || 'Refund requested',
+            notes: 'AgriReach refund'
+          },
+        },
+      }),
+    });
+
+    const result = await handleApiResponse(response);
+    return result.data;
+  } catch (error: any) {
+    console.error('PayMongo createRefund error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Verify webhook signature
+ */
+export function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
+  try {
+    const crypto = require('crypto');
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(payload)
+      .digest('hex');
+    
+    return crypto.timingSafeEqual(
+      Buffer.from(signature, 'hex'),
+      Buffer.from(expectedSignature, 'hex')
+    );
+  } catch (error) {
+    console.error('Webhook signature verification error:', error);
+    return false;
+  }
+}
+
 export const PAYMONGO_CONFIG = {
   publicKey: PAYMONGO_PUBLIC_KEY,
   secretKey: PAYMONGO_SECRET_KEY,
   apiUrl: 'https://api.paymongo.com/v1',
+  webhookSecret: process.env.PAYMONGO_WEBHOOK_SECRET || '',
 };
 
+export { PayMongoError };

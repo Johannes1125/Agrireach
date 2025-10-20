@@ -16,7 +16,7 @@ export interface IFarmer extends Document {
 
 const FarmerSchema = new Schema<IFarmer>(
   {
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
     specialty: { type: String, required: true },
     experience_years: { type: Number },
     farm_size: { type: String },

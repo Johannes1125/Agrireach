@@ -21,7 +21,7 @@ export interface IProduct extends Document {
 
 const ProductSchema = new Schema<IProduct>(
   {
-    seller_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    seller_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     title: { type: String, required: true, index: "text" },
     description: { type: String, required: true },
     category: { type: String, required: true, index: true },
@@ -31,7 +31,7 @@ const ProductSchema = new Schema<IProduct>(
     location: { type: String, required: true },
     images: { type: Schema.Types.Mixed }, // JSONB equivalent
     organic: { type: Boolean, default: false },
-    status: { type: String, default: "pending_approval", enum: ["active", "sold", "pending_approval"], index: true },
+    status: { type: String, default: "pending_approval", enum: ["active", "sold", "pending_approval"] },
     views: { type: Number, default: 0 },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
@@ -51,8 +51,8 @@ export interface ICartItem extends Document {
 
 const CartItemSchema = new Schema<ICartItem>(
   {
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    product_id: { type: Schema.Types.ObjectId, ref: "Product", required: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    product_id: { type: Schema.Types.ObjectId, ref: "Product", required: true },
     quantity: { type: Number, required: true, min: 1 },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
@@ -89,8 +89,8 @@ export interface IOrder extends Document {
 
 const OrderSchema = new Schema<IOrder>(
   {
-    buyer_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    seller_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    buyer_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    seller_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     product_id: { type: Schema.Types.ObjectId, ref: "Product" },
     items: [{
       product_id: { type: Schema.Types.ObjectId, ref: "Product" },
@@ -100,8 +100,8 @@ const OrderSchema = new Schema<IOrder>(
     quantity: { type: Number, required: true },
     total_price: { type: Number, required: true },
     delivery_address: { type: String, required: true },
-    status: { type: String, default: "pending", enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"], index: true },
-    payment_status: { type: String, default: "pending", enum: ["pending", "paid", "refunded", "failed"], index: true },
+    status: { type: String, default: "pending", enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"] },
+    payment_status: { type: String, default: "pending", enum: ["pending", "paid", "refunded", "failed"] },
     payment_method: { type: String },
     payment_intent_id: { type: String },
     payment_source_id: { type: String },

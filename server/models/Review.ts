@@ -18,15 +18,15 @@ export interface IReview extends Document {
 
 const ReviewSchema = new Schema<IReview>(
   {
-    reviewer_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    reviewee_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    reviewer_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    reviewee_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
     title: { type: String },
     comment: { type: String },
     category: { type: String },
     helpful_count: { type: Number, default: 0 },
     verified_purchase: { type: Boolean, default: false },
-    status: { type: String, default: "active", enum: ["active", "pending", "hidden"], index: true },
+    status: { type: String, default: "active", enum: ["active", "pending", "hidden"] },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
@@ -44,8 +44,8 @@ export interface IReviewVote extends Document {
 
 const ReviewVoteSchema = new Schema<IReviewVote>(
   {
-    review_id: { type: Schema.Types.ObjectId, ref: "Review", required: true, index: true },
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    review_id: { type: Schema.Types.ObjectId, ref: "Review", required: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     vote_type: { type: String, required: true, enum: ["helpful", "not_helpful"] },
   },
   { timestamps: { createdAt: "created_at", updatedAt: false } }

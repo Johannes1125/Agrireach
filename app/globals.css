@@ -148,6 +148,40 @@
   .sidebar-scroll::-webkit-scrollbar-thumb:hover {
     background: oklch(0.8 0.04 80);
   }
+
+  /* Custom scrollbar for dashboard sections */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: oklch(0.95 0.01 80) !important;
+    border-radius: 3px !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: oklch(0.7 0.02 80) !important;
+    border-radius: 3px !important;
+    transition: background 0.2s ease !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.6 0.04 80) !important;
+  }
+
+}
+
+/* Dark mode scrollbar styles */
+.dark .scrollbar-thin::-webkit-scrollbar-track {
+  background: oklch(0.2 0.02 140) !important;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: oklch(0.4 0.02 140) !important;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.5 0.04 140) !important;
 }
 
 /* Accessibility: Focus visible styles */

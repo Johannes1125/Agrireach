@@ -700,7 +700,15 @@ export function formatPhilippineAddress(address: PhilippineAddress): string {
   if (address.region) parts.push(address.region)
   if (address.zipCode) parts.push(address.zipCode)
   
-  return parts.join(", ")
+  const formatted = parts.join(", ")
+  
+  // Ensure we have at least the required fields for a valid address
+  if (!address.region || !address.province || !address.city || !address.barangay) {
+    console.warn("Incomplete address provided to formatPhilippineAddress:", address)
+    return formatted || "Incomplete address"
+  }
+  
+  return formatted
 }
 
 // Helper function to validate if address is complete

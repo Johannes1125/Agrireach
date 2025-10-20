@@ -14,12 +14,12 @@ export interface IOtpCode extends Document {
 
 const OtpCodeSchema = new Schema<IOtpCode>(
   {
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: false, index: true, default: null },
-    email: { type: String, required: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: false, default: null },
+    email: { type: String, required: true },
     code: { type: String, required: true },
-    type: { type: String, required: true, enum: ["registration", "password_reset"], index: true },
+    type: { type: String, required: true, enum: ["registration", "password_reset"] },
     expires_at: { type: Date, required: true },
-    used: { type: Boolean, default: false, index: true },
+    used: { type: Boolean, default: false },
   },
   { timestamps: { createdAt: "created_at", updatedAt: false } }
 );

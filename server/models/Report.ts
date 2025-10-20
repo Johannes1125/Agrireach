@@ -23,15 +23,15 @@ export interface IReport extends Document {
 
 const ReportSchema = new Schema<IReport>(
   {
-    reporter_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    reported_user_id: { type: Schema.Types.ObjectId, ref: "User", index: true },
-    type: { type: String, required: true, enum: ["user", "forum_post", "product", "review"], index: true },
+    reporter_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    reported_user_id: { type: Schema.Types.ObjectId, ref: "User" },
+    type: { type: String, required: true, enum: ["user", "forum_post", "product", "review"] },
     content_id: { type: Schema.Types.ObjectId },
     reason: { type: String, required: true },
     description: { type: String, required: true },
     evidence: { type: Schema.Types.Mixed }, // JSONB equivalent
-    status: { type: String, default: "pending", enum: ["pending", "investigating", "resolved", "dismissed"], index: true },
-    priority: { type: String, default: "medium", enum: ["low", "medium", "high"], index: true },
+    status: { type: String, default: "pending", enum: ["pending", "investigating", "resolved", "dismissed"] },
+    priority: { type: String, default: "medium", enum: ["low", "medium", "high"] },
     admin_notes: { type: String },
     resolved_by: { type: Schema.Types.ObjectId, ref: "User" },
     resolved_at: { type: Date },
@@ -55,7 +55,7 @@ export interface IAdminActivityLog extends Document {
 
 const AdminActivityLogSchema = new Schema<IAdminActivityLog>(
   {
-    admin_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    admin_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     action: { type: String, required: true },
     target_type: { type: String },
     target_id: { type: Schema.Types.ObjectId },

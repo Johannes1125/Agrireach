@@ -10,9 +10,9 @@ export interface IUserSession extends Document {
 
 const UserSessionSchema = new Schema<IUserSession>(
   {
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
-    token: { type: String, required: true, index: true },
-    expires_at: { type: Date, required: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    token: { type: String, required: true },
+    expires_at: { type: Date, required: true },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
