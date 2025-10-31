@@ -30,6 +30,7 @@ import {
   Sprout,
   LogOut,
   MessageCircle,
+  BookOpen,
 } from "lucide-react";
 
 const navigation = [
@@ -37,6 +38,7 @@ const navigation = [
   { name: "Opportunities", href: "/opportunities", icon: Briefcase },
   { name: "Marketplace", href: "/marketplace", icon: ShoppingBag },
   { name: "Community", href: "/community", icon: MessageSquare },
+  { name: "Learning", href: "/learning", icon: BookOpen },
   { name: "Messages", href: "/chat", icon: MessageCircle },
   { name: "Reviews", href: "/reviews", icon: Star },
   { name: "Profile", href: "/profile", icon: User },

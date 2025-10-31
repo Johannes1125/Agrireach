@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { useLanguage } from "@/contexts/language-context";
 import {
   Select,
   SelectContent,
@@ -43,14 +45,14 @@ import {
 } from "lucide-react";
 
 interface SettingsUser {
-  id: string
-  name: string
-  email: string
-  role: "worker" | "recruiter" | "buyer" | ("worker" | "recruiter" | "buyer")[]
-  avatar: string
-  location: string
-  bio?: string
-  phone?: string
+  id: string;
+  name: string;
+  email: string;
+  role: "worker" | "recruiter" | "buyer" | ("worker" | "recruiter" | "buyer")[];
+  avatar: string;
+  location: string;
+  bio?: string;
+  phone?: string;
   business?: {
     name?: string;
     industry?: string;
@@ -87,14 +89,29 @@ interface SettingsContentProps {
 }
 
 export function SettingsContent({ user }: SettingsContentProps) {
-  const [formData, setFormData] = useState(user)
-  const [selectedRoles, setSelectedRoles] = useState<("worker" | "recruiter" | "buyer")[]>(
-    Array.isArray(user.role) ? user.role : [user.role]
-  )
-  const [isSavingRoles, setIsSavingRoles] = useState(false)
-  const notifications = useNotifications()
-  const [darkMode, setDarkMode] = useState(false)
-  const { profile, saveProfile } = useUserProfile()
+  const [formData, setFormData] = useState(user);
+  const [selectedRoles, setSelectedRoles] = useState<
+    ("worker" | "recruiter" | "buyer")[]
+  >(Array.isArray(user.role) ? user.role : [user.role]);
+  const [isSavingRoles, setIsSavingRoles] = useState(false);
+  const notifications = useNotifications();
+  const [darkMode, setDarkMode] = useState(false);
+  const { profile, saveProfile } = useUserProfile();
+  const { lang, setLang, resolvedLang, autoTranslate, setAutoTranslate } =
+    useLanguage();
+
+  // Language label map (typed)
+  const LANG_LABELS = {
+    auto: "Auto (device)",
+    en: "English",
+    zh: "Mandarin Chinese",
+    hi: "Hindi",
+    es: "Spanish",
+    fr: "French",
+  } as const;
+  type LabelKey = keyof typeof LANG_LABELS;
+  const currentLanguageLabel =
+    lang === "auto" ? LANG_LABELS[resolvedLang] : LANG_LABELS[lang as LabelKey];
 
   // Initialize dark mode from both localStorage and document class
   useEffect(() => {
@@ -165,54 +182,66 @@ export function SettingsContent({ user }: SettingsContentProps) {
   };
 
   const toggleRole = (role: "worker" | "recruiter" | "buyer") => {
-    setSelectedRoles(prev => {
+    setSelectedRoles((prev) => {
       if (prev.includes(role)) {
         // Don't allow removing the last role
         if (prev.length === 1) {
-          notifications.showError("Cannot Remove Role", "You must have at least one role selected.")
-          return prev
+          notifications.showError(
+            "Cannot Remove Role",
+            "You must have at least one role selected."
+          );
+          return prev;
         }
-        return prev.filter(r => r !== role)
+        return prev.filter((r) => r !== role);
       } else {
-        return [...prev, role]
+        return [...prev, role];
       }
-    })
-  }
+    });
+  };
 
   const handleSaveRoles = async () => {
     if (selectedRoles.length === 0) {
-      notifications.showError("No Roles Selected", "Please select at least one role.")
-      return
+      notifications.showError(
+        "No Roles Selected",
+        "Please select at least one role."
+      );
+      return;
     }
 
-    setIsSavingRoles(true)
+    setIsSavingRoles(true);
     try {
       const response = await authFetch(`/api/users/${user.id}/roles`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roles: selectedRoles })
-      })
+        body: JSON.stringify({ roles: selectedRoles }),
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Failed to update roles")
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update roles");
       }
 
       showRoleUpdateSuccess(selectedRoles);
       // Update local state
-      setFormData({ ...formData, role: selectedRoles as any })
-      
+      setFormData({ ...formData, role: selectedRoles as any });
+
       // Show message about re-login requirement
-      notifications.showInfo("Re-login Required", "Your roles have been updated. Please log out and log back in to refresh your permissions.");
-      
+      notifications.showInfo(
+        "Re-login Required",
+        "Your roles have been updated. Please log out and log back in to refresh your permissions."
+      );
+
       // Refresh the page to update the UI with new roles
-      setTimeout(() => window.location.reload(), 1500)
+      setTimeout(() => window.location.reload(), 1500);
     } catch (error: any) {
-      notifications.showError("Failed to Update Roles", error.message || "An error occurred while updating your roles.")
+      notifications.showError(
+        "Failed to Update Roles",
+        error.message || "An error occurred while updating your roles."
+      );
     } finally {
-      setIsSavingRoles(false)
+      setIsSavingRoles(false);
     }
-  }
+  };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -356,12 +385,15 @@ export function SettingsContent({ user }: SettingsContentProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="font-heading">Platform Roles</CardTitle>
-                <CardDescription>Select all roles that apply to you - you can have multiple roles at once</CardDescription>
+                <CardDescription>
+                  Select all roles that apply to you - you can have multiple
+                  roles at once
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-3">
                   {(["worker", "recruiter", "buyer"] as const).map((role) => {
-                    const isSelected = selectedRoles.includes(role)
+                    const isSelected = selectedRoles.includes(role);
                     return (
                       <div
                         key={role}
@@ -374,23 +406,41 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       >
                         <div className="flex items-center gap-3 mb-2">
                           {getRoleIcon(role)}
-                          <h4 className="font-medium capitalize">{role === "worker" ? "Member" : role === "recruiter" ? "Employer" : role === "buyer" ? "Trader" : role}</h4>
-                          {isSelected && <Badge variant="secondary">Selected</Badge>}
+                          <h4 className="font-medium capitalize">
+                            {role === "worker"
+                              ? "Member"
+                              : role === "recruiter"
+                              ? "Employer"
+                              : role === "buyer"
+                              ? "Trader"
+                              : role}
+                          </h4>
+                          {isSelected && (
+                            <Badge variant="secondary">Selected</Badge>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{getRoleDescription(role)}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {getRoleDescription(role)}
+                        </p>
                       </div>
-                    )
+                    );
                   })}
                 </div>
 
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> You can select multiple roles if you use the platform for different purposes. 
-                    For example, you can be a worker looking for jobs while also being a buyer purchasing products.
+                    <strong>Note:</strong> You can select multiple roles if you
+                    use the platform for different purposes. For example, you
+                    can be a worker looking for jobs while also being a buyer
+                    purchasing products.
                   </p>
                 </div>
 
-                <Button onClick={handleSaveRoles} disabled={isSavingRoles || selectedRoles.length === 0} className="w-fit">
+                <Button
+                  onClick={handleSaveRoles}
+                  disabled={isSavingRoles || selectedRoles.length === 0}
+                  className="w-fit"
+                >
                   <Save className="mr-2 h-4 w-4" />
                   {isSavingRoles ? "Saving..." : "Save Role Changes"}
                 </Button>
@@ -1134,6 +1184,43 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 }}
               />
             </div>
+
+            {/* Language selector */}
+            <Separator className="my-3" />
+            <div className="space-y-3">
+              <h4 className="font-medium">Language</h4>
+              <div className="space-y-2">
+                <Label htmlFor="language-select">Choose language</Label>
+                <select
+                  id="language-select"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                  value={lang}
+                  onChange={(e) => setLang(e.target.value as any)}
+                  aria-label="Language"
+                >
+                  <option value="auto">Auto (device)</option>
+                  <option value="en">English</option>
+                  <option value="zh">Mandarin Chinese</option>
+                  <option value="hi">Hindi</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                </select>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Current: <strong>{currentLanguageLabel}</strong>
+              </p>
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-sm">Translate content automatically</span>
+                <Switch
+                  checked={autoTranslate}
+                  onCheckedChange={setAutoTranslate}
+                  aria-label="Toggle auto translate"
+                />
+              </div>
+            </div>
+            {/* end language selector */}
+
+            {/* ...existing code (remaining CardContent) ... */}
           </CardContent>
         </Card>
 
