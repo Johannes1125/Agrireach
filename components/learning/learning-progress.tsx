@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Target } from "lucide-react";
-import Trans from "@/components/ui/Trans";
+import Trans from "@/components/ui/trans";
 import Link from "next/link";
 
 export default function LearningProgress({ userId }: { userId: string }) {

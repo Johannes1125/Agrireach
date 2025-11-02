@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Search, BookOpen, Clock, Award, Filter } from "lucide-react";
-import Trans from "@/components/ui/Trans";
+import Trans from "@/components/ui/trans";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -1,4 +1,4 @@
-import Trans from "@/components/ui/Trans";
+import Trans from "@/components/ui/trans";
 import { SimpleHeader } from "@/components/layout/simple-header";
 import { PageTransition } from "@/components/ui/page-transition";
 import { getCurrentUser } from "@/lib/auth-server";

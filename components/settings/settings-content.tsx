@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/contexts/language-context";
+import Trans from "@/components/ui/trans";
 import {
   Select,
   SelectContent,
@@ -42,6 +43,9 @@ import {
   Trash2,
   AlertTriangle,
   Moon,
+  Globe,
+  Languages,
+  Check,
 } from "lucide-react";
 
 interface SettingsUser {
@@ -61,6 +65,8 @@ interface SettingsUser {
     description?: string;
     website?: string;
     logo?: string;
+    years?: number;
+    services?: string[];
   };
   preferences: {
     notifications: {
@@ -97,21 +103,61 @@ export function SettingsContent({ user }: SettingsContentProps) {
   const notifications = useNotifications();
   const [darkMode, setDarkMode] = useState(false);
   const { profile, saveProfile } = useUserProfile();
-  const { lang, setLang, resolvedLang, autoTranslate, setAutoTranslate } =
-    useLanguage();
+  const { language, setLanguage, t } = useLanguage();
+  const [debugTranslated, setDebugTranslated] = useState<string>("");
+  const [supportedLangs, setSupportedLangs] = useState<string[]>([
+    "en",
+    "es",
+    "fr",
+    "de",
+    "hi",
+    "zh",
+    "pt",
+    "ru",
+    "it",
+    "ja",
+  ]);
 
-  // Language label map (typed)
+  // Local selection so choosing in the dropdown doesn't immediately change app language
+  const [selectedLang, setSelectedLang] = useState<string>(language);
+  useEffect(() => {
+    setSelectedLang(language);
+  }, [language]);
+
+  useEffect(() => {
+    // Fetch supported language codes from server, fallback to defaults
+    (async () => {
+      try {
+        const res = await fetch("/api/translate/languages", {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const codes: string[] = data?.data?.languages || [];
+        if (Array.isArray(codes) && codes.length > 0) {
+          setSupportedLangs(codes);
+        }
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
+
+  // Language label map (typed) — extended to include all selectable options
   const LANG_LABELS = {
-    auto: "Auto (device)",
     en: "English",
-    zh: "Mandarin Chinese",
-    hi: "Hindi",
-    es: "Spanish",
-    fr: "French",
+    tl: "Tagalog (Filipino)",
+    es: "Español",
+    fr: "Français",
+    de: "Deutsch",
+    hi: "हिन्दी",
+    zh: "中文",
+    pt: "Português",
+    ar: "العربية",
+    ru: "Русский",
   } as const;
   type LabelKey = keyof typeof LANG_LABELS;
-  const currentLanguageLabel =
-    lang === "auto" ? LANG_LABELS[resolvedLang] : LANG_LABELS[lang as LabelKey];
+  const currentLanguageLabel = LANG_LABELS[language as LabelKey] || "English";
 
   // Initialize dark mode from both localStorage and document class
   useEffect(() => {
@@ -274,27 +320,27 @@ export function SettingsContent({ user }: SettingsContentProps) {
       <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="profile" className="flex items-center gap-2">
           <Bell className="h-4 w-4" />
-          Profile
+          <Trans text="Profile" />
         </TabsTrigger>
         <TabsTrigger value="notifications" className="flex items-center gap-2">
           <Shield className="h-4 w-4" />
-          Notifications
+          <Trans text="Notifications" />
         </TabsTrigger>
         <TabsTrigger value="privacy" className="flex items-center gap-2">
           <CreditCard className="h-4 w-4" />
-          Privacy
+          <Trans text="Privacy" />
         </TabsTrigger>
         <TabsTrigger value="business" className="flex items-center gap-2">
           <Briefcase className="h-4 w-4" />
-          Business
+          <Trans text="Business" />
         </TabsTrigger>
         <TabsTrigger value="billing" className="flex items-center gap-2">
           <CreditCard className="h-4 w-4" />
-          Billing
+          <Trans text="Billing" />
         </TabsTrigger>
         <TabsTrigger value="account" className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4" />
-          Account
+          <Trans text="Account" />
         </TabsTrigger>
       </TabsList>
 
@@ -1186,41 +1232,94 @@ export function SettingsContent({ user }: SettingsContentProps) {
             </div>
 
             {/* Language selector */}
-            <Separator className="my-3" />
-            <div className="space-y-3">
-              <h4 className="font-medium">Language</h4>
-              <div className="space-y-2">
-                <Label htmlFor="language-select">Choose language</Label>
-                <select
-                  id="language-select"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
-                  value={lang}
-                  onChange={(e) => setLang(e.target.value as any)}
-                  aria-label="Language"
+            <Separator className="my-4" />
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                <h4 className="font-medium text-lg">
+                  <Trans text="Language & Translation" />
+                </h4>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="language-select" className="text-base">
+                  Preferred Language
+                </Label>
+                <Select
+                  value={selectedLang}
+                  onValueChange={(value) => setSelectedLang(value as LabelKey)}
                 >
-                  <option value="auto">Auto (device)</option>
-                  <option value="en">English</option>
-                  <option value="zh">Mandarin Chinese</option>
-                  <option value="hi">Hindi</option>
-                  <option value="es">Spanish</option>
-                  <option value="fr">French</option>
-                </select>
+                  <SelectTrigger
+                    id="language-select"
+                    className="w-full border border-gray-300 rounded-md bg-white"
+                  >
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supportedLangs.map((code) => (
+                      <SelectItem key={code} value={code as LabelKey}>
+                        <div className="flex items-center gap-2">
+                          <span>{code.toUpperCase()}</span>
+                          <span>
+                            {LANG_LABELS[code as LabelKey] ||
+                              code.toUpperCase()}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Current: <strong>{currentLanguageLabel}</strong>
-              </p>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-sm">Translate content automatically</span>
-                <Switch
-                  checked={autoTranslate}
-                  onCheckedChange={setAutoTranslate}
-                  aria-label="Toggle auto translate"
-                />
+
+              {/* Translate confirmation button */}
+              <div className="pt-3 flex justify-end">
+                <Button
+                  onClick={async () => {
+                    try {
+                      console.debug("[Settings] setLanguage", { selectedLang });
+                    } catch {}
+                    // Update global language (persists to localStorage & cookie)
+                    if (!supportedLangs.includes(selectedLang)) {
+                      notifications.showError(
+                        "Unsupported language",
+                        `The selected language (${selectedLang}) is not supported by the translation service.`
+                      );
+                      return;
+                    }
+                    setLanguage(selectedLang);
+
+                    // Fire a sample translation to prove the pipeline and update a debug preview
+                    try {
+                      console.debug("[Settings] translating sample phrase");
+                    } catch {}
+                    const sample = await t("Language & Translation");
+                    setDebugTranslated(sample);
+                    try {
+                      console.debug("[Settings] sample translated", { sample });
+                    } catch {}
+
+                    notifications.showSuccess(
+                      "Translating",
+                      `Translating UI to ${
+                        LANG_LABELS[selectedLang as keyof typeof LANG_LABELS] ||
+                        currentLanguageLabel
+                      }…`
+                    );
+                  }}
+                  className="w-fit"
+                >
+                  <Languages className="mr-2 h-4 w-4" />
+                  Translate
+                </Button>
               </div>
+              {debugTranslated && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Debug: current language <strong>{language}</strong>, sample →{" "}
+                  {debugTranslated}
+                </p>
+              )}
             </div>
             {/* end language selector */}
-
-            {/* ...existing code (remaining CardContent) ... */}
           </CardContent>
         </Card>
 

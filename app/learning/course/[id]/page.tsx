@@ -20,7 +20,7 @@ import {
   ArrowLeft,
   AlertCircle,
 } from "lucide-react";
-import Trans from "@/components/ui/Trans";
+import Trans from "@/components/ui/trans";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -633,7 +633,7 @@ const COURSES = {
         type: "video" as const,
         completed: false,
         description: "Learn about soil types and structure",
-        videoUrl: "https://www.youtube.com/watch?v=rDgM-FJYe_c", 
+        videoUrl: "https://www.youtube.com/watch?v=rDgM-FJYe_c",
       },
       {
         id: 2,
@@ -1089,7 +1089,7 @@ const COURSES = {
         type: "video" as const,
         completed: false,
         description: "Drip, sprinkler, and surface irrigation methods",
-        videoUrl: "https://www.youtube.com/watch?v=Z9HAy9EYKKs", 
+        videoUrl: "https://www.youtube.com/watch?v=Z9HAy9EYKKs",
       },
       {
         id: 3,
@@ -1684,7 +1684,7 @@ export default function CoursePage() {
         handleLessonClick(nextLesson);
         // Scroll to top of modal
         setTimeout(() => {
-          modalContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+          modalContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
         }, 100);
       } else {
         // Last lesson - check if course is completed
@@ -1709,7 +1709,7 @@ export default function CoursePage() {
         handleLessonClick(prevLesson);
         // Scroll to top of modal
         setTimeout(() => {
-          modalContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+          modalContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
         }, 100);
       }
     }
@@ -1739,7 +1739,10 @@ export default function CoursePage() {
       {/* Video/Reading/Quiz Modal */}
       {activeLesson && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div ref={modalContentRef} className="bg-background rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+          <div
+            ref={modalContentRef}
+            className="bg-background rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+          >
             <div className="sticky top-0 bg-background border-b px-6 py-4 flex items-center justify-between z-10">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -1827,7 +1830,10 @@ export default function CoursePage() {
                                   while improving overall productivity.
                                 </p>
                                 <div className="flex gap-2">
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
                                     💧 Water Saving
                                   </Badge>
                                 </div>

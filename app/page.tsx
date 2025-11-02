@@ -8,8 +8,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Sprout, Users, MapPin, TrendingUp, Shield, Globe } from "lucide-react";
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { translate } from "@/lib/translate";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const cookieStore = await cookies();
+  const lang = cookieStore.get("lang")?.value || "en";
+
+  const title = (await translate("Welcome to AgriReach", lang)) as string;
+  const subtitle = (await translate("Your dashboard overview", lang)) as string;
+
   return (
     <div>
       {/* Navigation */}

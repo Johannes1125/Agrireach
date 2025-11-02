@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Award, Clock, TrendingUp } from "lucide-react";
-import Trans from "@/components/ui/Trans";
+import Trans from "@/components/ui/trans";
 
 export default function LearningStats({ user }: { user: any }) {
   const stats = [
