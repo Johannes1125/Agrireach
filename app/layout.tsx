@@ -14,7 +14,6 @@ import { SkipToContent } from "@/components/accessibility/skip-to-content";
 import { GlobalAnnouncer } from "@/components/accessibility/global-announcer";
 import { PageAnnouncer } from "@/components/accessibility/page-announcer";
 import { LoadingProvider } from "@/contexts/loading-context";
-import { LanguageProvider } from "@/contexts/language-context";
 import "./globals.css";
 
 const openSans = Open_Sans({
@@ -56,7 +55,6 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <LanguageProvider>
               <AccessibilityProvider>
                 <LoadingProvider>
                   <GlobalAnnouncer />
@@ -67,7 +65,6 @@ export default function RootLayout({
                   <Toaster position="top-right" richColors />
                 </LoadingProvider>
               </AccessibilityProvider>
-            </LanguageProvider>
           </ThemeProvider>
         </Suspense>
         <Analytics />
