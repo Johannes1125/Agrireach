@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Trans from "../ui/trans";
 import ProducersList from "./ProducersList";
 import * as Icons from "lucide-react";
 
@@ -14,10 +13,8 @@ export default function ProducersPageClient() {
         </div>
         <div>
           <h1 className="text-2xl font-semibold">
-            <Trans text="Producers" />
           </h1>
           <p className="text-muted-foreground">
-            <Trans text="Discover local farmers and artisans you can collaborate with." />
           </p>
         </div>
       </header>
