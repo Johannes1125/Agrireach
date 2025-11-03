@@ -42,9 +42,11 @@ export function OpportunityBoard() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      // Build API URL with sortBy parameter if needed
+      const apiUrl = `/api/opportunities?limit=100&page=1${sortBy === "match" ? "&sortBy=match" : ""}`;
       // Add minimum delay for loading state
       const [data] = await Promise.all([
-        fetch(`/api/opportunities?limit=100&page=1`).then(res => res.json().catch(() => ({}))),
+        fetch(apiUrl).then(res => res.json().catch(() => ({}))),
         new Promise(resolve => setTimeout(resolve, 2000)) // Minimum 2 second delay
       ]);
       
@@ -69,15 +71,15 @@ export function OpportunityBoard() {
         skills: Array.isArray(j.required_skills) ? j.required_skills : [],
         companyLogo: j.company_logo || "/placeholder.svg",
         companyRating: 0,
-        matchScore: 0,
+        matchScore: j.matchScore || 0,
       }));
       setAllJobs(items);
       setLoading(false);
     };
     load();
-  }, []);
+  }, [sortBy]);
 
-  // Filter jobs based on search query and location
+  // Filter and sort jobs based on search query, location, and sortBy
   useEffect(() => {
     let filtered = allJobs;
 
@@ -102,9 +104,39 @@ export function OpportunityBoard() {
       );
     }
 
+    // Apply sorting
+    if (sortBy === "match") {
+      filtered.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+    } else if (sortBy === "pay-high") {
+      filtered.sort((a, b) => {
+        const aPay = parseInt(a.payRange.replace(/[^\d]/g, "")) || 0;
+        const bPay = parseInt(b.payRange.replace(/[^\d]/g, "")) || 0;
+        return bPay - aPay;
+      });
+    } else if (sortBy === "pay-low") {
+      filtered.sort((a, b) => {
+        const aPay = parseInt(a.payRange.replace(/[^\d]/g, "")) || 0;
+        const bPay = parseInt(b.payRange.replace(/[^\d]/g, "")) || 0;
+        return aPay - bPay;
+      });
+    } else if (sortBy === "deadline") {
+      filtered.sort((a, b) => {
+        const aDate = new Date(a.deadline).getTime();
+        const bDate = new Date(b.deadline).getTime();
+        return aDate - bDate;
+      });
+    } else {
+      // newest first (default)
+      filtered.sort((a, b) => {
+        const aDate = new Date(a.postedDate).getTime();
+        const bDate = new Date(b.postedDate).getTime();
+        return bDate - aDate;
+      });
+    }
+
     setJobs(filtered);
     setTotal(filtered.length);
-  }, [searchQuery, location, allJobs]);
+  }, [searchQuery, location, allJobs, sortBy]);
 
   const toggleSaveJob = (jobId: string) => {
     setSavedJobs((prev) =>
@@ -215,9 +247,12 @@ export function OpportunityBoard() {
                         </AvatarFallback>
                       </Avatar>
 
-                      {job.matchScore >= 80 && (
+                      {job.matchScore > 0 && (
                         <div className="text-center">
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge 
+                            variant={job.matchScore >= 80 ? "secondary" : "outline"} 
+                            className="text-xs"
+                          >
                             {job.matchScore}% Match
                           </Badge>
                         </div>

@@ -5,8 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { getRoleDisplay } from "@/lib/role-utils"
 import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, Calendar, Star, Shield, Edit, Share, MessageSquare, ArrowLeft, Settings } from "lucide-react"
+import { MapPin, Calendar, Star, Shield, Edit, Share, MessageSquare, ArrowLeft, Settings, Building } from "lucide-react"
 import Link from "next/link"
+import { useUserProfile } from "@/hooks/use-user-profile"
 
 interface User {
   id: string
@@ -27,6 +28,13 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({ user }: ProfileHeaderProps) {
+  const { profile } = useUserProfile()
+  const hasBusiness = !!(profile && (
+    profile.company_name || profile.business_type || profile.industry || profile.company_size ||
+    profile.website || profile.business_description || (Array.isArray(profile.services_offered) && profile.services_offered.length > 0) ||
+    typeof profile.years_in_business === 'number'
+  ))
+
   const getRoleBadge = (role: string) => {
     const label = getRoleDisplay(role)
     if (!label) return null
@@ -62,9 +70,14 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
               {/* Avatar and Basic Info */}
               <div className="flex flex-col items-center md:items-start gap-4">
                 <Avatar className="h-32 w-32">
-                  <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                  <AvatarImage 
+                    src={hasBusiness && profile?.business_logo ? profile.business_logo : (user.avatar || "/placeholder.svg")} 
+                    alt={hasBusiness && profile?.company_name ? profile.company_name : user.name} 
+                  />
                   <AvatarFallback className="text-2xl">
-                    {user.name
+                    {hasBusiness && profile?.company_name
+                      ? profile.company_name.split(" ").map((n) => n[0]).join("")
+                      : user.name
                       ? user.name.split(" ").map((n) => n[0]).join("")
                       : "U"}
                   </AvatarFallback>
@@ -72,7 +85,9 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
 
                 <div className="text-center md:text-left">
                   <div className="flex items-center gap-2 mb-2">
-                    <h1 className="font-heading text-3xl font-bold">{user.name || "User"}</h1>
+                    <h1 className="font-heading text-3xl font-bold">
+                      {hasBusiness && profile?.company_name ? profile.company_name : (user.name || "User")}
+                    </h1>
                     {user.verified && (
                       <>
                         <Shield className="h-6 w-6 text-primary" />
@@ -80,6 +95,20 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                       </>
                     )}
                   </div>
+
+                  {hasBusiness && profile?.company_name && (
+                    <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+                      <Building className="h-4 w-4" />
+                      <span className="text-sm">Owned by {user.name}</span>
+                    </div>
+                  )}
+
+                  {hasBusiness && profile?.business_address && (
+                    <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4" />
+                      <span className="text-sm">{profile.business_address}</span>
+                    </div>
+                  )}
 
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
                     {getRoleBadge(user.role)}

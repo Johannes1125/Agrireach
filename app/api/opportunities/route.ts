@@ -2,12 +2,30 @@ import { NextRequest } from "next/server";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Opportunity } from "@/server/models/Job";
 import { User } from "@/server/models/User";
+import { UserProfile } from "@/server/models/UserProfile";
 import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/api";
 import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { CreateJobSchema } from "@/server/validators/opportunitySchemas";
 import { notifyAllUsersNewJob } from "@/server/utils/notifications";
 import { validateUserRole } from "@/server/utils/role-validation";
+
+// Helper function to calculate match score
+function calculateMatchScore(jobSkills: string[] | any, workerSkills: string[]): number {
+  if (!Array.isArray(jobSkills) || jobSkills.length === 0) return 0;
+  if (!Array.isArray(workerSkills) || workerSkills.length === 0) return 0;
+  
+  // Normalize skills to lowercase for comparison
+  const jobSkillsLower = jobSkills.map((s: string) => s.toLowerCase());
+  const workerSkillsLower = workerSkills.map((s: string) => s.toLowerCase());
+  
+  const matchingSkills = jobSkillsLower.filter((skill: string) =>
+    workerSkillsLower.includes(skill)
+  );
+  
+  // Calculate percentage match
+  return Math.round((matchingSkills.length / jobSkillsLower.length) * 100);
+}
 
 export async function GET(req: NextRequest) {
   const mm = requireMethod(req, ["GET"]);
@@ -29,6 +47,23 @@ export async function GET(req: NextRequest) {
   const page = parseInt(q.get("page") || "1", 10);
   const limit = Math.min(parseInt(q.get("limit") || "20", 10), 100);
   const skip = (page - 1) * limit;
+  
+  // Get user's skills if authenticated
+  let workerSkills: string[] = [];
+  try {
+    const token = getAuthToken(req, "access");
+    if (token) {
+      const decoded = verifyToken<any>(token, "access");
+      const profile = await UserProfile.findOne({ user_id: decoded.sub }).lean();
+      if (profile?.skills && Array.isArray(profile.skills)) {
+        workerSkills = profile.skills;
+      }
+    }
+  } catch (error) {
+    // If token is invalid or missing, just continue without skill matching
+    console.error("Error fetching user skills:", error);
+  }
+  
   const [items, total] = await Promise.all([
     Opportunity.find(filter)
       .populate('recruiter_id', 'full_name location verified')
@@ -38,7 +73,24 @@ export async function GET(req: NextRequest) {
       .lean(),
     Opportunity.countDocuments(filter),
   ]);
-  return jsonOk({ items, total, page, pages: Math.ceil(total / limit) });
+  
+  // Calculate match scores for each job
+  const itemsWithMatchScores = items.map((item: any) => {
+    const jobSkills = Array.isArray(item.required_skills) ? item.required_skills : [];
+    const matchScore = calculateMatchScore(jobSkills, workerSkills);
+    return {
+      ...item,
+      matchScore,
+    };
+  });
+  
+  // Sort by match score if requested (via sortBy query param)
+  const sortBy = q.get("sortBy");
+  if (sortBy === "match" && workerSkills.length > 0) {
+    itemsWithMatchScores.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+  }
+  
+  return jsonOk({ items: itemsWithMatchScores, total, page, pages: Math.ceil(total / limit) });
 }
 
 export async function POST(req: NextRequest) {

@@ -9,10 +9,15 @@ export interface BusinessProfile {
   business_type?: string
   company_size?: string
   business_description?: string
+  business_address?: string
+  business_registration?: string
+  business_hours?: string
   website?: string
   business_logo?: string
   years_in_business?: number
   services_offered?: string[]
+  skills?: string[]
+  phone?: string
 }
 
 export function useUserProfile() {

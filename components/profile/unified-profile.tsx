@@ -59,12 +59,18 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             tertiary: { label: "Hours Worked", value: "1,240", icon: Clock },
             quaternary: { label: "Rating", value: user.rating || 4.8, icon: Star },
           },
-          skills: [
-            { name: "Crop Harvesting", level: 95, verified: true },
-            { name: "Organic Farming", level: 88, verified: true },
-            { name: "Equipment Operation", level: 75, verified: false },
-            { name: "Soil Management", level: 82, verified: true },
-          ],
+          skills: profile?.skills && Array.isArray(profile.skills) && profile.skills.length > 0
+            ? profile.skills.map((skillName: string) => ({ 
+                name: skillName, 
+                level: 100, 
+                verified: false 
+              }))
+            : [
+                { name: "Crop Harvesting", level: 95, verified: true },
+                { name: "Organic Farming", level: 88, verified: true },
+                { name: "Equipment Operation", level: 75, verified: false },
+                { name: "Soil Management", level: 82, verified: true },
+              ],
           recentActivity: [
             {
               title: "Seasonal Fruit Harvesting",
@@ -238,29 +244,31 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
         </Card>
 
         {/* Skills Section (Workers only) */}
-        {user.role === "worker" && profileData.skills && (
+        {user.role === "worker" && profileData.skills && profileData.skills.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="font-heading">Skills & Expertise</CardTitle>
-              <CardDescription>Verified skills based on completed work</CardDescription>
+              <CardDescription>
+                {profile?.skills && Array.isArray(profile.skills) && profile.skills.length > 0
+                  ? "Your skills for job matching"
+                  : "Verified skills based on completed work"}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {profileData.skills.map((skill) => (
-                <div key={skill.name} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{skill.name}</span>
-                      {skill.verified && (
-                        <Badge variant="secondary" className="text-xs">
-                          Verified
-                        </Badge>
-                      )}
-                    </div>
-                    <span className="text-sm text-muted-foreground">{skill.level}%</span>
-                  </div>
-                  <Progress value={skill.level} className="h-2" />
-                </div>
-              ))}
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {profileData.skills.map((skill) => (
+                  <Badge
+                    key={skill.name}
+                    variant={skill.verified ? "secondary" : "outline"}
+                    className="px-3 py-1"
+                  >
+                    {skill.name}
+                    {skill.verified && (
+                      <Award className="ml-1 h-3 w-3" />
+                    )}
+                  </Badge>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
@@ -454,6 +462,24 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
                 <Label className="text-sm font-medium">Years in Business</Label>
                 <p className="text-sm text-muted-foreground mt-1">{typeof profile?.years_in_business === 'number' ? profile?.years_in_business : ''}</p>
               </div>
+              {profile?.business_address && (
+                <div className="md:col-span-2">
+                  <Label className="text-sm font-medium">Business Address</Label>
+                  <p className="text-sm text-muted-foreground mt-1">{profile.business_address}</p>
+                </div>
+              )}
+              {profile?.business_hours && (
+                <div>
+                  <Label className="text-sm font-medium">Business Hours</Label>
+                  <p className="text-sm text-muted-foreground mt-1">{profile.business_hours}</p>
+                </div>
+              )}
+              {profile?.business_registration && (
+                <div>
+                  <Label className="text-sm font-medium">Registration Number</Label>
+                  <p className="text-sm text-muted-foreground mt-1">{profile.business_registration}</p>
+                </div>
+              )}
             </div>
 
             <div>

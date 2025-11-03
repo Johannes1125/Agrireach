@@ -42,6 +42,8 @@ import {
   Trash2,
   AlertTriangle,
   Moon,
+  Plus,
+  X,
 } from "lucide-react";
 
 interface SettingsUser {
@@ -100,6 +102,72 @@ export function SettingsContent({ user }: SettingsContentProps) {
   const { lang, setLang, resolvedLang, autoTranslate, setAutoTranslate } =
     useLanguage();
 
+  // Skills management state
+  const [workerSkills, setWorkerSkills] = useState<string[]>(
+    profile?.skills || []
+  );
+  const [customSkillInput, setCustomSkillInput] = useState("");
+
+  // Available skills list (same as in post-job-form)
+  const availableSkills = [
+    "Crop Harvesting",
+    "Organic Farming",
+    "Equipment Operation",
+    "Soil Management",
+    "Livestock Care",
+    "Greenhouse Management",
+    "Pest Control",
+    "Irrigation Systems",
+    "Team Leadership",
+    "Quality Control",
+    "Safety Protocols",
+    "Mechanical Skills",
+    "Plant Science",
+    "Animal Husbandry",
+    "Food Processing",
+    "Packaging",
+  ];
+
+  // Load skills from profile when available
+  useEffect(() => {
+    if (profile?.skills) {
+      setWorkerSkills(profile.skills);
+    }
+  }, [profile?.skills]);
+
+  // Skill management functions
+  const addSkill = (skill: string) => {
+    if (skill && !workerSkills.includes(skill)) {
+      setWorkerSkills([...workerSkills, skill]);
+    }
+  };
+
+  const removeSkill = (skill: string) => {
+    setWorkerSkills(workerSkills.filter((s) => s !== skill));
+  };
+
+  const addCustomSkill = () => {
+    if (customSkillInput.trim()) {
+      addSkill(customSkillInput.trim());
+      setCustomSkillInput("");
+    }
+  };
+
+  const handleSaveSkills = async () => {
+    try {
+      await saveProfile({ skills: workerSkills });
+      notifications.showSuccess(
+        "Skills Saved",
+        "Your skills have been updated. Job matching will be improved!"
+      );
+    } catch (e: any) {
+      notifications.showError(
+        "Save Failed",
+        e.message || "Unable to save skills"
+      );
+    }
+  };
+
   // Language label map (typed)
   const LANG_LABELS = {
     auto: "Auto (device)",
@@ -152,6 +220,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
           business_type: formData.business?.type || "",
           company_size: formData.business?.size || "",
           business_description: formData.business?.description || "",
+          business_address: formData.business?.address || "",
+          business_registration: formData.business?.registration || "",
+          business_hours: formData.business?.hours || "",
           website: formData.business?.website || "",
           business_logo: formData.business?.logo || "",
           years_in_business:
@@ -446,6 +517,105 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Skills Management - Only for Workers */}
+            {(() => {
+              const isWorker = 
+                selectedRoles.includes("worker") || 
+                (Array.isArray(user.role) && user.role.includes("worker")) ||
+                user.role === "worker";
+              return isWorker;
+            })() && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-heading">My Skills</CardTitle>
+                  <CardDescription>
+                    Add your skills to get better job matches. Jobs matching your
+                    skills will be prioritized.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Selected Skills */}
+                  {workerSkills.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Your Skills ({workerSkills.length})</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {workerSkills.map((skill) => (
+                          <Badge
+                            key={skill}
+                            variant="secondary"
+                            className="flex items-center gap-1 px-3 py-1"
+                          >
+                            {skill}
+                            <button
+                              type="button"
+                              onClick={() => removeSkill(skill)}
+                              className="ml-1 hover:text-destructive"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  {/* Available Skills */}
+                  <div className="space-y-2">
+                    <Label>Add Skills</Label>
+                    <div className="grid gap-2 md:grid-cols-3">
+                      {availableSkills
+                        .filter((skill) => !workerSkills.includes(skill))
+                        .map((skill) => (
+                          <div
+                            key={skill}
+                            className="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+                            onClick={() => addSkill(skill)}
+                          >
+                            <Plus className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{skill}</span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+
+                  {/* Custom Skill Input */}
+                  <Separator />
+                  <div className="space-y-2">
+                    <Label>Add Custom Skill</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Enter a custom skill"
+                        value={customSkillInput}
+                        onChange={(e) => setCustomSkillInput(e.target.value)}
+                        onKeyPress={(e) =>
+                          e.key === "Enter" &&
+                          (e.preventDefault(), addCustomSkill())
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addCustomSkill}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleSaveSkills}
+                    className="w-fit"
+                    disabled={workerSkills.length === 0}
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Skills
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Profile Picture */}
@@ -1084,6 +1254,53 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   })
                 }
               />
+            </div>
+
+            <div>
+              <Label htmlFor="business-address">Business Address</Label>
+              <Textarea
+                id="business-address"
+                placeholder="Enter your complete business address"
+                value={formData.business?.address || profile?.business_address || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    business: { ...formData.business, address: e.target.value },
+                  })
+                }
+                rows={2}
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="business-registration">Business Registration Number</Label>
+                <Input
+                  id="business-registration"
+                  placeholder="Enter registration number (optional)"
+                  value={formData.business?.registration || profile?.business_registration || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      business: { ...formData.business, registration: e.target.value },
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="business-hours">Business Hours</Label>
+                <Input
+                  id="business-hours"
+                  placeholder="e.g., Mon-Fri 8AM-5PM"
+                  value={formData.business?.hours || profile?.business_hours || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      business: { ...formData.business, hours: e.target.value },
+                    })
+                  }
+                />
+              </div>
             </div>
 
             <Button onClick={() => handleSave("business")} className="w-fit">

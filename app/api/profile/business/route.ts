@@ -38,10 +38,15 @@ export async function PUT(req: NextRequest) {
     business_type: body?.business_type,
     company_size: body?.company_size,
     business_description: body?.business_description,
+    business_address: body?.business_address,
+    business_registration: body?.business_registration,
+    business_hours: body?.business_hours,
     website: body?.website,
     business_logo: body?.business_logo,
     years_in_business: body?.years_in_business,
     services_offered: Array.isArray(body?.services_offered) ? body.services_offered : undefined,
+    skills: Array.isArray(body?.skills) ? body.skills : undefined,
+    phone: body?.phone,
   }
 
   Object.keys(update).forEach((k) => update[k] === undefined && delete update[k])
