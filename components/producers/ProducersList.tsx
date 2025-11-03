@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import ProducerCard from "./ProducerCard";
 import SearchBar from "@/components/producers/SearchBar";
+import SavedPanel from "@/components/producers/SavedPanel";
 
 export type Producer = {
   id: string;
@@ -49,6 +50,41 @@ export default function ProducersList() {
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("name");
+  const [savedOpen, setSavedOpen] = useState<boolean>(false);
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
+
+  const BOOKMARKS_KEY = "agrireach.bookmarks";
+
+  useEffect(() => {
+    try {
+      const raw =
+        typeof window !== "undefined"
+          ? localStorage.getItem(BOOKMARKS_KEY)
+          : null;
+      const list = raw ? (JSON.parse(raw) as string[]) : [];
+      setBookmarks(Array.isArray(list) ? list : []);
+    } catch {
+      setBookmarks([]);
+    }
+  }, []);
+
+  const refreshBookmarks = () => {
+    try {
+      const raw = localStorage.getItem(BOOKMARKS_KEY);
+      const list = raw ? (JSON.parse(raw) as string[]) : [];
+      setBookmarks(Array.isArray(list) ? list : []);
+    } catch {
+      setBookmarks([]);
+    }
+  };
+
+  const handleUnsave = (id: string) => {
+    try {
+      const next = bookmarks.filter((b) => b !== id);
+      localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(next));
+      setBookmarks(next);
+    } catch {}
+  };
 
   const locations = useMemo(
     () => Array.from(new Set(mockProducers.map((p) => p.location))),
@@ -129,7 +165,7 @@ export default function ProducersList() {
           </select>
         </div>
 
-        <div>
+        <div className="flex items-center gap-2">
           <select
             className="rounded-md border bg-background px-3 py-2 text-sm"
             value={sortBy}
@@ -140,6 +176,39 @@ export default function ProducersList() {
             <option value="rating-desc">Sort: Rating (high → low)</option>
             <option value="rating-asc">Sort: Rating (low → high)</option>
           </select>
+
+          <button
+            type="button"
+            onClick={() => {
+              refreshBookmarks();
+              setSavedOpen(true);
+            }}
+            aria-label="Open saved companies"
+            className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent"
+          >
+            {/* bookmark icon */}
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="text-foreground"
+            >
+              <path
+                d="M6 3h12v18l-6-4-6 4V3z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Saved
+            {bookmarks.length > 0 && (
+              <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-medium text-primary-foreground">
+                {bookmarks.length}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -155,6 +224,21 @@ export default function ProducersList() {
           ))}
         </div>
       )}
+
+      {/* Saved popup */}
+      <SavedPanel
+        open={savedOpen}
+        onCloseAction={() => setSavedOpen(false)}
+        items={mockProducers
+          .filter((p) => bookmarks.includes(p.id))
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            location: p.location,
+            description: p.description,
+          }))}
+        onUnsaveAction={handleUnsave}
+      />
     </div>
   );
 }
