@@ -12,6 +12,7 @@ import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { authFetch } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
+import { LocationPicker, LocationData } from "@/components/ui/location-picker"
 
 interface EditJobFormProps {
   job: any
@@ -22,6 +23,10 @@ export function EditJobForm({ job }: EditJobFormProps) {
   const [selectedSkills, setSelectedSkills] = useState<string[]>(job.required_skills || [])
   const [customSkill, setCustomSkill] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [jobLocation, setJobLocation] = useState<LocationData>({
+    address: job.location || "",
+    coordinates: job.location_coordinates,
+  })
 
   const availableSkills = [
     "Crop Harvesting",
@@ -71,10 +76,11 @@ export function EditJobForm({ job }: EditJobFormProps) {
       const benefits = benefitsText.split(/\n|,|;/).map((s) => s.trim()).filter(Boolean)
       const requirements = requirementsText.split(/\n|,|;/).map((s) => s.trim()).filter(Boolean)
 
-      const payload = {
+      const payload: any = {
         title: formData.get("title"),
         description: formData.get("description"),
-        location: formData.get("location"),
+        location: jobLocation.address || formData.get("location"),
+        location_coordinates: jobLocation.coordinates,
         company_name: formData.get("company_name"),
         contact_email: formData.get("contact_email"),
         // Save selected job type as `duration` (string)
@@ -146,13 +152,12 @@ export function EditJobForm({ job }: EditJobFormProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="location">Location *</Label>
-                <Input
-                  id="location"
-                  name="location"
-                  placeholder="e.g., Baguio City, Benguet"
+                <LocationPicker
+                  value={jobLocation}
+                  onChange={setJobLocation}
+                  label="Location"
+                  placeholder="Enter job location or use current location"
                   required
-                  defaultValue={job.location}
                 />
               </div>
 

@@ -7,6 +7,10 @@ export const CreateJobSchema = z.object({
   benefits: z.array(z.string()).optional(),
   category: z.string().min(1),
   location: z.string().min(1),
+  location_coordinates: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+  }).optional(),
   pay_rate: z.coerce.number().positive(),
   pay_rate_max: z.preprocess((v) => (v === undefined || v === null || v === "" ? undefined : v), z.coerce.number().positive().optional()),
   pay_type: z.enum(["hourly", "daily", "weekly", "monthly", "project"]),

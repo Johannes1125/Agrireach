@@ -11,6 +11,10 @@ export interface IUser extends Document {
   roles: UserRole[]; // New field for multiple roles
   phone?: string;
   location?: string;
+  location_coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
   avatar_url?: string;
   bio?: string;
   skills?: any; // JSONB equivalent
@@ -37,6 +41,10 @@ const UserSchema = new Schema<IUser>(
     },
     phone: { type: String },
     location: { type: String },
+    location_coordinates: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+    },
     avatar_url: { type: String },
     bio: { type: String },
     skills: { type: Schema.Types.Mixed }, // JSONB equivalent

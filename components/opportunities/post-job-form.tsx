@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog"
 import { handleRoleValidationError } from "@/lib/role-validation-client";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { LocationPicker, LocationData } from "@/components/ui/location-picker";
 
 export function PostJobForm() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([])
@@ -35,6 +36,7 @@ export function PostJobForm() {
   const [companyLogo, setCompanyLogo] = useState<string | undefined>(undefined)
   const [jobType, setJobType] = useState<string | undefined>(undefined)
   const [urgency, setUrgency] = useState<string | undefined>(undefined)
+  const [jobLocation, setJobLocation] = useState<LocationData>({ address: "" })
 
   const availableSkills = [
     "Crop Harvesting",
@@ -83,7 +85,7 @@ export function PostJobForm() {
     try {
       const title = (document.getElementById("job-title") as HTMLInputElement)?.value
       const description = (document.getElementById("description") as HTMLTextAreaElement)?.value
-      const location = (document.getElementById("location") as HTMLInputElement)?.value
+      const location = jobLocation.address || ""
       const company_name = (document.getElementById("company-name") as HTMLInputElement)?.value
       const benefitsText = (document.getElementById("benefits") as HTMLTextAreaElement)?.value || ""
       const requirementsText = (document.getElementById("requirements") as HTMLTextAreaElement)?.value || ""
@@ -120,6 +122,7 @@ export function PostJobForm() {
         description,
         category: "general",
         location,
+        location_coordinates: jobLocation.coordinates,
         company_name,
         company_logo: companyLogo,
         contact_email,
@@ -195,11 +198,13 @@ export function PostJobForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="location">Location *</Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input id="location" placeholder="City, State" className="pl-10" required />
-              </div>
+              <LocationPicker
+                value={jobLocation}
+                onChange={setJobLocation}
+                label="Location"
+                placeholder="Enter job location or use current location"
+                required
+              />
             </div>
           </CardContent>
         </Card>

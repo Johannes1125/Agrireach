@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { LocationPicker, LocationData } from "@/components/ui/location-picker";
 import { useNotifications } from "@/components/notifications/notification-provider";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { authFetch } from "@/lib/auth-client";
@@ -101,6 +102,13 @@ export function SettingsContent({ user }: SettingsContentProps) {
   const { profile, saveProfile } = useUserProfile();
   const { lang, setLang, resolvedLang, autoTranslate, setAutoTranslate } =
     useLanguage();
+  const [userLocation, setUserLocation] = useState<LocationData>({
+    address: user.location || "",
+  });
+  const [businessLocation, setBusinessLocation] = useState<LocationData>({
+    address: profile?.business_address || "",
+    coordinates: profile?.business_coordinates,
+  });
 
   // Skills management state
   const [workerSkills, setWorkerSkills] = useState<string[]>(
@@ -134,6 +142,26 @@ export function SettingsContent({ user }: SettingsContentProps) {
       setWorkerSkills(profile.skills);
     }
   }, [profile?.skills]);
+
+  // Load user location coordinates
+  useEffect(() => {
+    if (user.location) {
+      setUserLocation({
+        address: user.location,
+        coordinates: (user as any).location_coordinates,
+      });
+    }
+  }, [user.location]);
+
+  // Load business location coordinates
+  useEffect(() => {
+    if (profile?.business_address) {
+      setBusinessLocation({
+        address: profile.business_address,
+        coordinates: profile.business_coordinates,
+      });
+    }
+  }, [profile?.business_address, profile?.business_coordinates]);
 
   // Skill management functions
   const addSkill = (skill: string) => {
@@ -212,15 +240,53 @@ export function SettingsContent({ user }: SettingsContentProps) {
   }, []);
 
   const handleSave = async (section: string) => {
+    if (section === "profile") {
+      try {
+        const updateData: any = {
+          full_name: formData.name, // Changed from 'name' to 'full_name' to match API schema
+          bio: formData.bio,
+          location: formData.location,
+          phone: formData.phone || undefined, // Add phone number
+        };
+        
+        // Include coordinates if available
+        if (userLocation.coordinates) {
+          updateData.location_coordinates = userLocation.coordinates;
+        }
+        
+        const response = await authFetch(`/api/users/${user.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to save profile");
+        }
+
+        notifications.showSuccess(
+          "Profile Saved",
+          "Your profile information has been updated."
+        );
+      } catch (e: any) {
+        notifications.showError(
+          "Save Failed",
+          e.message || "Unable to save profile"
+        );
+      }
+      return;
+    }
+    
     if (section === "business") {
       try {
-        await saveProfile({
+        const businessData: any = {
           company_name: formData.business?.name || "",
           industry: formData.business?.industry || "",
           business_type: formData.business?.type || "",
           company_size: formData.business?.size || "",
           business_description: formData.business?.description || "",
-          business_address: formData.business?.address || "",
+          business_address: formData.business?.address || businessLocation.address || "",
           business_registration: formData.business?.registration || "",
           business_hours: formData.business?.hours || "",
           website: formData.business?.website || "",
@@ -233,7 +299,14 @@ export function SettingsContent({ user }: SettingsContentProps) {
             (formData as any)?.business?.services ??
             profile?.services_offered ??
             undefined,
-        });
+        };
+        
+        // Include business coordinates if available
+        if (businessLocation.coordinates) {
+          businessData.business_coordinates = businessLocation.coordinates;
+        }
+        
+        await saveProfile(businessData);
         notifications.showSuccess(
           "Business Saved",
           "Your business information has been updated."
@@ -421,13 +494,14 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input
-                      id="location"
-                      value={formData.location}
-                      onChange={(e) =>
-                        setFormData({ ...formData, location: e.target.value })
-                      }
+                    <LocationPicker
+                      value={userLocation}
+                      onChange={(location) => {
+                        setUserLocation(location);
+                        setFormData({ ...formData, location: location.address });
+                      }}
+                      label="Location"
+                      placeholder="Enter your location or use current location"
                     />
                   </div>
                 </div>
@@ -1087,7 +1161,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-white dark:border-white">
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1153,7 +1227,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-white dark:border-white">
                     <SelectValue placeholder="Select company size" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1257,18 +1331,17 @@ export function SettingsContent({ user }: SettingsContentProps) {
             </div>
 
             <div>
-              <Label htmlFor="business-address">Business Address</Label>
-              <Textarea
-                id="business-address"
-                placeholder="Enter your complete business address"
-                value={formData.business?.address || profile?.business_address || ""}
-                onChange={(e) =>
+              <LocationPicker
+                value={businessLocation}
+                onChange={(location) => {
+                  setBusinessLocation(location);
                   setFormData({
                     ...formData,
-                    business: { ...formData.business, address: e.target.value },
-                  })
-                }
-                rows={2}
+                    business: { ...formData.business, address: location.address },
+                  });
+                }}
+                label="Business Address"
+                placeholder="Enter business address or use current location"
               />
             </div>
 

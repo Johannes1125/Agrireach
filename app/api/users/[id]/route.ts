@@ -10,6 +10,10 @@ const UpdateUserSchema = z.object({
   full_name: z.string().optional(),
   phone: z.string().optional(),
   location: z.string().optional(),
+  location_coordinates: z.object({
+    latitude: z.number(),
+    longitude: z.number(),
+  }).optional(),
   bio: z.string().optional(),
   skills: z.any().optional(),
   avatar_url: z.string().optional(),
@@ -46,9 +50,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!result.ok) return result.res;
 
   await connectToDatabase();
+  
+  // Handle location_coordinates properly
+  const updateData: any = { ...result.data };
+  if (result.data.location_coordinates) {
+    updateData.location_coordinates = result.data.location_coordinates;
+  }
+  
   const user = await User.findByIdAndUpdate(
     params.id,
-    { $set: result.data },
+    { $set: updateData },
     { new: true }
   ).select("-password_hash -two_fa_secret");
 

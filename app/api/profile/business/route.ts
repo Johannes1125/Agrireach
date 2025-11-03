@@ -39,6 +39,7 @@ export async function PUT(req: NextRequest) {
     company_size: body?.company_size,
     business_description: body?.business_description,
     business_address: body?.business_address,
+    business_coordinates: body?.business_coordinates,
     business_registration: body?.business_registration,
     business_hours: body?.business_hours,
     website: body?.website,

@@ -10,6 +10,10 @@ export interface BusinessProfile {
   company_size?: string
   business_description?: string
   business_address?: string
+  business_coordinates?: {
+    latitude: number
+    longitude: number
+  }
   business_registration?: string
   business_hours?: string
   website?: string

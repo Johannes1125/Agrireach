@@ -10,6 +10,10 @@ export interface IOpportunity extends Document {
   description: string;
   category: string;
   location: string;
+  location_coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
   pay_rate: number;
   pay_rate_max?: number;
   pay_type: PayType;
@@ -44,6 +48,10 @@ const OpportunitySchema = new Schema<IOpportunity>(
     description: { type: String, required: true },
     category: { type: String, required: true, index: true },
     location: { type: String, required: true },
+    location_coordinates: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+    },
     pay_rate: { type: Number, required: true },
     pay_rate_max: { type: Number },
     pay_type: {

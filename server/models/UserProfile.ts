@@ -10,6 +10,10 @@ export interface IUserProfile extends Document {
   company_size?: string;
   business_description?: string;
   business_address?: string;
+  business_coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
   business_registration?: string;
   years_in_business?: number;
   services_offered?: string[];
@@ -33,6 +37,10 @@ const UserProfileSchema = new Schema<IUserProfile>(
     company_size: { type: String },
     business_description: { type: String },
     business_address: { type: String },
+    business_coordinates: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+    },
     business_registration: { type: String },
     years_in_business: { type: Number },
     services_offered: { type: [String], default: [] },
