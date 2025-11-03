@@ -31,11 +31,13 @@ import {
   LogOut,
   MessageCircle,
   BookOpen,
+  Users,
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Opportunities", href: "/opportunities", icon: Briefcase },
+  { name: "Producers", href: "/producers", icon: Users },
   { name: "Marketplace", href: "/marketplace", icon: ShoppingBag },
   { name: "Community", href: "/community", icon: MessageSquare },
   { name: "Learning", href: "/learning", icon: BookOpen },
