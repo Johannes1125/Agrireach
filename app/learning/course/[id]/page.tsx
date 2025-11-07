@@ -19,8 +19,8 @@ import {
   ArrowRight,
   ArrowLeft,
   AlertCircle,
+  Leaf,
 } from "lucide-react";
-import Trans from "@/components/ui/Trans";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -633,7 +633,7 @@ const COURSES = {
         type: "video" as const,
         completed: false,
         description: "Learn about soil types and structure",
-        videoUrl: "https://www.youtube.com/watch?v=rDgM-FJYe_c", 
+        videoUrl: "https://www.youtube.com/watch?v=rDgM-FJYe_c",
       },
       {
         id: 2,
@@ -1089,7 +1089,7 @@ const COURSES = {
         type: "video" as const,
         completed: false,
         description: "Drip, sprinkler, and surface irrigation methods",
-        videoUrl: "https://www.youtube.com/watch?v=Z9HAy9EYKKs", 
+        videoUrl: "https://www.youtube.com/watch?v=Z9HAy9EYKKs",
       },
       {
         id: 3,
@@ -1361,35 +1361,94 @@ const Certificate = ({
     year: "numeric",
   });
 
+  // ...existing code...
   const handleDownload = async () => {
-    // Create a canvas to convert the certificate to an image
     const certificate = certificateRef.current;
     if (!certificate) return;
 
+    const fileName = `AgriReach_Certificate_${course.title
+      .replace(/\s+/g, "_")
+      .replace(/[^\w\-]/g, "")}.pdf`;
+
     try {
-      // Using html2canvas (you'll need to install: npm install html2canvas)
+      // Try html-to-image first (better SVG/CSS support)
+      const htmlToImage = await import("html-to-image");
+      const toPng = (htmlToImage as any).toPng || (htmlToImage as any).default?.toPng;
+      const dataUrl = await toPng(certificate, {
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+      });
+
+      // Create image and convert to PDF with jsPDF
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = (e) => reject(e);
+      });
+
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10; // mm
+
+      let imgWidthMm = pageWidth - margin * 2;
+      let imgHeightMm = (img.height / img.width) * imgWidthMm;
+
+      if (imgHeightMm > pageHeight - margin * 2) {
+        imgHeightMm = pageHeight - margin * 2;
+        imgWidthMm = (img.width / img.height) * imgHeightMm;
+      }
+
+      const x = (pageWidth - imgWidthMm) / 2;
+      const y = (pageHeight - imgHeightMm) / 2;
+
+      pdf.addImage(dataUrl, "PNG", x, y, imgWidthMm, imgHeightMm);
+      pdf.save(fileName);
+      return;
+    } catch (err) {
+      console.warn("html-to-image / jsPDF failed, falling back to html2canvas:", err);
+    }
+
+    // Fallback: html2canvas -> PNG -> jsPDF
+    try {
       const html2canvas = (await import("html2canvas")).default;
       const canvas = await html2canvas(certificate, {
         scale: 2,
         backgroundColor: "#ffffff",
+        useCORS: true,
       });
 
-      // Convert canvas to blob and download
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `AgriReach_Certificate_${course.title.replace(
-            /\s+/g,
-            "_"
-          )}.png`;
-          link.click();
-          URL.revokeObjectURL(url);
-        }
+      const dataUrl = canvas.toDataURL("image/png");
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = (e) => reject(e);
       });
+
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+
+      let imgWidthMm = pageWidth - margin * 2;
+      let imgHeightMm = (img.height / img.width) * imgWidthMm;
+      if (imgHeightMm > pageHeight - margin * 2) {
+        imgHeightMm = pageHeight - margin * 2;
+        imgWidthMm = (img.width / img.height) * imgHeightMm;
+      }
+      const x = (pageWidth - imgWidthMm) / 2;
+      const y = (pageHeight - imgHeightMm) / 2;
+
+      pdf.addImage(dataUrl, "PNG", x, y, imgWidthMm, imgHeightMm);
+      pdf.save(fileName);
     } catch (error) {
-      console.error("Error downloading certificate:", error);
+      console.error("Error generating PDF certificate:", error);
       alert("Failed to download certificate. Please try again.");
     }
   };
@@ -1492,11 +1551,9 @@ const Certificate = ({
                 </div>
                 <div className="text-center">
                   <div className="mb-2">
-                    <img
-                      src="/api/placeholder/120/60"
-                      alt="AgriReach Logo"
-                      className="h-12 mx-auto"
-                    />
+                  <div className="h-12 w-12 mx-auto flex items-center justify-center bg-green-50 rounded-full">
+                   <Leaf className="h-7 w-7 text-green-700" />
+                    </div>
                   </div>
                   <div className="border-t-2 border-gray-800 pt-1">
                     <p className="text-sm font-semibold">AgriReach Platform</p>
@@ -1543,7 +1600,7 @@ const Certificate = ({
             <p className="text-sm font-semibold text-center mb-3">
               🎉 Share your achievement!
             </p>
-            <div className="flex gap-2 justify-center">
+            {/* <div className="flex gap-2 justify-center">
               <Button variant="outline" size="sm">
                 <Share2 className="h-4 w-4 mr-2" />
                 Share on Facebook
@@ -1552,7 +1609,7 @@ const Certificate = ({
                 <Share2 className="h-4 w-4 mr-2" />
                 Share on LinkedIn
               </Button>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -1684,7 +1741,7 @@ export default function CoursePage() {
         handleLessonClick(nextLesson);
         // Scroll to top of modal
         setTimeout(() => {
-          modalContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+          modalContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
         }, 100);
       } else {
         // Last lesson - check if course is completed
@@ -1709,7 +1766,7 @@ export default function CoursePage() {
         handleLessonClick(prevLesson);
         // Scroll to top of modal
         setTimeout(() => {
-          modalContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+          modalContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
         }, 100);
       }
     }
@@ -1739,7 +1796,10 @@ export default function CoursePage() {
       {/* Video/Reading/Quiz Modal */}
       {activeLesson && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div ref={modalContentRef} className="bg-background rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+          <div
+            ref={modalContentRef}
+            className="bg-background rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto"
+          >
             <div className="sticky top-0 bg-background border-b px-6 py-4 flex items-center justify-between z-10">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -1827,7 +1887,10 @@ export default function CoursePage() {
                                   while improving overall productivity.
                                 </p>
                                 <div className="flex gap-2">
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
                                     💧 Water Saving
                                   </Badge>
                                 </div>
