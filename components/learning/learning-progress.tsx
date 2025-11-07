@@ -3,7 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Target } from "lucide-react";
-import Trans from "@/components/ui/Trans";
 import Link from "next/link";
 
 export default function LearningProgress({ userId }: { userId: string }) {
@@ -18,10 +17,10 @@ export default function LearningProgress({ userId }: { userId: string }) {
       {/* In Progress */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2 text-base">
             <Target className="h-5 w-5 text-primary" />
-            <Trans text="In Progress" />
-          </CardTitle>
+            In Progress
+            </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {inProgress.map((course) => (
@@ -44,10 +43,10 @@ export default function LearningProgress({ userId }: { userId: string }) {
       {/* Achievements */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2 text-base">
             <Trophy className="h-5 w-5 text-yellow-600" />
-            <Trans text="Recent Achievements" />
-          </CardTitle>
+            Recent Achievements
+            </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-3">

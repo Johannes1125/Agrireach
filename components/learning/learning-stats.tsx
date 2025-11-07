@@ -2,7 +2,6 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Award, Clock, TrendingUp } from "lucide-react";
-import Trans from "@/components/ui/Trans";
 
 export default function LearningStats({ user }: { user: any }) {
   const stats = [
@@ -44,7 +43,7 @@ export default function LearningStats({ user }: { user: any }) {
               <div>
                 <p className="text-2xl font-bold">{stat.value}</p>
                 <p className="text-xs text-muted-foreground">
-                  <Trans text={stat.label} />
+                  {stat.label}
                 </p>
               </div>
             </div>

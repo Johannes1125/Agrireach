@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Search, BookOpen, Clock, Award, Filter } from "lucide-react";
-import Trans from "@/components/ui/Trans";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -110,7 +109,7 @@ export default function Catalog() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-primary" />
-          <Trans text="Course Catalog" />
+          Course Catalog
         </h2>
         <span className="text-sm text-muted-foreground">
           {items.length} {items.length === 1 ? "course" : "courses"}
@@ -200,7 +199,7 @@ export default function Catalog() {
 
               <Link href={`/learning/course/${c.id}`} className="block">
                 <Button className="w-full" size="sm">
-                  <Trans text="View Course" />
+                  View Course
                 </Button>
               </Link>
             </CardContent>
@@ -209,7 +208,7 @@ export default function Catalog() {
         {items.length === 0 && (
           <div className="col-span-full text-center py-12">
             <p className="text-muted-foreground">
-              <Trans text="No courses match your filters." />
+              No courses match your filters.
             </p>
           </div>
         )}

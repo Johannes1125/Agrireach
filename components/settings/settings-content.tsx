@@ -31,6 +31,7 @@ import { useNotifications } from "@/components/notifications/notification-provid
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { authFetch } from "@/lib/auth-client";
 import { showRoleUpdateSuccess } from "@/lib/role-validation-client";
+import { useTranslation } from "@/contexts/TranslationProvider";
 import {
   Bell,
   Shield,
@@ -64,6 +65,11 @@ interface SettingsUser {
     description?: string;
     website?: string;
     logo?: string;
+    address?: string;
+    registration?: string;
+    hours?: string;
+    years?: number;
+    services?: string[];
   };
   preferences: {
     notifications: {
@@ -102,6 +108,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
   const { profile, saveProfile } = useUserProfile();
   const { lang, setLang, resolvedLang, autoTranslate, setAutoTranslate } =
     useLanguage();
+  const { translateNow, isTranslating } = useTranslation();
   const [userLocation, setUserLocation] = useState<LocationData>({
     address: user.location || "",
   });
@@ -200,10 +207,23 @@ export function SettingsContent({ user }: SettingsContentProps) {
   const LANG_LABELS = {
     auto: "Auto (device)",
     en: "English",
-    zh: "Mandarin Chinese",
-    hi: "Hindi",
     es: "Spanish",
     fr: "French",
+    pt: "Portuguese",
+    zh: "Mandarin Chinese",
+    ja: "Japanese",
+    ko: "Korean",
+    ru: "Russian",
+    ar: "Arabic",
+    hi: "Hindi",
+    bn: "Bengali",
+    id: "Indonesian",
+    vi: "Vietnamese",
+    tl: "Filipino",
+    de: "German",
+    it: "Italian",
+    tr: "Turkish",
+    sw: "Swahili",
   } as const;
   type LabelKey = keyof typeof LANG_LABELS;
   const currentLanguageLabel =
@@ -248,12 +268,12 @@ export function SettingsContent({ user }: SettingsContentProps) {
           location: formData.location,
           phone: formData.phone || undefined, // Add phone number
         };
-        
+
         // Include coordinates if available
         if (userLocation.coordinates) {
           updateData.location_coordinates = userLocation.coordinates;
         }
-        
+
         const response = await authFetch(`/api/users/${user.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -277,7 +297,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
       }
       return;
     }
-    
+
     if (section === "business") {
       try {
         const businessData: any = {
@@ -286,7 +306,8 @@ export function SettingsContent({ user }: SettingsContentProps) {
           business_type: formData.business?.type || "",
           company_size: formData.business?.size || "",
           business_description: formData.business?.description || "",
-          business_address: formData.business?.address || businessLocation.address || "",
+          business_address:
+            formData.business?.address || businessLocation.address || "",
           business_registration: formData.business?.registration || "",
           business_hours: formData.business?.hours || "",
           website: formData.business?.website || "",
@@ -300,12 +321,12 @@ export function SettingsContent({ user }: SettingsContentProps) {
             profile?.services_offered ??
             undefined,
         };
-        
+
         // Include business coordinates if available
         if (businessLocation.coordinates) {
           businessData.business_coordinates = businessLocation.coordinates;
         }
-        
+
         await saveProfile(businessData);
         notifications.showSuccess(
           "Business Saved",
@@ -498,7 +519,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       value={userLocation}
                       onChange={(location) => {
                         setUserLocation(location);
-                        setFormData({ ...formData, location: location.address });
+                        setFormData({
+                          ...formData,
+                          location: location.address,
+                        });
                       }}
                       label="Location"
                       placeholder="Enter your location or use current location"
@@ -594,8 +618,8 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
             {/* Skills Management - Only for Workers */}
             {(() => {
-              const isWorker = 
-                selectedRoles.includes("worker") || 
+              const isWorker =
+                selectedRoles.includes("worker") ||
                 (Array.isArray(user.role) && user.role.includes("worker")) ||
                 user.role === "worker";
               return isWorker;
@@ -604,8 +628,8 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <CardHeader>
                   <CardTitle className="font-heading">My Skills</CardTitle>
                   <CardDescription>
-                    Add your skills to get better job matches. Jobs matching your
-                    skills will be prioritized.
+                    Add your skills to get better job matches. Jobs matching
+                    your skills will be prioritized.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1337,7 +1361,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   setBusinessLocation(location);
                   setFormData({
                     ...formData,
-                    business: { ...formData.business, address: location.address },
+                    business: {
+                      ...formData.business,
+                      address: location.address,
+                    },
                   });
                 }}
                 label="Business Address"
@@ -1347,15 +1374,24 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <Label htmlFor="business-registration">Business Registration Number</Label>
+                <Label htmlFor="business-registration">
+                  Business Registration Number
+                </Label>
                 <Input
                   id="business-registration"
                   placeholder="Enter registration number (optional)"
-                  value={formData.business?.registration || profile?.business_registration || ""}
+                  value={
+                    formData.business?.registration ||
+                    profile?.business_registration ||
+                    ""
+                  }
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      business: { ...formData.business, registration: e.target.value },
+                      business: {
+                        ...formData.business,
+                        registration: e.target.value,
+                      },
                     })
                   }
                 />
@@ -1365,7 +1401,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <Input
                   id="business-hours"
                   placeholder="e.g., Mon-Fri 8AM-5PM"
-                  value={formData.business?.hours || profile?.business_hours || ""}
+                  value={
+                    formData.business?.hours || profile?.business_hours || ""
+                  }
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -1490,22 +1528,55 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 >
                   <option value="auto">Auto (device)</option>
                   <option value="en">English</option>
-                  <option value="zh">Mandarin Chinese</option>
-                  <option value="hi">Hindi</option>
                   <option value="es">Spanish</option>
                   <option value="fr">French</option>
+                  <option value="pt">Portuguese</option>
+                  <option value="zh">Mandarin Chinese</option>
+                  <option value="ja">Japanese</option>
+                  <option value="ko">Korean</option>
+                  <option value="ru">Russian</option>
+                  <option value="ar">Arabic</option>
+                  <option value="hi">Hindi</option>
+                  <option value="bn">Bengali</option>
+                  <option value="id">Indonesian</option>
+                  <option value="vi">Vietnamese</option>
+                  <option value="tl">Filipino</option>
+                  <option value="de">German</option>
+                  <option value="it">Italian</option>
+                  <option value="tr">Turkish</option>
+                  <option value="sw">Swahili</option>
                 </select>
               </div>
               <p className="text-xs text-muted-foreground">
                 Current: <strong>{currentLanguageLabel}</strong>
               </p>
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-sm">Translate content automatically</span>
-                <Switch
-                  checked={autoTranslate}
-                  onCheckedChange={setAutoTranslate}
-                  aria-label="Toggle auto translate"
-                />
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span className="text-sm">Manual translation</span>
+                <Button
+                  variant="default"
+                  size="sm"
+                  disabled={isTranslating}
+                  onClick={async () => {
+                    notifications.showInfo(
+                      "Translating",
+                      `Translating page to ${currentLanguageLabel}...`
+                    );
+                    try {
+                      await translateNow();
+                      notifications.showSuccess(
+                        "Translation complete",
+                        `Content translated to ${currentLanguageLabel}`
+                      );
+                    } catch (e: any) {
+                      notifications.showError(
+                        "Translation failed",
+                        e?.message || "Unable to translate content"
+                      );
+                    }
+                  }}
+                >
+                  {isTranslating ? "Translating..." : "Translate"}
+                </Button>
               </div>
             </div>
             {/* end language selector */}

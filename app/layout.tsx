@@ -15,6 +15,7 @@ import { GlobalAnnouncer } from "@/components/accessibility/global-announcer";
 import { PageAnnouncer } from "@/components/accessibility/page-announcer";
 import { LoadingProvider } from "@/contexts/loading-context";
 import { LanguageProvider } from "@/contexts/language-context";
+import { TranslationProvider } from "@/contexts/TranslationProvider";
 import "./globals.css";
 
 const openSans = Open_Sans({
@@ -56,8 +57,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-              <AccessibilityProvider>
-                <LanguageProvider>
+            <AccessibilityProvider>
+              <LanguageProvider>
+                <TranslationProvider>
                   <LoadingProvider>
                     <GlobalAnnouncer />
                     <PageAnnouncer>
@@ -66,8 +68,9 @@ export default function RootLayout({
                     <AccessibilitySettings position="bottom-left" />
                     <Toaster position="top-right" richColors />
                   </LoadingProvider>
-                </LanguageProvider>
-              </AccessibilityProvider>
+                </TranslationProvider>
+              </LanguageProvider>
+            </AccessibilityProvider>
           </ThemeProvider>
         </Suspense>
         <Analytics />

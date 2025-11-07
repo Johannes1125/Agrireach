@@ -1,4 +1,3 @@
-import Trans from "@/components/ui/Trans";
 import { SimpleHeader } from "@/components/layout/simple-header";
 import { PageTransition } from "@/components/ui/page-transition";
 import { getCurrentUser } from "@/lib/auth-server";
@@ -23,10 +22,10 @@ export default async function LearningPage() {
         <div className="bg-gradient-to-r from-green-600 to-green-800 text-white">
           <div className="container mx-auto px-4 py-8 sm:py-12">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
-              <Trans text="E-Learning & Training Center" />
+              E-Learning & Training Center
             </h1>
             <p className="text-sm sm:text-base text-green-50 max-w-2xl">
-              <Trans text="Master agricultural skills, earn certifications, and unlock new opportunities with our comprehensive training programs." />
+              Master agricultural skills, earn certifications, and unlock new opportunities with our comprehensive training programs.
             </p>
           </div>
         </div>
