@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+const SkillRequirementSchema = z.object({
+  name: z.string().min(1),
+  min_level: z.number().int().min(1).max(4).optional(),
+  required: z.boolean().optional().default(true),
+});
+
+const SkillSummarySchema = z.object({
+  name: z.string().min(1),
+  level: z.number().int().min(1).max(4).optional(),
+});
+
 export const CreateJobSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
@@ -16,7 +27,9 @@ export const CreateJobSchema = z.object({
   pay_type: z.enum(["hourly", "daily", "weekly", "monthly", "project"]),
   duration: z.string().optional(),
   urgency: z.enum(["low", "medium", "high", "urgent"]),
-  required_skills: z.array(z.string()).optional(),
+  required_skills: z
+    .array(z.union([z.string(), SkillRequirementSchema]))
+    .optional(),
   company_name: z.string().optional(),
   company_logo: z.string().url().optional(),
   images: z.array(z.string().url()).optional(),
@@ -34,6 +47,10 @@ export type UpdateJobInput = z.infer<typeof UpdateJobSchema>;
 export const ApplyJobSchema = z.object({
   cover_letter: z.string().optional(),
   resume_url: z.string().url().optional(),
+  highlighted_skills: z
+    .array(SkillSummarySchema)
+    .max(20)
+    .optional(),
 });
 export type ApplyJobInput = z.infer<typeof ApplyJobSchema>;
 

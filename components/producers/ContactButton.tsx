@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
 import * as Icons from "lucide-react";
 
 export default function ContactButton({
@@ -11,12 +10,12 @@ export default function ContactButton({
   producerId: string;
   producerName: string;
 }) {
-  const router = useRouter();
-
   const onContact = async () => {
     try {
-      // Redirect to messages/chat tab (original behavior)
-      router.push("/chat");
+      // Chat is now handled by the chat widget
+      // User can open the widget using the floating button
+      // Scroll to top to make the widget button visible
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error("Failed to start contact thread", err);
     }

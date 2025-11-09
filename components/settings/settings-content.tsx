@@ -31,6 +31,9 @@ import { useNotifications } from "@/components/notifications/notification-provid
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { authFetch } from "@/lib/auth-client";
 import { showRoleUpdateSuccess } from "@/lib/role-validation-client";
+import { SkillCard } from "@/components/ui/skill-card";
+import { SkillSelector } from "@/components/ui/skill-selector";
+import { Skill, getSkillCategory } from "@/lib/skills";
 import { useTranslation } from "@/contexts/TranslationProvider";
 import {
   Bell,
@@ -117,36 +120,27 @@ export function SettingsContent({ user }: SettingsContentProps) {
     coordinates: profile?.business_coordinates,
   });
 
-  // Skills management state
-  const [workerSkills, setWorkerSkills] = useState<string[]>(
-    profile?.skills || []
-  );
-  const [customSkillInput, setCustomSkillInput] = useState("");
+  // Skills management state - support both old and new formats
+  const [workerSkills, setWorkerSkills] = useState<Array<{
+    name: string;
+    level: number;
+    category: string;
+  }>>([]);
 
-  // Available skills list (same as in post-job-form)
-  const availableSkills = [
-    "Crop Harvesting",
-    "Organic Farming",
-    "Equipment Operation",
-    "Soil Management",
-    "Livestock Care",
-    "Greenhouse Management",
-    "Pest Control",
-    "Irrigation Systems",
-    "Team Leadership",
-    "Quality Control",
-    "Safety Protocols",
-    "Mechanical Skills",
-    "Plant Science",
-    "Animal Husbandry",
-    "Food Processing",
-    "Packaging",
-  ];
-
-  // Load skills from profile when available
+  // Load skills from profile when available - normalize to new format
   useEffect(() => {
     if (profile?.skills) {
-      setWorkerSkills(profile.skills);
+      // Normalize skills to new format
+      const normalized = Array.isArray(profile.skills) && profile.skills.length > 0
+        ? (typeof profile.skills[0] === 'string'
+          ? profile.skills.map((s: string) => ({
+              name: s,
+              level: 2,
+              category: getSkillCategory(s) || "Farm Management"
+            }))
+          : profile.skills)
+        : [];
+      setWorkerSkills(normalized);
     }
   }, [profile?.skills]);
 
@@ -171,21 +165,14 @@ export function SettingsContent({ user }: SettingsContentProps) {
   }, [profile?.business_address, profile?.business_coordinates]);
 
   // Skill management functions
-  const addSkill = (skill: string) => {
-    if (skill && !workerSkills.includes(skill)) {
+  const addSkill = (skill: Skill) => {
+    if (skill && !workerSkills.some((s) => s.name.toLowerCase() === skill.name.toLowerCase())) {
       setWorkerSkills([...workerSkills, skill]);
     }
   };
 
-  const removeSkill = (skill: string) => {
-    setWorkerSkills(workerSkills.filter((s) => s !== skill));
-  };
-
-  const addCustomSkill = () => {
-    if (customSkillInput.trim()) {
-      addSkill(customSkillInput.trim());
-      setCustomSkillInput("");
-    }
+  const removeSkill = (skillName: string) => {
+    setWorkerSkills(workerSkills.filter((s) => s.name !== skillName));
   };
 
   const handleSaveSkills = async () => {
@@ -628,84 +615,52 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <CardHeader>
                   <CardTitle className="font-heading">My Skills</CardTitle>
                   <CardDescription>
-                    Add your skills to get better job matches. Jobs matching
-                    your skills will be prioritized.
+                    Add your skills with proficiency levels to get better job matches. 
+                    Jobs matching your skills will be prioritized based on your skill levels.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   {/* Selected Skills */}
                   {workerSkills.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Your Skills ({workerSkills.length})</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {workerSkills.map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="secondary"
-                            className="flex items-center gap-1 px-3 py-1"
-                          >
-                            {skill}
-                            <button
-                              type="button"
-                              onClick={() => removeSkill(skill)}
-                              className="ml-1 hover:text-destructive"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-base font-semibold">
+                          Your Skills ({workerSkills.length})
+                        </Label>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        {workerSkills.map((skill, index) => (
+                          <SkillCard
+                            key={`${skill.name}-${index}`}
+                            skill={skill}
+                            onRemove={() => removeSkill(skill.name)}
+                            showCategory={true}
+                            showLevel={true}
+                          />
                         ))}
                       </div>
                     </div>
                   )}
 
-                  <Separator />
+                  {workerSkills.length > 0 && <Separator />}
 
-                  {/* Available Skills */}
-                  <div className="space-y-2">
-                    <Label>Add Skills</Label>
-                    <div className="grid gap-2 md:grid-cols-3">
-                      {availableSkills
-                        .filter((skill) => !workerSkills.includes(skill))
-                        .map((skill) => (
-                          <div
-                            key={skill}
-                            className="flex items-center space-x-2 p-2 border rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
-                            onClick={() => addSkill(skill)}
-                          >
-                            <Plus className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{skill}</span>
-                          </div>
-                        ))}
-                    </div>
+                  {/* Add Skills Section */}
+                  <div className="space-y-3">
+                    <Label className="text-base font-semibold">Add Skills</Label>
+                    <SkillSelector
+                      selectedSkills={workerSkills}
+                      onAddSkill={addSkill}
+                      onRemoveSkill={removeSkill}
+                      showCustomInput={true}
+                    />
                   </div>
 
-                  {/* Custom Skill Input */}
                   <Separator />
-                  <div className="space-y-2">
-                    <Label>Add Custom Skill</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Enter a custom skill"
-                        value={customSkillInput}
-                        onChange={(e) => setCustomSkillInput(e.target.value)}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" &&
-                          (e.preventDefault(), addCustomSkill())
-                        }
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={addCustomSkill}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
 
+                  {/* Save Button */}
                   <Button
                     onClick={handleSaveSkills}
-                    className="w-fit"
+                    className="w-full md:w-fit"
                     disabled={workerSkills.length === 0}
                   >
                     <Save className="mr-2 h-4 w-4" />

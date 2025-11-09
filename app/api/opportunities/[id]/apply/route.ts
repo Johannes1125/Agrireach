@@ -2,12 +2,18 @@ import { NextRequest } from "next/server";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Job, JobApplication } from "@/server/models/Job";
 import { User } from "@/server/models/User";
+import { UserProfile } from "@/server/models/UserProfile";
 import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/api";
 import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { ApplyJobSchema } from "@/server/validators/opportunitySchemas";
 import { notifyJobApplication } from "@/server/utils/notifications";
 import { validateUserRole } from "@/server/utils/role-validation";
+import {
+  calculateMatchScore,
+  normalizeSkillRequirements,
+  normalizeSkills,
+} from "@/lib/skills";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["POST"]);
@@ -36,7 +42,57 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const validate = validateBody(ApplyJobSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;
-  const app = await JobApplication.create({ opportunity_id: job._id, worker_id: userId, ...result.data });
+
+  const profile = await UserProfile.findOne({ user_id: userId }).lean();
+  const workerSkills = normalizeSkills(profile?.skills as any);
+  const jobSkillRequirements = normalizeSkillRequirements(job.required_skills as any);
+  const matchResult = calculateMatchScore(jobSkillRequirements, workerSkills);
+
+  const unmetRequired = jobSkillRequirements.filter((req) => {
+    if (req.required === false) return false;
+    const workerSkill = workerSkills.find(
+      (ws) => ws.name.toLowerCase() === req.name.toLowerCase()
+    );
+    if (!workerSkill) return true;
+    if (req.min_level && workerSkill.level < req.min_level) return true;
+    return false;
+  });
+
+  if (unmetRequired.length > 0) {
+    const missingList = unmetRequired.map((req) => req.name).join(", ");
+    return jsonError(
+      `You are missing required skills: ${missingList}. Update your skills in settings before applying.`,
+      400
+    );
+  }
+
+  const { highlighted_skills = [], ...applicationBody } = result.data;
+  const highlightedSkills = (highlighted_skills as typeof highlighted_skills).length
+    ? highlighted_skills.map((skill) => {
+        const workerSkill = workerSkills.find(
+          (ws) => ws.name.toLowerCase() === skill.name.toLowerCase()
+        );
+        return {
+          name: skill.name,
+          level: skill.level || workerSkill?.level,
+        };
+      })
+    : workerSkills
+        .filter((ws) =>
+          jobSkillRequirements.some(
+            (jr) => jr.name.toLowerCase() === ws.name.toLowerCase()
+          )
+        )
+        .map((ws) => ({ name: ws.name, level: ws.level }));
+
+  const app = await JobApplication.create({
+    opportunity_id: job._id,
+    worker_id: userId,
+    ...applicationBody,
+    highlighted_skills: highlightedSkills,
+    match_score: matchResult.score,
+    match_details: matchResult.details,
+  });
   await Job.findByIdAndUpdate(job._id, { $inc: { applications_count: 1 } });
 
   // Get applicant info and notify recruiter

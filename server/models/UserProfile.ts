@@ -19,7 +19,11 @@ export interface IUserProfile extends Document {
   services_offered?: string[];
   business_hours?: string;
   business_logo?: string;
-  skills?: string[];
+  skills?: Array<{
+    name: string;
+    level: number; // 1-4 (Beginner to Expert)
+    category: string;
+  }> | string[]; // Support both new object format and old string array format
   certifications?: string[];
   preferences?: any;
   created_at: Date;
@@ -46,7 +50,10 @@ const UserProfileSchema = new Schema<IUserProfile>(
     services_offered: { type: [String], default: [] },
     business_hours: { type: String },
     business_logo: { type: String },
-    skills: { type: [String], default: [] },
+    skills: {
+      type: Schema.Types.Mixed, // Supports both [String] and [{name, level, category}]
+      default: [],
+    },
     certifications: { type: [String], default: [] },
     preferences: { type: Schema.Types.Mixed },
   },

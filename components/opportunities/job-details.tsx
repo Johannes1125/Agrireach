@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { MapPin, Clock, DollarSign, Users, Star, Building } from "lucide-react"
+import { MapPin, Clock, DollarSign, Users, Building, Phone, Globe, Calendar as CalendarIcon } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
+import { SkillRequirement, SKILL_LEVELS, Skill, SKILL_LEVEL_COLORS } from "@/lib/skills"
 
 interface Job {
   id: string
@@ -21,15 +22,20 @@ interface Job {
   postedDate: string
   deadline: string
   urgency: string
-  skills: string[]
+  skills: SkillRequirement[]
   poster?: { id: string; name: string; location?: string }
   schedule?: string
   companyInfo: {
     name: string
-    size: string
-    industry: string
-    rating: number
-    description: string
+    size?: string
+    industry?: string
+    description?: string
+    phone?: string
+    website?: string
+    address?: string
+    services?: string[]
+    skills?: Skill[]
+    business_hours?: string
   }
 }
 
@@ -71,10 +77,6 @@ export function JobDetails({ job }: JobDetailsProps) {
 
               <div className="flex items-center gap-2 mb-3">
                 <span className="font-medium text-lg">{job.company}</span>
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm text-muted-foreground">{job.companyInfo.rating}</span>
-                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-4 text-muted-foreground mb-4">
@@ -98,8 +100,17 @@ export function JobDetails({ job }: JobDetailsProps) {
                 <Badge variant={getUrgencyColor(job.urgency)}>{job.urgency} priority</Badge>
 
                 {job.skills.map((skill) => (
-                  <Badge key={skill} variant="outline">
-                    {skill}
+                  <Badge
+                    key={skill.name}
+                    variant={skill.required === false ? "outline" : "secondary"}
+                    className="flex items-center gap-1"
+                  >
+                    <span>{skill.name}</span>
+                    {skill.min_level && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {SKILL_LEVELS[skill.min_level]}
+                      </span>
+                    )}
                   </Badge>
                 ))}
               </div>
@@ -203,24 +214,89 @@ export function JobDetails({ job }: JobDetailsProps) {
       {/* Company Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="font-heading">About {job.companyInfo.name}</CardTitle>
+          <CardTitle className="font-heading">About {job.companyInfo.name || job.company}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-muted-foreground leading-relaxed">{job.companyInfo.description}</p>
+          {job.companyInfo.description && (
+            <p className="text-muted-foreground leading-relaxed">{job.companyInfo.description}</p>
+          )}
 
-          <Separator />
+          {(job.companyInfo.industry || job.companyInfo.size || job.companyInfo.address || job.companyInfo.phone || job.companyInfo.website || job.companyInfo.business_hours) && (
+            <>
+              <Separator />
+              <div className="grid gap-4 md:grid-cols-2">
+                {job.companyInfo.industry && (
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Industry: {job.companyInfo.industry}</span>
+                  </div>
+                )}
+                {job.companyInfo.size && (
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Company Size: {job.companyInfo.size}</span>
+                  </div>
+                )}
+                {job.companyInfo.address && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Address: {job.companyInfo.address}</span>
+                  </div>
+                )}
+                {job.companyInfo.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Phone: {job.companyInfo.phone}</span>
+                  </div>
+                )}
+                {job.companyInfo.website && (
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    <a href={job.companyInfo.website} target="_blank" className="text-sm text-primary underline">{job.companyInfo.website}</a>
+                  </div>
+                )}
+                {job.companyInfo.business_hours && (
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Hours: {job.companyInfo.business_hours}</span>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex items-center gap-2">
-              <Building className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">Industry: {job.companyInfo.industry}</span>
+          {Array.isArray(job.companyInfo.services) && job.companyInfo.services.length > 0 && (
+            <div className="space-y-2">
+              <Separator />
+              <p className="text-xs font-medium text-muted-foreground">Services Offered</p>
+              <div className="flex flex-wrap gap-2">
+                {job.companyInfo.services.map((service) => (
+                  <Badge key={service} variant="outline" className="text-xs">
+                    {service}
+                  </Badge>
+                ))}
+              </div>
             </div>
+          )}
 
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">Size: {job.companyInfo.size}</span>
+          {Array.isArray(job.companyInfo.skills) && job.companyInfo.skills.length > 0 && (
+            <div className="space-y-2">
+              <Separator />
+              <p className="text-xs font-medium text-muted-foreground">Company Skills</p>
+              <div className="flex flex-wrap gap-2">
+                {job.companyInfo.skills.map((skill) => {
+                  const levelLabel = SKILL_LEVELS[skill.level]
+                  const levelClass = SKILL_LEVEL_COLORS[skill.level]
+                  return (
+                    <Badge key={`company-skill-${skill.name}`} variant="outline" className="flex items-center gap-1 text-xs">
+                      <span>{skill.name}</span>
+                      <span className={`rounded-full border px-2 py-0.5 ${levelClass}`}>{levelLabel}</span>
+                    </Badge>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 

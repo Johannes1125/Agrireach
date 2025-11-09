@@ -11,14 +11,33 @@ import { Send, Paperclip, Image as ImageIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 export function ChatWindow() {
-  const { state, sendMessage } = useChat();
+  const { state, sendMessage, loadMessages } = useChat();
   const { user } = useAuth();
   const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const loadedConversationIdRef = useRef<string | null>(null);
 
   const currentConversation = state.currentConversation;
+
+  // Load messages when conversation changes
+  useEffect(() => {
+    if (currentConversation) {
+      const conversationUserId = currentConversation.other_user.id?.toString() || currentConversation.other_user.id;
+      const loadedUserId = loadedConversationIdRef.current?.toString() || loadedConversationIdRef.current;
+      
+      if (conversationUserId !== loadedUserId) {
+        loadedConversationIdRef.current = conversationUserId;
+        // Clear messages first to avoid showing old messages from previous conversation
+        // The loadMessages function will set loading state
+        loadMessages(currentConversation.other_user.id);
+      }
+    } else {
+      // Reset when no conversation is selected
+      loadedConversationIdRef.current = null;
+    }
+  }, [currentConversation, loadMessages]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -111,60 +130,56 @@ export function ChatWindow() {
       </div>
 
       {/* Messages */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 p-2 sm:p-3">
-        {state.loading ? (
-          <div className="text-center text-sm text-muted-foreground">
-            Loading messages...
-          </div>
-        ) : state.messages.length === 0 ? (
+      <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+        {state.messages.length === 0 && !state.loading ? (
           <div className="text-center text-sm text-muted-foreground mt-6">
             <p>No messages yet. Start the conversation!</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {state.messages.map((message, i) => {
-              const isOwnMessage = message.sender_id === user?.id;
+              // Handle both string IDs and ObjectId comparisons
+              const messageSenderId = typeof message.sender_id === 'object' && message.sender_id?._id
+                ? message.sender_id._id.toString()
+                : message.sender_id?.toString() || message.sender_id
+              const currentUserId = user?.id?.toString() || user?.id
+              const isOwnMessage = messageSenderId === currentUserId
+              
               return (
                 <div
-                  key={message.id ?? message.id ?? `msg-${i}`}
-                  className={`flex ${
+                  key={message.id ?? `msg-${i}`}
+                  className={`flex items-end gap-3 ${
                     isOwnMessage ? "justify-end" : "justify-start"
                   }`}
                 >
+                  {!isOwnMessage && (
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarImage src={message.sender?.avatar || currentConversation.other_user.avatar} />
+                      <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                        {message.sender?.name?.charAt(0).toUpperCase() || currentConversation.other_user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                  
                   <div
-                    className={`flex gap-2 max-w-[75%] sm:max-w-xs lg:max-w-md ${
-                      isOwnMessage ? "flex-row-reverse" : "flex-row"
+                    className={`rounded-2xl px-4 py-2 max-w-[75%] sm:max-w-xs lg:max-w-md ${
+                      isOwnMessage
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
                     }`}
                   >
-                    {!isOwnMessage && (
-                      <Avatar className="h-6 w-6 mt-1">
-                        <AvatarImage src={message.sender?.avatar} />
-                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                          {message.sender?.name?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-
-                    <div
-                      className={`rounded-md px-2 py-1.5 ${
+                    <p className="text-sm leading-relaxed">{message.content}</p>
+                    <p
+                      className={`text-xs mt-1 ${
                         isOwnMessage
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
+                          ? "text-primary-foreground/70"
+                          : "text-muted-foreground"
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
-                      <p
-                        className={`text-xs mt-0.5 ${
-                          isOwnMessage
-                            ? "text-primary-foreground/70"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        {formatDistanceToNow(new Date(message.created_at), {
-                          addSuffix: true,
-                        })}
-                      </p>
-                    </div>
+                      {formatDistanceToNow(new Date(message.created_at), {
+                        addSuffix: true,
+                      })}
+                    </p>
                   </div>
                 </div>
               );

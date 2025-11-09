@@ -299,22 +299,25 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
         toast.success("Order placed successfully! Payment will be collected upon delivery.")
         onSuccess()
         onClose()
-      } else if (actualData.payment_type === "source") {
-        // For e-wallet (GCash, GrabPay), redirect to checkout URL
+      } else if (actualData.payment_type === "checkout") {
+        // For Stripe Checkout (GCash, GrabPay, Card)
         toast.success("Redirecting to payment...")
         
-        // Store cart items and delivery address in sessionStorage for confirmation later
+        // Store cart items in sessionStorage for confirmation later
         sessionStorage.setItem("pending_payment", JSON.stringify({
-          source_id: actualData.source_id,
+          session_id: actualData.session_id,
           cart_item_ids: Array.from(selectedItems),
           delivery_address: deliveryAddress,
         }))
 
-        // Redirect to PayMongo checkout page
-        window.location.href = actualData.checkout_url
+        // Redirect to Stripe Checkout
+        if (actualData.checkout_url) {
+          window.location.href = actualData.checkout_url
+        } else {
+          toast.error("Payment URL not available. Please try again.")
+        }
       } else {
-        // For card payments, you would integrate PayMongo.js here
-        toast.info("Card payment integration coming soon. Please use GCash or GrabPay for now.")
+        toast.error("Unknown payment type. Please try again.")
       }
     } catch (error: any) {
       console.error("Checkout error:", error)
@@ -498,7 +501,7 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
                       Payment Information
                     </p>
                     <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                      Your billing details will be used for payment processing with PayMongo. 
+                      Your billing details will be used for payment processing with Stripe. 
                       All transactions are secure and encrypted.
                     </p>
                   </div>
@@ -555,14 +558,14 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
                     </CardContent>
                   </Card>
 
-                  <Card className="opacity-50 cursor-not-allowed">
+                  <Card className={`cursor-pointer transition-all ${paymentMethod === "card" ? "ring-2 ring-primary" : ""}`}>
                     <CardContent className="p-4">
-                      <label className="flex items-center gap-3">
-                        <RadioGroupItem value="card" id="card" disabled />
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <RadioGroupItem value="card" id="card" />
                         {getPaymentIcon("card")}
                         <div className="flex-1">
                           <p className="font-medium">Credit/Debit Card</p>
-                          <p className="text-sm text-muted-foreground">Coming soon</p>
+                          <p className="text-sm text-muted-foreground">Pay via credit or debit card</p>
                         </div>
                       </label>
                     </CardContent>
@@ -575,10 +578,10 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
                   <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm text-green-800 dark:text-green-200 font-medium">
-                      Secure Payment via PayMongo
+                      Secure Payment via Stripe
                     </p>
                     <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                      You'll be redirected to PayMongo's secure checkout page to complete your payment.
+                      You'll be redirected to Stripe's secure checkout page to complete your payment.
                     </p>
                   </div>
                 </div>

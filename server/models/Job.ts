@@ -19,7 +19,11 @@ export interface IOpportunity extends Document {
   pay_type: PayType;
   duration?: string;
   urgency: UrgencyLevel;
-  required_skills?: any; // JSONB equivalent
+  required_skills?: Array<{
+    name: string;
+    min_level?: number; // 1-4 (Beginner to Expert)
+    required: boolean;
+  }> | string[]; // Support both new object format and old string array format
   experience_level?: string;
   start_date?: Date;
   company_logo?: string;
@@ -113,6 +117,18 @@ export interface IJobApplication extends Document {
   worker_id: Types.ObjectId;
   cover_letter?: string;
   resume_url?: string;
+  highlighted_skills?: Array<{
+    name: string;
+    level?: number;
+  }>;
+  match_score?: number;
+  match_details?: Array<{
+    skill: string;
+    match: boolean;
+    level?: number;
+    required_level?: number;
+    weight: number;
+  }>;
   status: ApplicationStatus;
   created_at: Date;
   updated_at: Date;
@@ -140,6 +156,20 @@ const JobApplicationSchema = new Schema<IJobApplication>(
       enum: ["pending", "reviewed", "accepted", "rejected"],
       index: true,
     },
+    highlighted_skills: {
+      type: [
+        new Schema(
+          {
+            name: { type: String, required: true },
+            level: { type: Number },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
+    match_score: { type: Number },
+    match_details: { type: Schema.Types.Mixed },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );

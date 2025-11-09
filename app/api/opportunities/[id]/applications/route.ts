@@ -45,7 +45,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     status: app.status,
     cover_letter: app.cover_letter,
     resume_url: app.resume_url,
-    created_at: app.created_at
+    created_at: app.created_at,
+    match_score: typeof app.match_score === 'number' ? Math.round(app.match_score) : null,
+    highlighted_skills: Array.isArray(app.highlighted_skills) ? app.highlighted_skills : [],
+    match_details: Array.isArray(app.match_details) ? app.match_details : []
   }));
   
   return jsonOk({ applications: formattedApps });

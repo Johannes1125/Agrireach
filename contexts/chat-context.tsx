@@ -46,6 +46,8 @@ type ChatAction =
   | { type: 'SET_CURRENT_CONVERSATION'; payload: ChatConversation | null }
   | { type: 'SET_MESSAGES'; payload: ChatMessage[] }
   | { type: 'ADD_MESSAGE'; payload: ChatMessage }
+  | { type: 'REPLACE_MESSAGE'; payload: { oldId: string; newMessage: ChatMessage } }
+  | { type: 'REMOVE_MESSAGE'; payload: string }
   | { type: 'UPDATE_CONVERSATION'; payload: ChatConversation }
   | { type: 'SET_CONNECTION_STATUS'; payload: boolean }
 
@@ -72,6 +74,18 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
       return { ...state, messages: action.payload }
     case 'ADD_MESSAGE':
       return { ...state, messages: [...state.messages, action.payload] }
+    case 'REPLACE_MESSAGE':
+      return {
+        ...state,
+        messages: state.messages.map(msg =>
+          msg.id === action.payload.oldId ? action.payload.newMessage : msg
+        ),
+      }
+    case 'REMOVE_MESSAGE':
+      return {
+        ...state,
+        messages: state.messages.filter(msg => msg.id !== action.payload),
+      }
     case 'UPDATE_CONVERSATION':
       return {
         ...state,
@@ -153,9 +167,26 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   ) => {
     if (!user) return
 
+    // Create optimistic message immediately
+    const tempMessage: ChatMessage = {
+      id: `temp-${Date.now()}`,
+      sender_id: user.id,
+      recipient_id: recipientId,
+      content,
+      message_type: messageType,
+      created_at: new Date().toISOString(),
+      sender: {
+        id: user.id,
+        name: user.full_name || user.email || 'You',
+        avatar: user.avatar_url,
+        email: user.email,
+      },
+    }
+
+    // Add message optimistically (show immediately)
+    dispatch({ type: 'ADD_MESSAGE', payload: tempMessage })
+
     try {
-      dispatch({ type: 'SET_LOADING', payload: true })
-      
       const response = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: {
@@ -173,12 +204,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
 
       const result = await response.json()
-      dispatch({ type: 'ADD_MESSAGE', payload: result.data.message })
+      const realMessage = result.data.message
+      
+      // Replace temp message with real message from server
+      dispatch({ type: 'REPLACE_MESSAGE', payload: { oldId: tempMessage.id, newMessage: realMessage } })
     } catch (error) {
       console.error('Send message error:', error)
+      // Remove failed message
+      dispatch({ type: 'REMOVE_MESSAGE', payload: tempMessage.id })
       dispatch({ type: 'SET_ERROR', payload: 'Failed to send message' })
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false })
     }
   }, [user])
 
@@ -226,9 +260,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const selectConversation = useCallback((conversation: ChatConversation) => {
     dispatch({ type: 'SET_CURRENT_CONVERSATION', payload: conversation })
-    dispatch({ type: 'SET_MESSAGES', payload: [] })
-    loadMessages(conversation.other_user.id)
-  }, [loadMessages])
+    // Don't clear messages here - let ChatWindow handle loading
+    // This prevents flickering and allows ChatWindow to manage its own loading state
+    // ChatWindow will detect the conversation change and load messages
+  }, [])
 
   const searchUsers = useCallback(async (query: string): Promise<ChatUser[]> => {
     if (!user || !query.trim()) return []

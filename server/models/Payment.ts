@@ -17,11 +17,16 @@ export interface IPayment extends Document {
   payment_method: PaymentMethod
   payment_type: PaymentType
   
-  // PayMongo integration
+  // PayMongo integration (deprecated - kept for backward compatibility)
   paymongo_payment_intent_id?: string
   paymongo_source_id?: string
   paymongo_payment_id?: string
   paymongo_client_key?: string
+  
+  // Stripe integration
+  stripe_payment_intent_id?: string
+  stripe_checkout_session_id?: string
+  stripe_customer_id?: string
   
   // Payment status and tracking
   status: PaymentStatus
@@ -90,11 +95,16 @@ const PaymentSchema = new Schema<IPayment>({
     enum: ['one_time', 'subscription', 'refund']
   },
   
-  // PayMongo integration
+  // PayMongo integration (deprecated - kept for backward compatibility)
   paymongo_payment_intent_id: { type: String },
   paymongo_source_id: { type: String },
   paymongo_payment_id: { type: String },
   paymongo_client_key: { type: String },
+  
+  // Stripe integration
+  stripe_payment_intent_id: { type: String },
+  stripe_checkout_session_id: { type: String },
+  stripe_customer_id: { type: String },
   
   // Payment status and tracking
   status: { 
@@ -153,6 +163,8 @@ PaymentSchema.index({ status: 1, created_at: -1 })
 PaymentSchema.index({ payment_method: 1, status: 1 })
 PaymentSchema.index({ paymongo_payment_intent_id: 1 }, { unique: true, sparse: true })
 PaymentSchema.index({ paymongo_source_id: 1 }, { unique: true, sparse: true })
+PaymentSchema.index({ stripe_payment_intent_id: 1 }, { unique: true, sparse: true })
+PaymentSchema.index({ stripe_checkout_session_id: 1 }, { unique: true, sparse: true })
 
 // Virtual for amount in pesos
 PaymentSchema.virtual('amount_in_pesos').get(function() {
@@ -164,7 +176,12 @@ PaymentSchema.methods.markAsPaid = function(paymentId?: string) {
   this.status = 'paid'
   this.paid_at = new Date()
   if (paymentId) {
-    this.paymongo_payment_id = paymentId
+    // Support both PayMongo and Stripe payment IDs
+    if (paymentId.startsWith('pi_')) {
+      this.stripe_payment_intent_id = paymentId
+    } else {
+      this.paymongo_payment_id = paymentId
+    }
   }
   return this.save()
 }

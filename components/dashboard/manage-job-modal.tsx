@@ -9,6 +9,8 @@ import { authFetch } from "@/lib/auth-client"
 import { useNotifications } from "@/components/notifications/notification-provider"
 import { getRoleDisplay } from "@/lib/role-utils"
 import { formatDate } from "@/lib/utils"
+import { Progress } from "@/components/ui/progress"
+import { SKILL_LEVELS, SKILL_LEVEL_COLORS } from "@/lib/skills"
 import { 
   Users, 
   Edit, 
@@ -40,6 +42,15 @@ interface JobApplicant {
   created_at: string
   cover_letter?: string
   resume_url?: string
+  match_score?: number | null
+  highlighted_skills?: Array<{ name: string; level?: number }>
+  match_details?: Array<{
+    skill: string
+    match: boolean
+    level?: number
+    required_level?: number
+    weight: number
+  }>
 }
 
 interface ManageJobModalProps {
@@ -202,6 +213,12 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
               <div className="space-y-3">
                 {applicants.map((applicant) => {
                   const rating = (applicant.worker.trust_score / 20).toFixed(1)
+                  const matchScore = typeof applicant.match_score === "number" ? applicant.match_score : null
+                  const highlightedSkills = applicant.highlighted_skills || []
+                  const matchDetails = applicant.match_details || []
+                  const perfectMatches = matchDetails.filter(detail => detail.match && (!detail.required_level || detail.level === undefined || detail.level >= detail.required_level))
+                  const improvementSkills = matchDetails.filter(detail => detail.match && detail.required_level && detail.level !== undefined && detail.level < detail.required_level)
+                  const missingSkills = matchDetails.filter(detail => !detail.match)
                   return (
                     <div key={applicant._id} className="rounded-xl p-4 space-y-3 border bg-card hover:shadow-sm transition-shadow">
                       <div className="flex items-start justify-between">
@@ -276,6 +293,74 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
                         )}
                       </div>
 
+                      {(matchScore !== null || highlightedSkills.length > 0 || matchDetails.length > 0) && (
+                        <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-sm font-medium">Skill Match Overview</span>
+                            {matchScore !== null && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">{matchScore}%</span>
+                                <Progress value={matchScore} className="h-2 w-24" />
+                              </div>
+                            )}
+                          </div>
+
+                          {highlightedSkills.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground">Highlighted Skills</p>
+                              <div className="flex flex-wrap gap-2">
+                                {highlightedSkills.map((skill) => {
+                                  const level = skill.level as 1 | 2 | 3 | 4 | undefined
+                                  const levelLabel = level ? SKILL_LEVELS[level] : null
+                                  const levelClass = level ? SKILL_LEVEL_COLORS[level] : ""
+                                  return (
+                                    <Badge key={skill.name} variant="outline" className="flex items-center gap-1 text-xs">
+                                      <span>{skill.name}</span>
+                                      {levelLabel && (
+                                        <span className={`rounded-full border px-2 py-0.5 ${levelClass}`}>
+                                          {levelLabel}
+                                        </span>
+                                      )}
+                                    </Badge>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {(improvementSkills.length > 0 || missingSkills.length > 0) && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground">Next Steps</p>
+                              <div className="flex flex-wrap gap-2">
+                                {improvementSkills.map((detail) => (
+                                  <Badge key={`improve-${detail.skill}`} variant="outline" className="text-xs">
+                                    {detail.skill} • Need {detail.required_level ? SKILL_LEVELS[detail.required_level as 1 | 2 | 3 | 4] : "higher level"}
+                                  </Badge>
+                                ))}
+                                {missingSkills.map((detail) => (
+                                  <Badge key={`missing-${detail.skill}`} variant="destructive" className="text-xs">
+                                    Missing {detail.skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {perfectMatches.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground">Strong Matches</p>
+                              <div className="flex flex-wrap gap-2">
+                                {perfectMatches.map((detail) => (
+                                  <Badge key={`match-${detail.skill}`} variant="secondary" className="text-xs">
+                                    {detail.skill}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {applicant.cover_letter && (
                         <div className="mt-3 p-3 bg-muted/50 rounded-lg">
                           <p className="text-sm font-medium mb-1">Cover Letter</p>
@@ -346,6 +431,56 @@ export function ManageJobModal({ job, open, onClose, onEdit, onDelete }: ManageJ
             </div>
             <div className="text-sm">
               <div className="mb-1"><span className="text-muted-foreground">Trust score:</span> {selectedApplicant.worker.trust_score}</div>
+                {typeof selectedApplicant.match_score === "number" && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Match Score</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{selectedApplicant.match_score}%</span>
+                      <Progress value={selectedApplicant.match_score} className="h-2 w-24" />
+                    </div>
+                  </div>
+                )}
+                {selectedApplicant.highlighted_skills?.length ? (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Highlighted Skills</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedApplicant.highlighted_skills.map((skill) => {
+                        const level = skill.level as 1 | 2 | 3 | 4 | undefined
+                        const levelLabel = level ? SKILL_LEVELS[level] : null
+                        const levelClass = level ? SKILL_LEVEL_COLORS[level] : ""
+                        return (
+                          <Badge key={`preview-${skill.name}`} variant="outline" className="flex items-center gap-1 text-xs">
+                            <span>{skill.name}</span>
+                            {levelLabel && (
+                              <span className={`rounded-full border px-2 py-0.5 ${levelClass}`}>
+                                {levelLabel}
+                              </span>
+                            )}
+                          </Badge>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+                {selectedApplicant.match_details && selectedApplicant.match_details.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground">Skill Details</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedApplicant.match_details.map((detail) => (
+                        <Badge
+                          key={`detail-${detail.skill}`}
+                          variant={detail.match ? "secondary" : "destructive"}
+                          className="text-xs"
+                        >
+                          {detail.skill}
+                          {detail.required_level && detail.level !== undefined && detail.level < detail.required_level && (
+                            <span className="ml-1">(needs {SKILL_LEVELS[detail.required_level as 1 | 2 | 3 | 4]})</span>
+                          )}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               {selectedApplicant.cover_letter && (
                 <div className="mt-2">
                   <div className="text-muted-foreground text-sm font-medium">Cover Letter</div>

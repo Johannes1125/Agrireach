@@ -20,7 +20,11 @@ export interface BusinessProfile {
   business_logo?: string
   years_in_business?: number
   services_offered?: string[]
-  skills?: string[]
+  skills?: Array<{
+    name: string
+    level: number
+    category: string
+  }> | string[] // Support both formats
   phone?: string
 }
 

@@ -10,6 +10,7 @@ import {
 import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { UpdateJobSchema } from "@/server/validators/opportunitySchemas";
+import { normalizeSkillRequirements } from "@/lib/skills";
 
 export async function GET(
   _req: NextRequest,
@@ -33,7 +34,12 @@ export async function GET(
 
   if (!opportunity) return jsonError("Opportunity not found", 404);
 
-  return jsonOk({ opportunity });
+  const opportunityWithSkills = {
+    ...opportunity,
+    required_skills: normalizeSkillRequirements(opportunity.required_skills as any),
+  };
+
+  return jsonOk({ opportunity: opportunityWithSkills });
 }
 
 export async function PUT(
@@ -64,12 +70,23 @@ export async function PUT(
   const validate = validateBody(UpdateJobSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;
+  const updatePayload: any = { ...result.data };
+  if (updatePayload.required_skills) {
+    updatePayload.required_skills = normalizeSkillRequirements(updatePayload.required_skills as any);
+  }
+
   const updatedOpportunity = await Opportunity.findByIdAndUpdate(
     id,
-    { $set: result.data },
+    { $set: updatePayload },
     { new: true }
   ).populate("recruiter_id", "full_name email location");
-  return jsonOk({ opportunity: updatedOpportunity });
+  const normalizedUpdated = updatedOpportunity
+    ? {
+        ...updatedOpportunity.toObject(),
+        required_skills: normalizeSkillRequirements(updatedOpportunity.required_skills as any),
+      }
+    : null;
+  return jsonOk({ opportunity: normalizedUpdated });
 }
 
 export async function DELETE(

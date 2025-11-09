@@ -6,7 +6,7 @@ import { validateUserRole } from "@/server/utils/role-validation";
 import { Product, CartItem, Order } from "@/server/models/Product";
 import { Payment } from "@/server/models/Payment";
 import { CheckoutRequestSchema, convertToCentavos, PAYMENT_ERRORS } from "@/server/validators/payment";
-import { createPaymentIntent, createSource, PayMongoError } from "@/lib/paymongo";
+import { createPaymentIntent, createCheckoutSession, StripeError } from "@/lib/stripe";
 
 export async function POST(req: NextRequest) {
   const mm = requireMethod(req, ["POST"]);
@@ -168,36 +168,47 @@ export async function POST(req: NextRequest) {
         billing_details,
       });
     } 
-    else if (payment_method === "gcash" || payment_method === "grab_pay") {
-      // For e-wallet payments, create a source
+    else if (payment_method === "gcash" || payment_method === "grab_pay" || payment_method === "card") {
+      // For Stripe payments, create a checkout session or payment intent
       try {
-        const source = await createSource({
-          type: payment_method,
-          amount: convertToCentavos(totalAmount),
-          currency: 'PHP',
-          redirect: {
-            success: `${process.env.BASE_URL || 'http://localhost:3000'}/marketplace/payment/success?payment_id=${payment._id}`,
-            failed: `${process.env.BASE_URL || 'http://localhost:3000'}/marketplace/payment/failed?payment_id=${payment._id}`
+        const amountInCentavos = convertToCentavos(totalAmount);
+        
+        // Determine payment method types for Stripe
+        let paymentMethodTypes: string[] = [];
+        if (payment_method === "card") {
+          paymentMethodTypes = ['card'];
+        } else if (payment_method === "gcash") {
+          paymentMethodTypes = ['external_gcash'];
+        } else if (payment_method === "grab_pay") {
+          paymentMethodTypes = ['external_grabpay'];
+        }
+        
+        // Use Checkout Session for all payment methods (simpler and supports redirects)
+        const session = await createCheckoutSession({
+          amount: amountInCentavos,
+          currency: 'php',
+          description: `AgriReach order - ${orderItems.length} item(s)`,
+          success_url: `${process.env.BASE_URL || 'http://localhost:3000'}/marketplace/payment/success?payment_id=${payment._id}&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${process.env.BASE_URL || 'http://localhost:3000'}/marketplace/payment/failed?payment_id=${payment._id}`,
+          metadata: {
+            payment_id: payment._id.toString(),
+            buyer_id: userId,
           },
-          billing: {
-            name: billing_details.name,
-            email: billing_details.email,
-            phone: billing_details.phone || ''
-          }
+          customer_email: billing_details.email,
+          payment_method_types: paymentMethodTypes,
         });
 
-        // Update payment with source info
-        payment.paymongo_source_id = source.id;
-        payment.paymongo_client_key = source.attributes.client_key;
+        // Update payment with session info
+        payment.stripe_checkout_session_id = session.id;
         payment.status = 'processing';
         await payment.save();
 
         return jsonOk({
           success: true,
-          payment_type: "source",
+          payment_type: "checkout",
           payment_id: payment._id,
-          source_id: source.id,
-          checkout_url: source.attributes.redirect.check_url,
+          session_id: session.id,
+          checkout_url: session.url,
           amount: totalAmount,
           currency: "PHP",
           status: "processing",
@@ -206,57 +217,13 @@ export async function POST(req: NextRequest) {
           delivery_address: delivery_address_structured || delivery_address,
           billing_details,
         });
-      } catch (paymongoError: any) {
-        console.error('PayMongo source creation error:', paymongoError);
+      } catch (stripeError: any) {
+        console.error('Stripe payment creation error:', stripeError);
         payment.status = 'failed';
-        payment.failure_reason = paymongoError.message;
+        payment.failure_reason = stripeError.message;
         await payment.save();
         
-        return jsonError(`Payment processing failed: ${paymongoError.message}`, 500);
-      }
-    } 
-    else if (payment_method === "card") {
-      // For card payments, create a payment intent
-      try {
-        const paymentIntent = await createPaymentIntent({
-          amount: convertToCentavos(totalAmount),
-          currency: 'PHP',
-          description: `AgriReach order - ${orderItems.length} item(s)`,
-          payment_method_allowed: ['card'],
-          metadata: {
-            payment_id: payment._id.toString(),
-            buyer_id: userId,
-            order_items: orderItems
-          }
-        });
-
-        // Update payment with intent info
-        payment.paymongo_payment_intent_id = paymentIntent.id;
-        payment.paymongo_client_key = paymentIntent.attributes.client_key;
-        payment.status = 'processing';
-        await payment.save();
-
-        return jsonOk({
-          success: true,
-          payment_type: "card",
-          payment_id: payment._id,
-          payment_intent_id: paymentIntent.id,
-          client_key: paymentIntent.attributes.client_key,
-          amount: totalAmount,
-          currency: "PHP",
-          status: "processing",
-          message: "Card payment ready. Please complete payment on the next step.",
-          order_items: orderItems,
-          delivery_address: delivery_address_structured || delivery_address,
-          billing_details,
-        });
-      } catch (paymongoError: any) {
-        console.error('PayMongo payment intent creation error:', paymongoError);
-        payment.status = 'failed';
-        payment.failure_reason = paymongoError.message;
-        await payment.save();
-        
-        return jsonError(`Payment processing failed: ${paymongoError.message}`, 500);
+        return jsonError(`Payment processing failed: ${stripeError.message}`, 500);
       }
     } else {
       return jsonError("Unsupported payment method", 400);

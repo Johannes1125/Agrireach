@@ -7,13 +7,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { X, Plus, MapPin, DollarSign, Calendar, Users } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
+import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogAction,
@@ -27,9 +29,13 @@ import {
 import { handleRoleValidationError } from "@/lib/role-validation-client";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { LocationPicker, LocationData } from "@/components/ui/location-picker";
+import { SkillLevelSelector } from "@/components/ui/skill-level-selector";
+import { SkillLevel, SkillRequirement, SKILL_CATEGORIES, SkillCategory } from "@/lib/skills";
+import { useAuth } from "@/hooks/use-auth";
+import { useUserProfile } from "@/hooks/use-user-profile";
 
 export function PostJobForm() {
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
+  const [requiredSkills, setRequiredSkills] = useState<SkillRequirement[]>([])
   const [customSkill, setCustomSkill] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
@@ -37,34 +43,80 @@ export function PostJobForm() {
   const [jobType, setJobType] = useState<string | undefined>(undefined)
   const [urgency, setUrgency] = useState<string | undefined>(undefined)
   const [jobLocation, setJobLocation] = useState<LocationData>({ address: "" })
+  const [companyNameInput, setCompanyNameInput] = useState("")
+  const [contactEmail, setContactEmail] = useState("")
 
-  const availableSkills = [
-    "Crop Harvesting",
-    "Organic Farming",
-    "Equipment Operation",
-    "Soil Management",
-    "Livestock Care",
-    "Greenhouse Management",
-    "Pest Control",
-    "Irrigation Systems",
-    "Team Leadership",
-    "Quality Control",
-    "Safety Protocols",
-    "Mechanical Skills",
-    "Plant Science",
-    "Animal Husbandry",
-    "Food Processing",
-    "Packaging",
-  ]
+  const { user } = useAuth()
+  const { profile } = useUserProfile()
 
-  const addSkill = (skill: string) => {
-    if (skill && !selectedSkills.includes(skill)) {
-      setSelectedSkills([...selectedSkills, skill])
+  useEffect(() => {
+    if (user?.email) {
+      setContactEmail((prev) => (prev ? prev : user.email))
     }
+  }, [user?.email])
+
+  useEffect(() => {
+    if (!profile) return
+
+    setCompanyNameInput((prev) => (prev ? prev : profile.company_name || ""))
+
+    setJobLocation((prev) => {
+      if (prev.address) return prev
+      if (profile.business_address) {
+        return {
+          address: profile.business_address,
+          coordinates: profile.business_coordinates,
+        }
+      }
+      return prev
+    })
+
+    if (!companyLogo && profile.business_logo) {
+      setCompanyLogo(profile.business_logo)
+    }
+
+    if (profile.phone) {
+      setContactEmail((prev) => prev || user?.email || "")
+    }
+  }, [profile, companyLogo, user?.email])
+
+  useEffect(() => {
+    // Fallback to user name if company name still empty
+    if (!companyNameInput && user?.name) {
+      setCompanyNameInput(user.name)
+    }
+  }, [companyNameInput, user?.name])
+
+  useEffect(() => {
+    if (!jobLocation.address && user?.location) {
+      setJobLocation((prev) => ({
+        address: user.location,
+        coordinates: prev.coordinates,
+      }))
+    }
+  }, [jobLocation.address, user?.location])
+
+  const skillCategories = useMemo(
+    () => Object.entries(SKILL_CATEGORIES) as [SkillCategory, readonly string[]][],
+    []
+  )
+  const defaultCategory = skillCategories.length > 0 ? skillCategories[0][0] : ("Crop Farming" as SkillCategory)
+
+  const addSkill = (skill: string, level: SkillLevel = 2, required: boolean = true) => {
+    if (!skill.trim()) return
+    if (requiredSkills.some((s) => s.name.toLowerCase() === skill.toLowerCase())) return
+    setRequiredSkills([
+      ...requiredSkills,
+      {
+        name: skill.trim(),
+        min_level: level,
+        required,
+      },
+    ])
   }
 
   const removeSkill = (skill: string) => {
-    setSelectedSkills(selectedSkills.filter((s) => s !== skill))
+    setRequiredSkills(requiredSkills.filter((s) => s.name !== skill))
   }
 
   const addCustomSkill = () => {
@@ -72,6 +124,32 @@ export function PostJobForm() {
       addSkill(customSkill.trim())
       setCustomSkill("")
     }
+  }
+
+  const updateSkillLevel = (skillName: string, level: SkillLevel) => {
+    setRequiredSkills((prev) =>
+      prev.map((skill) =>
+        skill.name === skillName
+          ? {
+              ...skill,
+              min_level: level,
+            }
+          : skill
+      )
+    )
+  }
+
+  const toggleSkillRequired = (skillName: string, value: boolean) => {
+    setRequiredSkills((prev) =>
+      prev.map((skill) =>
+        skill.name === skillName
+          ? {
+              ...skill,
+              required: value,
+            }
+          : skill
+      )
+    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +164,7 @@ export function PostJobForm() {
       const title = (document.getElementById("job-title") as HTMLInputElement)?.value
       const description = (document.getElementById("description") as HTMLTextAreaElement)?.value
       const location = jobLocation.address || ""
-      const company_name = (document.getElementById("company-name") as HTMLInputElement)?.value
+      const company_name = companyNameInput
       const benefitsText = (document.getElementById("benefits") as HTMLTextAreaElement)?.value || ""
       const requirementsText = (document.getElementById("requirements") as HTMLTextAreaElement)?.value || ""
       const benefits = benefitsText.split(/\n|,|;/).map((s) => s.trim()).filter(Boolean)
@@ -111,7 +189,7 @@ export function PostJobForm() {
         }
       })()
       const start_date = (document.getElementById("deadline") as HTMLInputElement)?.value || undefined
-      const contact_email = (document.getElementById("contact-email") as HTMLInputElement)?.value || undefined
+      const contact_email = contactEmail || undefined
       const work_schedule = (document.getElementById("schedule") as HTMLTextAreaElement)?.value || undefined
       // Ensure required selections exist
       if (!jobType) {
@@ -132,7 +210,11 @@ export function PostJobForm() {
         // Save UI job type as duration (string) in backend
         duration: jobType,
         urgency: mappedUrgency,
-        required_skills: selectedSkills,
+        required_skills: requiredSkills.map((skill) => ({
+          name: skill.name,
+          min_level: skill.min_level,
+          required: skill.required !== false,
+        })),
         requirements,
         benefits,
         work_schedule,
@@ -194,7 +276,13 @@ export function PostJobForm() {
 
             <div className="space-y-2">
               <Label htmlFor="company-name">Company Name *</Label>
-              <Input id="company-name" placeholder="Your company or farm name" required />
+              <Input
+                id="company-name"
+                placeholder="Your company or farm name"
+                required
+                value={companyNameInput}
+                onChange={(e) => setCompanyNameInput(e.target.value)}
+              />
             </div>
 
             <div className="space-y-2">
@@ -297,26 +385,57 @@ export function PostJobForm() {
             <CardDescription>Select the skills needed for this position</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-2 md:grid-cols-3">
-              {availableSkills.map((skill) => (
-                <div key={skill} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={skill}
-                    checked={selectedSkills.includes(skill)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        addSkill(skill)
-                      } else {
-                        removeSkill(skill)
-                      }
-                    }}
-                  />
-                  <Label htmlFor={skill} className="text-sm cursor-pointer">
-                    {skill}
-                  </Label>
-                </div>
+            <Tabs defaultValue={defaultCategory} className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto">
+                {skillCategories.map(([category]) => (
+                  <TabsTrigger
+                    key={`required-cat-${category}`}
+                    value={category}
+                    className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  >
+                    {category.split(" ")[0]}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {skillCategories.map(([category, skills]) => (
+                <TabsContent key={`required-content-${category}`} value={category} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold">{category}</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {skills.length} {skills.length === 1 ? "skill" : "skills"}
+                    </span>
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                    {skills.map((skill) => {
+                      const existing = requiredSkills.find((s) => s.name === skill)
+                      return (
+                        <div
+                          key={`${category}-${skill}`}
+                          className="flex items-center justify-between space-x-3 rounded-md border px-3 py-2"
+                        >
+                          <Label htmlFor={`required-${skill}`} className="text-sm cursor-pointer flex-1">
+                            {skill}
+                          </Label>
+                          <Switch
+                            id={`required-${skill}`}
+                            checked={!!existing}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                addSkill(skill)
+                              } else {
+                                removeSkill(skill)
+                              }
+                            }}
+                            aria-label={`Toggle ${skill} requirement`}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </TabsContent>
               ))}
-            </div>
+            </Tabs>
 
             <Separator />
 
@@ -335,15 +454,47 @@ export function PostJobForm() {
               </div>
             </div>
 
-            {selectedSkills.length > 0 && (
+            {requiredSkills.length > 0 && (
               <div className="space-y-2">
-                <Label>Selected Skills ({selectedSkills.length})</Label>
-                <div className="flex flex-wrap gap-2">
-                  {selectedSkills.map((skill) => (
-                    <Badge key={skill} variant="secondary" className="flex items-center gap-1">
-                      {skill}
-                      <X className="h-3 w-3 cursor-pointer" onClick={() => removeSkill(skill)} />
-                    </Badge>
+                <Label>Skill Requirements</Label>
+                <div className="space-y-3">
+                  {requiredSkills.map((skill) => (
+                    <div
+                      key={skill.name}
+                      className="flex flex-col gap-3 rounded-lg border p-3 md:flex-row md:items-center md:gap-4"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-sm">
+                          {skill.name}
+                        </Badge>
+                        <button
+                          type="button"
+                          onClick={() => removeSkill(skill.name)}
+                          className="text-xs text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center md:gap-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Minimum Level</span>
+                          <SkillLevelSelector
+                            value={(skill.min_level as SkillLevel) || 2}
+                            onChange={(level) => updateSkillLevel(skill.name, level)}
+                            label=""
+                            className="w-40"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Required</span>
+                          <Switch
+                            checked={skill.required !== false}
+                            onCheckedChange={(checked) => toggleSkillRequired(skill.name, checked)}
+                            aria-label={`Toggle ${skill.name} required flag`}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -385,7 +536,13 @@ export function PostJobForm() {
 
             <div className="space-y-2">
               <Label htmlFor="contact-email">Contact Email</Label>
-              <Input id="contact-email" type="email" placeholder="hiring@yourcompany.com" />
+              <Input
+                id="contact-email"
+                type="email"
+                placeholder="hiring@yourcompany.com"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+              />
             </div>
           </CardContent>
         </Card>

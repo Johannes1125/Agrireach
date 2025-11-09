@@ -9,23 +9,7 @@ import { validateBody } from "@/server/middleware/validate";
 import { CreateJobSchema } from "@/server/validators/opportunitySchemas";
 import { notifyAllUsersNewJob } from "@/server/utils/notifications";
 import { validateUserRole } from "@/server/utils/role-validation";
-
-// Helper function to calculate match score
-function calculateMatchScore(jobSkills: string[] | any, workerSkills: string[]): number {
-  if (!Array.isArray(jobSkills) || jobSkills.length === 0) return 0;
-  if (!Array.isArray(workerSkills) || workerSkills.length === 0) return 0;
-  
-  // Normalize skills to lowercase for comparison
-  const jobSkillsLower = jobSkills.map((s: string) => s.toLowerCase());
-  const workerSkillsLower = workerSkills.map((s: string) => s.toLowerCase());
-  
-  const matchingSkills = jobSkillsLower.filter((skill: string) =>
-    workerSkillsLower.includes(skill)
-  );
-  
-  // Calculate percentage match
-  return Math.round((matchingSkills.length / jobSkillsLower.length) * 100);
-}
+import { calculateMatchScore as calculateEnhancedMatchScore, normalizeSkills, normalizeSkillRequirements } from "@/lib/skills";
 
 export async function GET(req: NextRequest) {
   const mm = requireMethod(req, ["GET"]);
@@ -49,14 +33,14 @@ export async function GET(req: NextRequest) {
   const skip = (page - 1) * limit;
   
   // Get user's skills if authenticated
-  let workerSkills: string[] = [];
+  let workerSkills: any[] = [];
   try {
     const token = getAuthToken(req, "access");
     if (token) {
       const decoded = verifyToken<any>(token, "access");
       const profile = await UserProfile.findOne({ user_id: decoded.sub }).lean();
       if (profile?.skills && Array.isArray(profile.skills)) {
-        workerSkills = profile.skills;
+        workerSkills = normalizeSkills(profile.skills);
       }
     }
   } catch (error) {
@@ -74,13 +58,15 @@ export async function GET(req: NextRequest) {
     Opportunity.countDocuments(filter),
   ]);
   
-  // Calculate match scores for each job
+  // Calculate match scores for each job using enhanced algorithm
   const itemsWithMatchScores = items.map((item: any) => {
-    const jobSkills = Array.isArray(item.required_skills) ? item.required_skills : [];
-    const matchScore = calculateMatchScore(jobSkills, workerSkills);
+    const normalizedRequirements = normalizeSkillRequirements(item.required_skills as any);
+    const matchResult = calculateEnhancedMatchScore(normalizedRequirements, workerSkills);
     return {
       ...item,
-      matchScore,
+      required_skills: normalizedRequirements,
+      matchScore: matchResult.score,
+      matchDetails: matchResult, // Include detailed match info
     };
   });
   
@@ -109,7 +95,12 @@ export async function POST(req: NextRequest) {
   const validate = validateBody(CreateJobSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;
-  const job = await Opportunity.create({ ...result.data, recruiter_id: userId });
+  const normalizedSkills = normalizeSkillRequirements(result.data.required_skills);
+  const job = await Opportunity.create({
+    ...result.data,
+    recruiter_id: userId,
+    required_skills: normalizedSkills,
+  });
   
   // Get recruiter info for notification
   const recruiter = await User.findById(userId).select("full_name company_name").lean();

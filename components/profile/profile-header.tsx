@@ -5,9 +5,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { getRoleDisplay } from "@/lib/role-utils"
 import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, Calendar, Star, Shield, Edit, Share, MessageSquare, ArrowLeft, Settings, Building } from "lucide-react"
+import { MapPin, Calendar, Star, Shield, Edit, Share, MessageSquare, ArrowLeft, Settings, Building, Clock } from "lucide-react"
 import Link from "next/link"
 import { useUserProfile } from "@/hooks/use-user-profile"
+// skills utils not needed here anymore
 
 interface User {
   id: string
@@ -34,6 +35,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
     profile.website || profile.business_description || (Array.isArray(profile.services_offered) && profile.services_offered.length > 0) ||
     typeof profile.years_in_business === 'number'
   ))
+  // No skill fetching here to keep header lightweight
 
   const getRoleBadge = (role: string) => {
     const label = getRoleDisplay(role)
@@ -68,7 +70,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
           <CardContent className="p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
               {/* Avatar and Basic Info */}
-              <div className="flex flex-col items-center md:items-start gap-4">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
                 <Avatar className="h-32 w-32">
                   <AvatarImage 
                     src={hasBusiness && profile?.business_logo ? profile.business_logo : (user.avatar || "/placeholder.svg")} 
@@ -83,8 +85,8 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                   </AvatarFallback>
                 </Avatar>
 
-                <div className="text-center md:text-left">
-                  <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-col gap-3 text-center md:text-left">
+                  <div className="flex flex-col items-center gap-2 md:flex-row md:items-center md:gap-3">
                     <h1 className="font-heading text-3xl font-bold">
                       {hasBusiness && profile?.company_name ? profile.company_name : (user.name || "User")}
                     </h1>
@@ -97,20 +99,20 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                   </div>
 
                   {hasBusiness && profile?.company_name && (
-                    <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground md:justify-start">
                       <Building className="h-4 w-4" />
                       <span className="text-sm">Owned by {user.name}</span>
                     </div>
                   )}
 
                   {hasBusiness && profile?.business_address && (
-                    <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground md:justify-start">
                       <MapPin className="h-4 w-4" />
                       <span className="text-sm">{profile.business_address}</span>
                     </div>
                   )}
 
-                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
+                  <div className="flex flex-col items-center gap-3 md:flex-row md:items-center md:gap-4 md:justify-start">
                     {getRoleBadge(user.role)}
 
                     {user.rating && (
@@ -128,47 +130,61 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
 
               {/* Profile Details */}
               <div className="flex-1 space-y-4">
-                {user.bio && <p className="text-muted-foreground leading-relaxed">{user.bio}</p>}
+                {user.bio && (
+                  <p className="text-muted-foreground leading-relaxed max-w-2xl">
+                    {user.bio}
+                  </p>
+                )}
 
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    <span>{user.location}</span>
+                <div className="flex flex-col gap-3 sm:gap-4">
+                  <div className="flex items-start gap-3 text-muted-foreground">
+                    <MapPin className="mt-1 h-4 w-4" />
+                    <span className="text-sm leading-relaxed whitespace-pre-line">
+                      {user.location}
+                    </span>
                   </div>
-
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  <div className="flex items-center gap-3 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>Joined {formatJoinDate(user.joinDate)}</span>
+                    <span className="text-sm">Joined {formatJoinDate(user.joinDate)}</span>
                   </div>
+                  {hasBusiness && profile?.business_hours && (
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-sm">Business Hours: {profile.business_hours}</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col gap-3 pt-4 md:flex-row">
-                  <Button size="lg" className="flex-1 md:flex-none" asChild>
-                    <Link href="/settings">
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit Profile
-                    </Link>
-                  </Button>
+                {/* Skills removed by request */}
 
-                  <Button variant="outline" size="lg" className="flex-1 md:flex-none bg-transparent" asChild>
-                    <Link href="/settings">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                  </Button>
-
-                  <Button variant="outline" size="lg" className="flex-1 md:flex-none bg-transparent">
-                    <Share className="mr-2 h-4 w-4" />
-                    Share Profile
-                  </Button>
-
-                  <Button variant="outline" size="lg" className="flex-1 md:flex-none bg-transparent">
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Message
-                  </Button>
-                </div>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-3 pt-6 md:flex-row md:items-center">
+              <Button size="lg" className="w-full md:w-auto" asChild>
+                <Link href="/settings">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Profile
+                </Link>
+              </Button>
+
+              <Button variant="outline" size="lg" className="w-full md:w-auto bg-transparent" asChild>
+                <Link href="/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Link>
+              </Button>
+
+              <Button variant="outline" size="lg" className="w-full md:w-auto bg-transparent">
+                <Share className="mr-2 h-4 w-4" />
+                Share Profile
+              </Button>
+
+              <Button variant="outline" size="lg" className="w-full md:w-auto bg-transparent">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Message
+              </Button>
             </div>
           </CardContent>
         </Card>

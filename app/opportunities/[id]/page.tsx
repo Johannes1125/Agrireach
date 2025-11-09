@@ -5,6 +5,8 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Opportunity } from "@/server/models/Job";
+import { UserProfile } from "@/server/models/UserProfile";
+import { normalizeSkillRequirements, normalizeSkills } from "@/lib/skills";
 
 interface JobPageProps {
   params: Promise<{ id: string }>;
@@ -26,17 +28,28 @@ async function fetchJob(id: string) {
     throw new Error("Opportunity not found");
   }
 
-  const j = opportunity;
+  const j = opportunity as any;
+  const recruiter = j.recruiter_id ?? {};
+
+  const companyProfile = await UserProfile.findOne({ user_id: j.recruiter_id })
+    .lean()
+    .catch(() => null);
+
+  const normalizedCompanySkills = normalizeSkills(companyProfile?.skills as any);
+
+  const postedDate = new Date(j.created_at || Date.now()).toISOString();
+  const deadlineDate = j.start_date ? new Date(j.start_date).toISOString() : postedDate;
 
   return {
     id: String(j._id || id),
     title: j.title,
     company:
       j.company_name ||
-      (j.recruiter_id?.full_name
-        ? `${j.recruiter_id.full_name}'s Company`
+      companyProfile?.company_name ||
+      (recruiter?.full_name
+        ? `${recruiter.full_name}'s Company`
         : "Company"),
-    location: j.location,
+    location: companyProfile?.business_address || j.location,
     type: j.duration || j.pay_type || "",
     payRange: ((): string => {
       const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
@@ -46,28 +59,35 @@ async function fetchJob(id: string) {
       return j.pay_type ? `${base}/${j.pay_type}` : base
     })(),
     description: j.description,
-    companyLogo: j.company_logo || "",
+    companyLogo: j.company_logo || companyProfile?.business_logo || "",
     images: Array.isArray(j.images) ? j.images : [],
-    poster: j.recruiter_id
+    poster: recruiter?._id || recruiter?.full_name
       ? {
-          id: String(j.recruiter_id._id || ""),
-          name: j.recruiter_id.full_name,
-          location: j.recruiter_id.location,
+          id: String(recruiter._id || ""),
+          name: recruiter.full_name,
+          location: companyProfile?.business_address || recruiter.location,
         }
       : undefined,
     requirements: Array.isArray(j.requirements) ? j.requirements : [],
     benefits: Array.isArray(j.benefits) ? j.benefits : [],
-    postedDate: j.created_at,
-    deadline: j.start_date || j.created_at,
+    postedDate,
+    deadline: deadlineDate,
     urgency: j.urgency,
-    skills: Array.isArray(j.required_skills) ? j.required_skills : [],
+    skills: normalizeSkillRequirements(j.required_skills as any),
     schedule: j.work_schedule || "",
     companyInfo: {
-      name: j.company_name || "",
-      size: j.contact_email || "",
-      industry: j.company_name || "",
-      rating: 0,
-      description: "",
+      name: j.company_name || companyProfile?.company_name || "",
+      size: companyProfile?.company_size || "",
+      industry: companyProfile?.industry || "",
+      phone: companyProfile?.phone || "",
+      website: companyProfile?.website || "",
+      address: companyProfile?.business_address || "",
+      description: companyProfile?.business_description || "",
+      services: Array.isArray(companyProfile?.services_offered)
+        ? companyProfile?.services_offered || []
+        : [],
+      skills: normalizedCompanySkills,
+      business_hours: companyProfile?.business_hours || "",
     },
   };
 }

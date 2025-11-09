@@ -8,11 +8,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { X, Plus } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 import { authFetch } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
 import { LocationPicker, LocationData } from "@/components/ui/location-picker"
+import { Switch } from "@/components/ui/switch"
+import { SkillLevelSelector } from "@/components/ui/skill-level-selector"
+import { SkillLevel, SkillRequirement, normalizeSkillRequirements } from "@/lib/skills"
 
 interface EditJobFormProps {
   job: any
@@ -20,7 +23,9 @@ interface EditJobFormProps {
 
 export function EditJobForm({ job }: EditJobFormProps) {
   const router = useRouter()
-  const [selectedSkills, setSelectedSkills] = useState<string[]>(job.required_skills || [])
+  const [skillRequirements, setSkillRequirements] = useState<SkillRequirement[]>(
+    normalizeSkillRequirements(job.required_skills)
+  )
   const [customSkill, setCustomSkill] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [jobLocation, setJobLocation] = useState<LocationData>({
@@ -47,14 +52,21 @@ export function EditJobForm({ job }: EditJobFormProps) {
     "Packaging",
   ]
 
-  const addSkill = (skill: string) => {
-    if (skill && !selectedSkills.includes(skill)) {
-      setSelectedSkills([...selectedSkills, skill])
-    }
+  const addSkill = (skill: string, level: SkillLevel = 2, required: boolean = true) => {
+    if (!skill.trim()) return
+    if (skillRequirements.some((s) => s.name.toLowerCase() === skill.toLowerCase())) return
+    setSkillRequirements((prev) => [
+      ...prev,
+      {
+        name: skill.trim(),
+        min_level: level,
+        required,
+      },
+    ])
   }
 
   const removeSkill = (skill: string) => {
-    setSelectedSkills(selectedSkills.filter((s) => s !== skill))
+    setSkillRequirements((prev) => prev.filter((s) => s.name !== skill))
   }
 
   const addCustomSkill = () => {
@@ -62,6 +74,32 @@ export function EditJobForm({ job }: EditJobFormProps) {
       addSkill(customSkill.trim())
       setCustomSkill("")
     }
+  }
+
+  const updateSkillLevel = (skillName: string, level: SkillLevel) => {
+    setSkillRequirements((prev) =>
+      prev.map((skill) =>
+        skill.name === skillName
+          ? {
+              ...skill,
+              min_level: level,
+            }
+          : skill
+      )
+    )
+  }
+
+  const toggleSkillRequired = (skillName: string, value: boolean) => {
+    setSkillRequirements((prev) =>
+      prev.map((skill) =>
+        skill.name === skillName
+          ? {
+              ...skill,
+              required: value,
+            }
+          : skill
+      )
+    )
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,7 +130,11 @@ export function EditJobForm({ job }: EditJobFormProps) {
           const v = Number(formData.get("salary_max")) || 0
           return v > 0 ? v : undefined
         })(),
-        required_skills: selectedSkills,
+        required_skills: skillRequirements.map((skill) => ({
+          name: skill.name,
+          min_level: skill.min_level,
+          required: skill.required !== false,
+        })),
         requirements,
         benefits,
         work_schedule: (formData.get("work_schedule") as string) || undefined,
@@ -254,7 +296,11 @@ export function EditJobForm({ job }: EditJobFormProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {availableSkills.map((skill) => (
-                    <SelectItem key={skill} value={skill} disabled={selectedSkills.includes(skill)}>
+                    <SelectItem
+                      key={skill}
+                      value={skill}
+                      disabled={skillRequirements.some((s) => s.name === skill)}
+                    >
                       {skill}
                     </SelectItem>
                   ))}
@@ -280,18 +326,44 @@ export function EditJobForm({ job }: EditJobFormProps) {
               </Button>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {selectedSkills.map((skill) => (
-                <Badge key={skill} variant="secondary" className="pl-3 pr-2 py-1">
-                  {skill}
-                  <button
-                    type="button"
-                    onClick={() => removeSkill(skill)}
-                    className="ml-2 hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
+            <div className="space-y-3">
+              {skillRequirements.map((skill) => (
+                <div
+                  key={skill.name}
+                  className="flex flex-col gap-3 rounded-lg border p-3 md:flex-row md:items-center md:gap-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-sm">
+                      {skill.name}
+                    </Badge>
+                    <button
+                      type="button"
+                      onClick={() => removeSkill(skill.name)}
+                      className="text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center md:gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Minimum Level</span>
+                      <SkillLevelSelector
+                        value={(skill.min_level as SkillLevel) || 2}
+                        onChange={(level) => updateSkillLevel(skill.name, level)}
+                        label=""
+                        className="w-40"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Required</span>
+                      <Switch
+                        checked={skill.required !== false}
+                        onCheckedChange={(checked) => toggleSkillRequired(skill.name, checked)}
+                        aria-label={`Toggle ${skill.name} required flag`}
+                      />
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>

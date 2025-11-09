@@ -41,7 +41,6 @@ const navigation = [
   { name: "Marketplace", href: "/marketplace", icon: ShoppingBag },
   { name: "Community", href: "/community", icon: MessageSquare },
   { name: "Learning", href: "/learning", icon: BookOpen },
-  { name: "Messages", href: "/chat", icon: MessageCircle },
   { name: "Reviews", href: "/reviews", icon: Star },
   { name: "Profile", href: "/profile", icon: User },
 ];

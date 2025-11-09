@@ -29,6 +29,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useJobSearch } from "@/contexts/job-search-context";
 import { InlineLoader } from "@/components/ui/page-loader";
 import { formatDate, formatRelativeTime } from "@/lib/utils";
+import { normalizeSkillRequirements, SKILL_LEVELS } from "@/lib/skills";
 
 export function OpportunityBoard() {
   const [sortBy, setSortBy] = useState("newest");
@@ -68,7 +69,7 @@ export function OpportunityBoard() {
         deadline: j.start_date || j.created_at,
         applicants: j.applications_count || 0,
         description: j.description,
-        skills: Array.isArray(j.required_skills) ? j.required_skills : [],
+        skills: normalizeSkillRequirements(j.required_skills as any),
         companyLogo: j.company_logo || "/placeholder.svg",
         companyRating: 0,
         matchScore: j.matchScore || 0,
@@ -91,8 +92,8 @@ export function OpportunityBoard() {
           job.company.toLowerCase().includes(query) ||
           job.description.toLowerCase().includes(query) ||
           (job.skills &&
-            job.skills.some((skill: string) =>
-              skill.toLowerCase().includes(query)
+            job.skills.some((skill: any) =>
+              (skill?.name || "").toLowerCase().includes(query)
             ))
       );
     }
@@ -341,13 +342,18 @@ export function OpportunityBoard() {
                         </span>
 
                         <div className="flex flex-wrap gap-1">
-                          {job.skills.slice(0, 3).map((skill: string) => (
+                          {job.skills.slice(0, 3).map((skill: any) => (
                             <Badge
-                              key={skill}
+                              key={skill.name}
                               variant="outline"
                               className="text-xs"
                             >
-                              {skill}
+                              <span>{skill.name}</span>
+                              {skill.min_level && (
+                                <span className="ml-1 text-[10px] text-muted-foreground">
+                                  {SKILL_LEVELS[skill.min_level]}
+                                </span>
+                              )}
                             </Badge>
                           ))}
                         </div>

@@ -9,19 +9,29 @@ import { ImageUpload } from "@/components/ui/image-upload"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Heart, Share2, Flag, Send, CheckCircle, AlertCircle } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { authFetch } from "@/lib/auth-client"
 import { useAuth } from "@/hooks/use-auth"
 import Link from "next/link"
 import { UserX } from "lucide-react"
+import { useUserProfile } from "@/hooks/use-user-profile"
+import {
+  Skill,
+  SkillRequirement,
+  calculateMatchScore,
+  normalizeSkills,
+  normalizeSkillRequirements,
+  SKILL_LEVELS,
+  SKILL_LEVEL_COLORS,
+} from "@/lib/skills"
 
 interface Job {
   id: string
   title: string
   company: string
-  skills: string[]
+  skills: SkillRequirement[]
 }
 
 interface JobApplicationProps {
@@ -32,13 +42,47 @@ export function JobApplication({ job }: JobApplicationProps) {
   const [coverLetter, setCoverLetter] = useState("")
   const [resumeUrl, setResumeUrl] = useState<string | undefined>(undefined)
   const [isApplied, setIsApplied] = useState(false)
+  const [selectedSkills, setSelectedSkills] = useState<Skill[]>([])
   const { user, loading } = useAuth()
+  const { profile, loading: profileLoading } = useUserProfile()
   const router = useRouter()
 
-  // Mock user skills and match calculation
-  const userSkills = ["Crop Harvesting", "Team Leadership", "Safety Protocols", "Equipment Operation"]
-  const matchingSkills = job.skills.filter((skill) => userSkills.includes(skill))
-  const matchPercentage = Math.round((matchingSkills.length / job.skills.length) * 100)
+  const workerSkills = useMemo(() => normalizeSkills(profile?.skills as any), [profile?.skills])
+  const jobRequirements = useMemo(
+    () => normalizeSkillRequirements(job.skills as any),
+    [job.skills]
+  )
+  const matchResult = useMemo(
+    () => calculateMatchScore(jobRequirements, workerSkills),
+    [jobRequirements, workerSkills]
+  )
+
+  useEffect(() => {
+    if (workerSkills.length === 0) {
+      setSelectedSkills([])
+      return
+    }
+    const matched = workerSkills.filter((skill) =>
+      jobRequirements.some((req) => req.name.toLowerCase() === skill.name.toLowerCase())
+    )
+    setSelectedSkills(matched)
+  }, [workerSkills, jobRequirements])
+
+  const fullyMatchedSkills = matchResult.details.filter((detail) => {
+    if (!detail.match) return false
+    if (detail.required_level && detail.level && detail.level < detail.required_level) return false
+    return true
+  })
+
+  const skillsNeedingDevelopment = matchResult.details.filter((detail) => {
+    if (!detail.match) return false
+    if (!detail.required_level || detail.level === undefined) return false
+    return detail.level < detail.required_level
+  })
+
+  const missingSkills = matchResult.details.filter((detail) => !detail.match)
+
+  const matchPercentage = matchResult.total > 0 ? matchResult.score : 0
 
   const canApply = user && user.roles?.includes("worker")
 
@@ -57,7 +101,14 @@ export function JobApplication({ job }: JobApplicationProps) {
       const res = await authFetch(`/api/opportunities/${job.id}/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cover_letter: coverLetter, resume_url: resumeUrl }),
+        body: JSON.stringify({
+          cover_letter: coverLetter,
+          resume_url: resumeUrl,
+          highlighted_skills: selectedSkills.map((skill) => ({
+            name: skill.name,
+            level: skill.level,
+          })),
+        }),
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
@@ -75,7 +126,7 @@ export function JobApplication({ job }: JobApplicationProps) {
     }
   }
 
-  if (loading) {
+  if (loading || profileLoading) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -160,30 +211,84 @@ export function JobApplication({ job }: JobApplicationProps) {
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Matching Skills:</h4>
             <div className="flex flex-wrap gap-1">
-              {matchingSkills.map((skill) => (
-                <Badge key={skill} variant="secondary" className="text-xs">
-                  {skill}
+              {fullyMatchedSkills.map((detail) => (
+                <Badge key={detail.skill} variant="secondary" className="text-xs">
+                  {detail.skill}
                 </Badge>
               ))}
+              {fullyMatchedSkills.length === 0 && (
+                <span className="text-xs text-muted-foreground">No perfect matches yet</span>
+              )}
             </div>
           </div>
 
-          {job.skills.length > matchingSkills.length && (
+          {(skillsNeedingDevelopment.length > 0 || missingSkills.length > 0) && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">Skills to Develop:</h4>
+              <h4 className="text-sm font-medium">Skills to Improve:</h4>
               <div className="flex flex-wrap gap-1">
-                {job.skills
-                  .filter((skill) => !userSkills.includes(skill))
-                  .map((skill) => (
-                    <Badge key={skill} variant="outline" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
+                {skillsNeedingDevelopment.map((detail) => (
+                  <Badge key={detail.skill} variant="outline" className="text-xs">
+                    {detail.skill} (Need {SKILL_LEVELS[detail.required_level as keyof typeof SKILL_LEVELS]})
+                  </Badge>
+                ))}
+                {missingSkills.map((detail) => (
+                  <Badge key={detail.skill} variant="outline" className="text-xs">
+                    {detail.skill}
+                  </Badge>
+                ))}
               </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Highlight Skills */}
+      {workerSkills.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading text-lg">Highlight Your Skills</CardTitle>
+            <CardDescription>Select which skills to emphasize in your application</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {workerSkills.map((skill) => {
+                const isSelected = selectedSkills.some(
+                  (s) => s.name.toLowerCase() === skill.name.toLowerCase()
+                )
+                const badgeColor = SKILL_LEVEL_COLORS[skill.level]
+                return (
+                  <button
+                    key={skill.name}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSkills((prev) => {
+                        if (isSelected) {
+                          return prev.filter(
+                            (entry) => entry.name.toLowerCase() !== skill.name.toLowerCase()
+                          )
+                        }
+                        return [...prev, skill]
+                      })
+                    }}
+                    className={`rounded-full border px-3 py-1 text-xs transition ${
+                      isSelected ? "border-primary text-primary" : "border-border text-muted-foreground"
+                    }`}
+                    aria-pressed={isSelected}
+                  >
+                    <span className="mr-2 font-medium text-foreground">{skill.name}</span>
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] ${badgeColor}`}>
+                      {SKILL_LEVELS[skill.level]}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Selected skills will be sent with your application so recruiters can quickly review how you match their requirements.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Apply */}
       <Card>

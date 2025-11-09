@@ -29,7 +29,11 @@ export function ChatList({ onSelectConversation }: ChatListProps = {}) {
 
   const handleSelectConversation = (conversation: any) => {
     selectConversation(conversation)
-    onSelectConversation?.()
+    
+    // Always call onSelectConversation if provided (for widget)
+    if (onSelectConversation) {
+      onSelectConversation()
+    }
   }
 
   return (

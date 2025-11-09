@@ -23,6 +23,8 @@ import {
 } from "lucide-react"
 import { useUserProfile } from "@/hooks/use-user-profile"
 import { useBuyerStats } from "@/hooks/use-buyer-stats"
+import { SkillCard } from "@/components/ui/skill-card"
+import { normalizeSkills, groupSkillsByCategory, SkillCategory, SKILL_LEVELS, SKILL_LEVEL_COLORS, CATEGORY_COLORS } from "@/lib/skills"
 
 interface User {
   id: string
@@ -60,17 +62,14 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             quaternary: { label: "Rating", value: user.rating || 4.8, icon: Star },
           },
           skills: profile?.skills && Array.isArray(profile.skills) && profile.skills.length > 0
-            ? profile.skills.map((skillName: string) => ({ 
-                name: skillName, 
-                level: 100, 
-                verified: false 
-              }))
-            : [
-                { name: "Crop Harvesting", level: 95, verified: true },
-                { name: "Organic Farming", level: 88, verified: true },
-                { name: "Equipment Operation", level: 75, verified: false },
-                { name: "Soil Management", level: 82, verified: true },
-              ],
+            ? (typeof profile.skills[0] === 'string'
+              ? profile.skills.map((skillName: string) => ({ 
+                  name: skillName, 
+                  level: 2, 
+                  category: "Farm Management"
+                }))
+              : profile.skills)
+            : [],
           recentActivity: [
             {
               title: "Seasonal Fruit Harvesting",
@@ -240,38 +239,77 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
                 </div>
               </div>
             )}
+
+            {/* Worker Skills Pills shown directly under About */}
+            {user.role === "worker" && profileData.skills && profileData.skills.length > 0 && (
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-3">My Skills</h4>
+                <div className="flex flex-wrap gap-2">
+                  {normalizeSkills(profileData.skills).map((skill, index) => {
+                    const levelLabel = SKILL_LEVELS[skill.level as keyof typeof SKILL_LEVELS]
+                    const levelColor = SKILL_LEVEL_COLORS[skill.level as keyof typeof SKILL_LEVEL_COLORS]
+                    const categoryColor = CATEGORY_COLORS[skill.category as keyof typeof CATEGORY_COLORS] || CATEGORY_COLORS["Crop Farming"]
+                    return (
+                      <div
+                        key={`${skill.name}-${index}`}
+                        className="flex items-center gap-2 rounded-full border border-border bg-background/80 px-3 py-1"
+                      >
+                        <span className="text-xs font-medium text-foreground">{skill.name}</span>
+                        <Badge variant="outline" className={`text-[10px] ${categoryColor}`}>{skill.category}</Badge>
+                        <Badge variant="outline" className={`text-[10px] ${levelColor}`}>{levelLabel}</Badge>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
         {/* Skills Section (Workers only) */}
-        {user.role === "worker" && profileData.skills && profileData.skills.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-heading">Skills & Expertise</CardTitle>
-              <CardDescription>
-                {profile?.skills && Array.isArray(profile.skills) && profile.skills.length > 0
-                  ? "Your skills for job matching"
-                  : "Verified skills based on completed work"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {profileData.skills.map((skill) => (
-                  <Badge
-                    key={skill.name}
-                    variant={skill.verified ? "secondary" : "outline"}
-                    className="px-3 py-1"
-                  >
-                    {skill.name}
-                    {skill.verified && (
-                      <Award className="ml-1 h-3 w-3" />
-                    )}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {user.role === "worker" && profileData.skills && profileData.skills.length > 0 && (() => {
+          const normalizedSkills = normalizeSkills(profileData.skills);
+          const groupedSkills = groupSkillsByCategory(normalizedSkills);
+          const categories = Object.keys(groupedSkills) as SkillCategory[];
+          
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading">Skills & Expertise</CardTitle>
+                <CardDescription>
+                  Your skills organized by category. Jobs matching your skills will be prioritized.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {categories.map((category) => {
+                  const skills = groupedSkills[category];
+                  return (
+                    <div key={category} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold text-muted-foreground">
+                          {category}
+                        </Label>
+                        <Badge variant="outline" className="text-xs">
+                          {skills.length} {skills.length === 1 ? 'skill' : 'skills'}
+                        </Badge>
+                      </div>
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {skills.map((skill, index) => (
+                          <SkillCard
+                            key={`${skill.name}-${index}`}
+                            skill={skill}
+                            showCategory={false}
+                            showLevel={true}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Recent Activity */}
         <Card>
