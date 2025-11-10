@@ -1,21 +1,33 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { X, Plus, MapPin, DollarSign, Calendar, Users } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
-import { toast } from "sonner"
-import { Switch } from "@/components/ui/switch"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { X, Plus, MapPin, DollarSign, Calendar, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogAction,
@@ -25,86 +37,102 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import { handleRoleValidationError } from "@/lib/role-validation-client";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { LocationPicker, LocationData } from "@/components/ui/location-picker";
 import { SkillLevelSelector } from "@/components/ui/skill-level-selector";
-import { SkillLevel, SkillRequirement, SKILL_CATEGORIES, SkillCategory } from "@/lib/skills";
+import {
+  SkillLevel,
+  SkillRequirement,
+  SKILL_CATEGORIES,
+  SkillCategory,
+} from "@/lib/skills";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserProfile } from "@/hooks/use-user-profile";
 
 export function PostJobForm() {
-  const [requiredSkills, setRequiredSkills] = useState<SkillRequirement[]>([])
-  const [customSkill, setCustomSkill] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [companyLogo, setCompanyLogo] = useState<string | undefined>(undefined)
-  const [jobType, setJobType] = useState<string | undefined>(undefined)
-  const [urgency, setUrgency] = useState<string | undefined>(undefined)
-  const [jobLocation, setJobLocation] = useState<LocationData>({ address: "" })
-  const [companyNameInput, setCompanyNameInput] = useState("")
-  const [contactEmail, setContactEmail] = useState("")
+  const [requiredSkills, setRequiredSkills] = useState<SkillRequirement[]>([]);
+  const [customSkill, setCustomSkill] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [companyLogo, setCompanyLogo] = useState<string | undefined>(undefined);
+  const [jobType, setJobType] = useState<string | undefined>(undefined);
+  const [urgency, setUrgency] = useState<string | undefined>(undefined);
+  const [jobLocation, setJobLocation] = useState<LocationData>({ address: "" });
+  const [companyNameInput, setCompanyNameInput] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
 
-  const { user } = useAuth()
-  const { profile } = useUserProfile()
+  const { user } = useAuth();
+  const { profile } = useUserProfile();
 
   useEffect(() => {
     if (user?.email) {
-      setContactEmail((prev) => (prev ? prev : user.email))
+      setContactEmail((prev) => (prev ? prev : user.email));
     }
-  }, [user?.email])
+  }, [user?.email]);
 
   useEffect(() => {
-    if (!profile) return
+    if (!profile) return;
 
-    setCompanyNameInput((prev) => (prev ? prev : profile.company_name || ""))
+    setCompanyNameInput((prev) => (prev ? prev : profile.company_name || ""));
 
     setJobLocation((prev) => {
-      if (prev.address) return prev
+      if (prev.address) return prev;
       if (profile.business_address) {
         return {
           address: profile.business_address,
           coordinates: profile.business_coordinates,
-        }
+        };
       }
-      return prev
-    })
+      return prev;
+    });
 
     if (!companyLogo && profile.business_logo) {
-      setCompanyLogo(profile.business_logo)
+      setCompanyLogo(profile.business_logo);
     }
 
     if (profile.phone) {
-      setContactEmail((prev) => prev || user?.email || "")
+      setContactEmail((prev) => prev || user?.email || "");
     }
-  }, [profile, companyLogo, user?.email])
+  }, [profile, companyLogo, user?.email]);
 
   useEffect(() => {
     // Fallback to user name if company name still empty
     if (!companyNameInput && user?.name) {
-      setCompanyNameInput(user.name)
+      setCompanyNameInput(user.name);
     }
-  }, [companyNameInput, user?.name])
+  }, [companyNameInput, user?.name]);
 
   useEffect(() => {
     if (!jobLocation.address && user?.location) {
       setJobLocation((prev) => ({
         address: user.location,
         coordinates: prev.coordinates,
-      }))
+      }));
     }
-  }, [jobLocation.address, user?.location])
+  }, [jobLocation.address, user?.location]);
 
   const skillCategories = useMemo(
-    () => Object.entries(SKILL_CATEGORIES) as [SkillCategory, readonly string[]][],
+    () =>
+      Object.entries(SKILL_CATEGORIES) as [SkillCategory, readonly string[]][],
     []
-  )
-  const defaultCategory = skillCategories.length > 0 ? skillCategories[0][0] : ("Crop Farming" as SkillCategory)
+  );
+  const defaultCategory =
+    skillCategories.length > 0
+      ? skillCategories[0][0]
+      : ("Crop Farming" as SkillCategory);
 
-  const addSkill = (skill: string, level: SkillLevel = 2, required: boolean = true) => {
-    if (!skill.trim()) return
-    if (requiredSkills.some((s) => s.name.toLowerCase() === skill.toLowerCase())) return
+  const addSkill = (
+    skill: string,
+    level: SkillLevel = 2,
+    required: boolean = true
+  ) => {
+    if (!skill.trim()) return;
+    if (
+      requiredSkills.some((s) => s.name.toLowerCase() === skill.toLowerCase())
+    )
+      return;
     setRequiredSkills([
       ...requiredSkills,
       {
@@ -112,19 +140,19 @@ export function PostJobForm() {
         min_level: level,
         required,
       },
-    ])
-  }
+    ]);
+  };
 
   const removeSkill = (skill: string) => {
-    setRequiredSkills(requiredSkills.filter((s) => s.name !== skill))
-  }
+    setRequiredSkills(requiredSkills.filter((s) => s.name !== skill));
+  };
 
   const addCustomSkill = () => {
     if (customSkill.trim()) {
-      addSkill(customSkill.trim())
-      setCustomSkill("")
+      addSkill(customSkill.trim());
+      setCustomSkill("");
     }
-  }
+  };
 
   const updateSkillLevel = (skillName: string, level: SkillLevel) => {
     setRequiredSkills((prev) =>
@@ -136,8 +164,8 @@ export function PostJobForm() {
             }
           : skill
       )
-    )
-  }
+    );
+  };
 
   const toggleSkillRequired = (skillName: string, value: boolean) => {
     setRequiredSkills((prev) =>
@@ -149,51 +177,74 @@ export function PostJobForm() {
             }
           : skill
       )
-    )
-  }
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setShowConfirmDialog(true)
-  }
+    e.preventDefault();
+    setShowConfirmDialog(true);
+  };
 
   const handleConfirmedSubmit = async () => {
-    setIsSubmitting(true)
-    setShowConfirmDialog(false)
+    setIsSubmitting(true);
+    setShowConfirmDialog(false);
     try {
-      const title = (document.getElementById("job-title") as HTMLInputElement)?.value
-      const description = (document.getElementById("description") as HTMLTextAreaElement)?.value
-      const location = jobLocation.address || ""
-      const company_name = companyNameInput
-      const benefitsText = (document.getElementById("benefits") as HTMLTextAreaElement)?.value || ""
-      const requirementsText = (document.getElementById("requirements") as HTMLTextAreaElement)?.value || ""
-      const benefits = benefitsText.split(/\n|,|;/).map((s) => s.trim()).filter(Boolean)
-      const requirements = requirementsText.split(/\n|,|;/).map((s) => s.trim()).filter(Boolean)
-      const pay_rate = Number((document.getElementById("pay-min") as HTMLInputElement)?.value || 0)
-      const pay_rate_max_raw = (document.getElementById("pay-max") as HTMLInputElement)?.value
-      const pay_rate_max = pay_rate_max_raw ? Number(pay_rate_max_raw) : undefined
-      const pay_type = "hourly"
+      const title = (document.getElementById("job-title") as HTMLInputElement)
+        ?.value;
+      const description = (
+        document.getElementById("description") as HTMLTextAreaElement
+      )?.value;
+      const location = jobLocation.address || "";
+      const company_name = companyNameInput;
+      const benefitsText =
+        (document.getElementById("benefits") as HTMLTextAreaElement)?.value ||
+        "";
+      const requirementsText =
+        (document.getElementById("requirements") as HTMLTextAreaElement)
+          ?.value || "";
+      const benefits = benefitsText
+        .split(/\n|,|;/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const requirements = requirementsText
+        .split(/\n|,|;/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const pay_rate = Number(
+        (document.getElementById("pay-min") as HTMLInputElement)?.value || 0
+      );
+      const pay_rate_max_raw = (
+        document.getElementById("pay-max") as HTMLInputElement
+      )?.value;
+      const pay_rate_max = pay_rate_max_raw
+        ? Number(pay_rate_max_raw)
+        : undefined;
+      const pay_type = "hourly";
       // Map UI urgency values to API schema values
       const mappedUrgency = ((): string => {
         switch (urgency) {
           case "standard":
-            return "low"
+            return "low";
           case "medium":
-            return "medium"
+            return "medium";
           case "high":
-            return "high"
+            return "high";
           case "urgent":
-            return "urgent"
+            return "urgent";
           default:
-            return "low"
+            return "low";
         }
-      })()
-      const start_date = (document.getElementById("deadline") as HTMLInputElement)?.value || undefined
-      const contact_email = contactEmail || undefined
-      const work_schedule = (document.getElementById("schedule") as HTMLTextAreaElement)?.value || undefined
+      })();
+      const start_date =
+        (document.getElementById("deadline") as HTMLInputElement)?.value ||
+        undefined;
+      const contact_email = contactEmail || undefined;
+      const work_schedule =
+        (document.getElementById("schedule") as HTMLTextAreaElement)?.value ||
+        undefined;
       // Ensure required selections exist
       if (!jobType) {
-        throw new Error("Please select a job type")
+        throw new Error("Please select a job type");
       }
       const payload: any = {
         title,
@@ -219,13 +270,17 @@ export function PostJobForm() {
         benefits,
         work_schedule,
         start_date,
-      }
-      const res = await fetch("/api/opportunities", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(json?.message || "Failed to post job")
-      const id = json?.data?.id
-      toast.success("Job posted successfully!")
-      window.location.href = id ? `/opportunities/${id}` : "/opportunities"
+      };
+      const res = await fetch("/api/opportunities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message || "Failed to post job");
+      const id = json?.data?.id;
+      toast.success("Job posted successfully!");
+      window.location.href = id ? `/opportunities/${id}` : "/opportunities";
     } catch (e: any) {
       // Check if it's a role validation error
       if (e?.message?.includes("role") && e?.message?.includes("Settings")) {
@@ -234,9 +289,9 @@ export function PostJobForm() {
         toast.error(e?.message || "Failed to post job");
       }
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <>
@@ -248,19 +303,25 @@ export function PostJobForm() {
               <Users className="h-5 w-5" />
               Basic Job Information
             </CardTitle>
-            <CardDescription>Provide the essential details about your job opening</CardDescription>
+            <CardDescription>
+              Provide the essential details about your job opening
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="job-title">Job Title *</Label>
-                <Input id="job-title" placeholder="e.g., Seasonal Harvest Coordinator" required />
+                <Input
+                  id="job-title"
+                  placeholder="e.g., Seasonal Harvest Coordinator"
+                  required
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="job-type">Job Type *</Label>
-              <Select value={jobType} onValueChange={setJobType}>
-                <SelectTrigger>
+                <Select value={jobType} onValueChange={setJobType}>
+                  <SelectTrigger className="border-zinc-300 dark:border-white/40">
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -301,7 +362,9 @@ export function PostJobForm() {
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Job Description</CardTitle>
-            <CardDescription>Describe the role and what you're looking for</CardDescription>
+            <CardDescription>
+              Describe the role and what you're looking for
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -352,18 +415,32 @@ export function PostJobForm() {
               <DollarSign className="h-5 w-5" />
               Compensation & Schedule
             </CardTitle>
-            <CardDescription>Set the pay range and work schedule details</CardDescription>
+            <CardDescription>
+              Set the pay range and work schedule details
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="pay-min">Minimum Pay (₱/hour) *</Label>
-                <Input id="pay-min" type="number" placeholder="60" min="60" required />
+                <Input
+                  id="pay-min"
+                  type="number"
+                  placeholder="60"
+                  min="60"
+                  required
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="pay-max">Maximum Pay (₱/hour) *</Label>
-                <Input id="pay-max" type="number" placeholder="100" min="60" required />
+                <Input
+                  id="pay-max"
+                  type="number"
+                  placeholder="100"
+                  min="60"
+                  required
+                />
               </div>
             </div>
 
@@ -382,7 +459,9 @@ export function PostJobForm() {
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Required Skills</CardTitle>
-            <CardDescription>Select the skills needed for this position</CardDescription>
+            <CardDescription>
+              Select the skills needed for this position
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Tabs defaultValue={defaultCategory} className="space-y-4">
@@ -399,7 +478,11 @@ export function PostJobForm() {
               </TabsList>
 
               {skillCategories.map(([category, skills]) => (
-                <TabsContent key={`required-content-${category}`} value={category} className="space-y-3">
+                <TabsContent
+                  key={`required-content-${category}`}
+                  value={category}
+                  className="space-y-3"
+                >
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-semibold">{category}</Label>
                     <span className="text-xs text-muted-foreground">
@@ -408,13 +491,18 @@ export function PostJobForm() {
                   </div>
                   <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                     {skills.map((skill) => {
-                      const existing = requiredSkills.find((s) => s.name === skill)
+                      const existing = requiredSkills.find(
+                        (s) => s.name === skill
+                      );
                       return (
                         <div
                           key={`${category}-${skill}`}
                           className="flex items-center justify-between space-x-3 rounded-md border px-3 py-2"
                         >
-                          <Label htmlFor={`required-${skill}`} className="text-sm cursor-pointer flex-1">
+                          <Label
+                            htmlFor={`required-${skill}`}
+                            className="text-sm cursor-pointer flex-1"
+                          >
                             {skill}
                           </Label>
                           <Switch
@@ -422,15 +510,15 @@ export function PostJobForm() {
                             checked={!!existing}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                addSkill(skill)
+                                addSkill(skill);
                               } else {
-                                removeSkill(skill)
+                                removeSkill(skill);
                               }
                             }}
                             aria-label={`Toggle ${skill} requirement`}
                           />
                         </div>
-                      )
+                      );
                     })}
                   </div>
                 </TabsContent>
@@ -446,9 +534,15 @@ export function PostJobForm() {
                   placeholder="Enter a custom skill"
                   value={customSkill}
                   onChange={(e) => setCustomSkill(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addCustomSkill())}
+                  onKeyPress={(e) =>
+                    e.key === "Enter" && (e.preventDefault(), addCustomSkill())
+                  }
                 />
-                <Button type="button" variant="outline" onClick={addCustomSkill}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addCustomSkill}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -477,19 +571,27 @@ export function PostJobForm() {
                       </div>
                       <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center md:gap-4">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Minimum Level</span>
+                          <span className="text-xs text-muted-foreground">
+                            Minimum Level
+                          </span>
                           <SkillLevelSelector
                             value={(skill.min_level as SkillLevel) || 2}
-                            onChange={(level) => updateSkillLevel(skill.name, level)}
+                            onChange={(level) =>
+                              updateSkillLevel(skill.name, level)
+                            }
                             label=""
                             className="w-40"
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Required</span>
+                          <span className="text-xs text-muted-foreground">
+                            Required
+                          </span>
                           <Switch
                             checked={skill.required !== false}
-                            onCheckedChange={(checked) => toggleSkillRequired(skill.name, checked)}
+                            onCheckedChange={(checked) =>
+                              toggleSkillRequired(skill.name, checked)
+                            }
                             aria-label={`Toggle ${skill.name} required flag`}
                           />
                         </div>
@@ -509,7 +611,9 @@ export function PostJobForm() {
               <Calendar className="h-5 w-5" />
               Application Settings
             </CardTitle>
-            <CardDescription>Configure how applications are handled</CardDescription>
+            <CardDescription>
+              Configure how applications are handled
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -520,8 +624,8 @@ export function PostJobForm() {
 
               <div className="space-y-2">
                 <Label htmlFor="urgency">Hiring Urgency</Label>
-              <Select value={urgency} onValueChange={setUrgency}>
-                <SelectTrigger>
+                <Select value={urgency} onValueChange={setUrgency}>
+                  <SelectTrigger className="border-zinc-300 dark:border-white/40">
                     <SelectValue placeholder="Select urgency" />
                   </SelectTrigger>
                   <SelectContent>
@@ -552,8 +656,8 @@ export function PostJobForm() {
           <div className="flex items-center space-x-2">
             <Checkbox id="terms" required />
             <Label htmlFor="terms" className="text-sm">
-              I agree to the AgriReach Terms of Service and confirm that this job posting complies with all applicable
-              laws
+              I agree to the AgriReach Terms of Service and confirm that this
+              job posting complies with all applicable laws
             </Label>
           </div>
 
@@ -562,8 +666,8 @@ export function PostJobForm() {
           </Button>
 
           <p className="text-xs text-muted-foreground text-center">
-            Your job will be reviewed and published within 24 hours. You'll receive email notifications for new
-            applications.
+            Your job will be reviewed and published within 24 hours. You'll
+            receive email notifications for new applications.
           </p>
         </div>
       </form>
@@ -573,16 +677,19 @@ export function PostJobForm() {
           <DialogHeader>
             <DialogTitle>Confirm Job Posting</DialogTitle>
             <DialogDescription>
-              Are you sure you want to publish this job? Once published, it will be visible to all workers on the
-              platform and you'll start receiving applications.
+              Are you sure you want to publish this job? Once published, it will
+              be visible to all workers on the platform and you'll start
+              receiving applications.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogCancel>Cancel</DialogCancel>
-            <DialogAction onClick={handleConfirmedSubmit}>Publish Job</DialogAction>
+            <DialogAction onClick={handleConfirmedSubmit}>
+              Publish Job
+            </DialogAction>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
