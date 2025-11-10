@@ -181,10 +181,6 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                 Share Profile
               </Button>
 
-              <Button variant="outline" size="lg" className="w-full md:w-auto bg-transparent">
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Message
-              </Button>
             </div>
           </CardContent>
         </Card>

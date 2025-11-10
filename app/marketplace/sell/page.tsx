@@ -223,7 +223,7 @@ function SellProductPageContent() {
                         handleInputChange("category", value)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-input border border-border/60 dark:border-primary/40 focus:ring-0 focus-visible:ring-0">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -283,7 +283,7 @@ function SellProductPageContent() {
                         handleInputChange("unit", value)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-input border border-border/60 dark:border-primary/40 focus:ring-0 focus-visible:ring-0">
                         <SelectValue placeholder="Select unit" />
                       </SelectTrigger>
                       <SelectContent>

@@ -295,7 +295,7 @@ function NewThreadPageContent() {
                         handleInputChange("category", value)
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white text-zinc-900 border border-zinc-200 focus:ring-0 dark:bg-white/5 dark:text-white dark:border-white">
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
