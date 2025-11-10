@@ -1,15 +1,21 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { ArrowLeft, Upload, X, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react";
+import { ArrowLeft, Upload, X, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +23,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { toast } from "sonner"
-import { ImageUpload } from "@/components/ui/image-upload"
-import { authFetch } from "@/lib/auth-client"
-import { useRouter } from "next/navigation"
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { ImageUpload, UploadedImage } from "@/components/ui/image-upload";
+import { LocationPicker, LocationData } from "@/components/ui/location-picker";
+import { authFetch } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 const categories = [
   "Vegetables",
@@ -33,16 +40,16 @@ const categories = [
   "Crafts",
   "Livestock",
   "Herbs & Spices",
-]
+];
 
-const units = ["kg", "liter", "piece", "dozen", "bundle", "bag", "box"]
+const units = ["kg", "liter", "piece", "dozen", "bundle", "bag", "box"];
 
 interface EditProductFormProps {
-  product: any
+  product: any;
 }
 
 export function EditProductForm({ product }: EditProductFormProps) {
-  const router = useRouter()
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: product.title || "",
     description: product.description || "",
@@ -50,26 +57,35 @@ export function EditProductForm({ product }: EditProductFormProps) {
     price: product.price?.toString() || "",
     unit: product.unit || undefined,
     stockQuantity: product.quantity_available?.toString() || "",
-    location: product.location || "",
     images: product.images || [],
-  })
+  });
 
-  const [isOrganic, setIsOrganic] = useState(product.organic || false)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  // LocationPicker state (address + optional coordinates)
+  const [productLocation, setProductLocation] = useState<LocationData>({
+    address: product.location || "",
+    coordinates:
+      product.location_coordinates ??
+      (product.locationCoordinates as any) ??
+      (product.coordinates as any) ??
+      undefined,
+  });
+
+  const [isOrganic, setIsOrganic] = useState(product.organic || false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setShowConfirmDialog(true)
-  }
+    e.preventDefault();
+    setShowConfirmDialog(true);
+  };
 
   const handleConfirmedSubmit = async () => {
-    setShowConfirmDialog(false)
-    setIsSubmitting(true)
+    setShowConfirmDialog(false);
+    setIsSubmitting(true);
 
     try {
       const payload = {
@@ -79,10 +95,11 @@ export function EditProductForm({ product }: EditProductFormProps) {
         price: Number(formData.price),
         unit: formData.unit as string,
         quantity_available: Number(formData.stockQuantity),
-        location: formData.location.trim(),
+        location: (productLocation.address || "").trim(),
+        location_coordinates: productLocation.coordinates,
         images: formData.images,
         organic: Boolean(isOrganic),
-      }
+      };
 
       const res = await authFetch(`/api/marketplace/products/${product._id}`, {
         method: "PUT",
@@ -90,22 +107,22 @@ export function EditProductForm({ product }: EditProductFormProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
-      })
+      });
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.message || "Failed to update product")
+        const error = await res.json();
+        throw new Error(error.message || "Failed to update product");
       }
 
-      toast.success("Product updated successfully!")
-      router.push("/dashboard")
-      router.refresh()
+      toast.success("Product updated successfully!");
+      router.push("/dashboard");
+      router.refresh();
     } catch (error: any) {
-      toast.error(error.message || "Failed to update product")
+      toast.error(error.message || "Failed to update product");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <>
@@ -133,15 +150,22 @@ export function EditProductForm({ product }: EditProductFormProps) {
                 placeholder="Describe your product, its quality, and any special features..."
                 rows={4}
                 value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 required
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
-                <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) =>
+                    handleInputChange("category", value)
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -154,14 +178,13 @@ export function EditProductForm({ product }: EditProductFormProps) {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div>
-                <Label htmlFor="location">Location *</Label>
-                <Input
-                  id="location"
-                  placeholder="e.g., Quezon City, Metro Manila"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange("location", e.target.value)}
+              <div className="space-y-2">
+                {/* LocationPicker replicates opportunities form with map + current location */}
+                <LocationPicker
+                  value={productLocation}
+                  onChange={setProductLocation}
+                  label="Location"
+                  placeholder="Enter product location or use current location"
                   required
                 />
               </div>
@@ -191,7 +214,10 @@ export function EditProductForm({ product }: EditProductFormProps) {
 
               <div>
                 <Label htmlFor="unit">Unit *</Label>
-                <Select value={formData.unit} onValueChange={(value) => handleInputChange("unit", value)}>
+                <Select
+                  value={formData.unit}
+                  onValueChange={(value) => handleInputChange("unit", value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select unit" />
                   </SelectTrigger>
@@ -213,7 +239,9 @@ export function EditProductForm({ product }: EditProductFormProps) {
                   placeholder="0"
                   min="0"
                   value={formData.stockQuantity}
-                  onChange={(e) => handleInputChange("stockQuantity", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("stockQuantity", e.target.value)
+                  }
                   required
                 />
               </div>
@@ -227,9 +255,31 @@ export function EditProductForm({ product }: EditProductFormProps) {
           </CardHeader>
           <CardContent>
             <ImageUpload
-              value={formData.images}
-              onChange={(urls) => setFormData((prev) => ({ ...prev, images: urls }))}
-              maxImages={5}
+              type="product"
+              maxFiles={5}
+              maxSizeMB={10}
+              acceptedTypes={[
+                "image/jpeg",
+                "image/jpg",
+                "image/png",
+                "image/webp",
+              ]}
+              existingImages={formData.images.map((url: string) => ({
+                url,
+                publicId: "existing",
+                width: 0,
+                height: 0,
+                format: url.split(".").pop() || "jpg",
+                bytes: 0,
+              }))}
+              onUploadComplete={(images: UploadedImage[]) => {
+                const imageUrls = images.map((img) => img.url);
+                setFormData((prev) => ({ ...prev, images: imageUrls }));
+                toast.success(
+                  `${images.length} image(s) uploaded successfully`
+                );
+              }}
+              onUploadError={(err) => toast.error(err)}
             />
           </CardContent>
         </Card>
@@ -240,8 +290,15 @@ export function EditProductForm({ product }: EditProductFormProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Checkbox id="organic" checked={isOrganic} onCheckedChange={(checked) => setIsOrganic(checked as boolean)} />
-              <Label htmlFor="organic" className="text-sm font-normal cursor-pointer">
+              <Checkbox
+                id="organic"
+                checked={isOrganic}
+                onCheckedChange={(checked) => setIsOrganic(checked as boolean)}
+              />
+              <Label
+                htmlFor="organic"
+                className="text-sm font-normal cursor-pointer"
+              >
                 This product is organically grown/produced
               </Label>
             </div>
@@ -249,7 +306,12 @@ export function EditProductForm({ product }: EditProductFormProps) {
         </Card>
 
         <div className="flex gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()} className="flex-1">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            className="flex-1"
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting} className="flex-1">
@@ -264,11 +326,15 @@ export function EditProductForm({ product }: EditProductFormProps) {
           <DialogHeader>
             <DialogTitle>Update Product Listing?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to update this product? The changes will be visible immediately.
+              Are you sure you want to update this product? The changes will be
+              visible immediately.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleConfirmedSubmit}>Confirm Update</Button>
@@ -276,6 +342,5 @@ export function EditProductForm({ product }: EditProductFormProps) {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
-

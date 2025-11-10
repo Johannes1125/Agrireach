@@ -1,18 +1,24 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { ArrowLeft, Upload, X, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
+import { useState } from "react";
+import { ArrowLeft, Upload, X, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import {
   Dialog,
   DialogAction,
@@ -22,13 +28,14 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { toast } from "sonner"
-import { ImageUpload, UploadedImage } from "@/components/ui/image-upload"
-import { authFetch } from "@/lib/auth-client"
-import { useLoading } from "@/hooks/use-loading"
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { ImageUpload, UploadedImage } from "@/components/ui/image-upload";
+import { LocationPicker, LocationData } from "@/components/ui/location-picker";
+import { authFetch } from "@/lib/auth-client";
+import { useLoading } from "@/hooks/use-loading";
 import { handleRoleValidationError } from "@/lib/role-validation-client";
-import { RouteGuard } from "@/components/auth/route-guard"
+import { RouteGuard } from "@/components/auth/route-guard";
 
 const categories = [
   "Vegetables",
@@ -40,20 +47,20 @@ const categories = [
   "Crafts",
   "Livestock",
   "Herbs & Spices",
-]
+];
 
-const units = ["kg", "liter", "piece", "dozen", "bundle", "bag", "box"]
+const units = ["kg", "liter", "piece", "dozen", "bundle", "bag", "box"];
 
 export default function SellProductPage() {
   return (
     <RouteGuard requireAuth redirectTo="/auth/login">
       <SellProductPageContent />
     </RouteGuard>
-  )
+  );
 }
 
 function SellProductPageContent() {
-  const { withLoading } = useLoading()
+  const { withLoading } = useLoading();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -64,43 +71,48 @@ function SellProductPageContent() {
     location: "",
     features: [] as string[],
     images: [] as string[],
-  })
+  });
 
-  const [newFeature, setNewFeature] = useState("")
-  const [isOrganic, setIsOrganic] = useState(false)
-  const [isFreshHarvest, setIsFreshHarvest] = useState(false)
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  // Location (address + coordinates) state to match opportunities
+  const [productLocation, setProductLocation] = useState<LocationData>({
+    address: "",
+  });
+
+  const [newFeature, setNewFeature] = useState("");
+  const [isOrganic, setIsOrganic] = useState(false);
+  const [isFreshHarvest, setIsFreshHarvest] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const addFeature = () => {
     if (newFeature.trim() && !formData.features.includes(newFeature.trim())) {
       setFormData((prev) => ({
         ...prev,
         features: [...prev.features, newFeature.trim()],
-      }))
-      setNewFeature("")
+      }));
+      setNewFeature("");
     }
-  }
+  };
 
   const removeFeature = (feature: string) => {
     setFormData((prev) => ({
       ...prev,
       features: prev.features.filter((f) => f !== feature),
-    }))
-  }
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setShowConfirmDialog(true)
-  }
+    e.preventDefault();
+    setShowConfirmDialog(true);
+  };
 
   const handleConfirmedSubmit = async () => {
-    setShowConfirmDialog(false)
-    setIsSubmitting(true)
+    setShowConfirmDialog(false);
+    setIsSubmitting(true);
 
     const submitPromise = (async () => {
       try {
@@ -111,10 +123,11 @@ function SellProductPageContent() {
           price: Number(formData.price),
           unit: formData.unit as string,
           quantity_available: Number(formData.stockQuantity),
-          location: formData.location.trim(),
+          location: (productLocation.address || formData.location).trim(),
+          location_coordinates: productLocation.coordinates,
           images: formData.images,
           organic: Boolean(isOrganic),
-        }
+        };
 
         const res = await authFetch("/api/marketplace/products", {
           method: "POST",
@@ -122,43 +135,49 @@ function SellProductPageContent() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
-        })
+        });
 
         if (!res.ok) {
-          const error = await res.json()
-          throw new Error(error.message || "Failed to create product listing")
+          const error = await res.json();
+          throw new Error(error.message || "Failed to create product listing");
         }
 
-        const data = await res.json()
-        toast.success("Product listed successfully!")
-        const productId = data?.data?.id || data?.id
+        const data = await res.json();
+        toast.success("Product listed successfully!");
+        const productId = data?.data?.id || data?.id;
         if (productId) {
           // Add delay to show loading for at least 5 seconds
-          await new Promise(resolve => setTimeout(resolve, 3000))
-          window.location.href = `/marketplace/${productId}`
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          window.location.href = `/marketplace/${productId}`;
         }
       } catch (error: any) {
         // Check if it's a role validation error
-        if (error?.message?.includes("role") && error?.message?.includes("Settings")) {
+        if (
+          error?.message?.includes("role") &&
+          error?.message?.includes("Settings")
+        ) {
           handleRoleValidationError(error);
         } else {
           toast.error(error.message || "Failed to create product listing");
         }
       } finally {
-        setIsSubmitting(false)
+        setIsSubmitting(false);
       }
-    })()
+    })();
 
-    await withLoading(submitPromise, "Creating your product listing...")
-  }
+    await withLoading(submitPromise, "Creating your product listing...");
+  };
 
   return (
     <>
       <div className="min-h-screen bg-background">
         {/* Header */}
-<div className="sticky top-0 z-40 border-b bg-white/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-zinc-900/60">
+        <div className="sticky top-0 z-40 border-b bg-white/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-zinc-900/60">
           <div className="container mx-auto px-4 py-4">
-            <Link href="/marketplace" className="inline-flex items-center text-muted-foreground hover:text-foreground">
+            <Link
+              href="/marketplace"
+              className="inline-flex items-center text-muted-foreground hover:text-foreground"
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Marketplace
             </Link>
@@ -167,8 +186,12 @@ function SellProductPageContent() {
 
         <div className="container mx-auto px-4 py-6 max-w-4xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground font-sans mb-2">List Your Product</h1>
-            <p className="text-muted-foreground">Share your products with the AgriReach community</p>
+            <h1 className="text-3xl font-bold text-foreground font-sans mb-2">
+              List Your Product
+            </h1>
+            <p className="text-muted-foreground">
+              Share your products with the AgriReach community
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -184,7 +207,9 @@ function SellProductPageContent() {
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
                       placeholder="e.g., Organic Tomatoes"
                       required
                     />
@@ -192,7 +217,12 @@ function SellProductPageContent() {
 
                   <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>
-                    <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) =>
+                        handleInputChange("category", value)
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
@@ -212,7 +242,9 @@ function SellProductPageContent() {
                   <Textarea
                     id="description"
                     value={formData.description}
-                    onChange={(e) => handleInputChange("description", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("description", e.target.value)
+                    }
                     placeholder="Describe your product, growing methods, quality, etc."
                     rows={4}
                     required
@@ -235,7 +267,9 @@ function SellProductPageContent() {
                       type="number"
                       step="0.01"
                       value={formData.price}
-                      onChange={(e) => handleInputChange("price", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("price", e.target.value)
+                      }
                       placeholder="0.00"
                       required
                     />
@@ -243,7 +277,12 @@ function SellProductPageContent() {
 
                   <div className="space-y-2">
                     <Label htmlFor="unit">Unit *</Label>
-                    <Select value={formData.unit} onValueChange={(value) => handleInputChange("unit", value)}>
+                    <Select
+                      value={formData.unit}
+                      onValueChange={(value) =>
+                        handleInputChange("unit", value)
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select unit" />
                       </SelectTrigger>
@@ -263,7 +302,9 @@ function SellProductPageContent() {
                       id="stock"
                       type="number"
                       value={formData.stockQuantity}
-                      onChange={(e) => handleInputChange("stockQuantity", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("stockQuantity", e.target.value)
+                      }
                       placeholder="Available quantity"
                       required
                     />
@@ -271,12 +312,11 @@ function SellProductPageContent() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="location">Location *</Label>
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange("location", e.target.value)}
-                    placeholder="e.g., Nairobi, Kenya"
+                  <LocationPicker
+                    value={productLocation}
+                    onChange={setProductLocation}
+                    label="Location"
+                    placeholder="Enter product location or use current location"
                     required
                   />
                 </div>
@@ -293,7 +333,9 @@ function SellProductPageContent() {
                   <Checkbox
                     id="organic"
                     checked={isOrganic}
-                    onCheckedChange={(checked) => setIsOrganic(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setIsOrganic(checked === true)
+                    }
                   />
                   <Label htmlFor="organic">Certified Organic</Label>
                 </div>
@@ -302,7 +344,9 @@ function SellProductPageContent() {
                   <Checkbox
                     id="fresh"
                     checked={isFreshHarvest}
-                    onCheckedChange={(checked) => setIsFreshHarvest(checked === true)}
+                    onCheckedChange={(checked) =>
+                      setIsFreshHarvest(checked === true)
+                    }
                   />
                   <Label htmlFor="fresh">Fresh Harvest</Label>
                 </div>
@@ -314,9 +358,15 @@ function SellProductPageContent() {
                       value={newFeature}
                       onChange={(e) => setNewFeature(e.target.value)}
                       placeholder="Add a feature (e.g., Pesticide-Free)"
-                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addFeature())}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && (e.preventDefault(), addFeature())
+                      }
                     />
-                    <Button type="button" onClick={addFeature} variant="outline">
+                    <Button
+                      type="button"
+                      onClick={addFeature}
+                      variant="outline"
+                    >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
@@ -324,7 +374,11 @@ function SellProductPageContent() {
                   {formData.features.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {formData.features.map((feature, index) => (
-                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
                           {feature}
                           <button
                             type="button"
@@ -346,21 +400,30 @@ function SellProductPageContent() {
             <Card>
               <CardHeader>
                 <CardTitle>Product Images</CardTitle>
-                <p className="text-sm text-muted-foreground">Add up to 5 high-quality images of your product</p>
+                <p className="text-sm text-muted-foreground">
+                  Add up to 5 high-quality images of your product
+                </p>
               </CardHeader>
               <CardContent>
                 <ImageUpload
                   type="product"
                   maxFiles={5}
                   maxSizeMB={10}
-                  acceptedTypes={['image/jpeg', 'image/jpg', 'image/png', 'image/webp']}
+                  acceptedTypes={[
+                    "image/jpeg",
+                    "image/jpg",
+                    "image/png",
+                    "image/webp",
+                  ]}
                   onUploadComplete={(images) => {
-                    const imageUrls = images.map(img => img.url)
-                    setFormData({ ...formData, images: imageUrls })
-                    toast.success(`${images.length} image(s) uploaded successfully`)
+                    const imageUrls = images.map((img) => img.url);
+                    setFormData({ ...formData, images: imageUrls });
+                    toast.success(
+                      `${images.length} image(s) uploaded successfully`
+                    );
                   }}
                   onUploadError={(error) => {
-                    toast.error(`Upload failed: ${error}`)
+                    toast.error(`Upload failed: ${error}`);
                   }}
                 />
               </CardContent>
@@ -380,16 +443,19 @@ function SellProductPageContent() {
           <DialogHeader>
             <DialogTitle>Confirm Product Listing</DialogTitle>
             <DialogDescription>
-              Are you sure you want to list this product? Once published, it will be visible to all buyers on the
-              marketplace and you'll start receiving orders.
+              Are you sure you want to list this product? Once published, it
+              will be visible to all buyers on the marketplace and you'll start
+              receiving orders.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogCancel>Cancel</DialogCancel>
-            <DialogAction onClick={handleConfirmedSubmit}>List Product</DialogAction>
+            <DialogAction onClick={handleConfirmedSubmit}>
+              List Product
+            </DialogAction>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
