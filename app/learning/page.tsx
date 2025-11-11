@@ -1,4 +1,3 @@
-import { SimpleHeader } from "@/components/layout/simple-header";
 import { PageTransition } from "@/components/ui/page-transition";
 import { getCurrentUser } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
@@ -15,8 +14,6 @@ export default async function LearningPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader />
-
       <PageTransition>
         {/* Hero Header */}
         <div className="bg-gradient-to-r from-green-600 to-green-800 text-white">

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { authFetch } from "@/lib/auth-client"
 
 export interface FeaturedProduct {
   _id: string
@@ -36,8 +35,8 @@ export function useFeaturedProductsData(limit: number = 12) {
       console.log("=== FEATURED PRODUCTS HOOK ===")
       console.log("Fetching featured products...")
       
-      // Fetch active products from marketplace
-      const res = await authFetch(`/api/marketplace/products?status=active&limit=${limit}&sortBy=created_at`)
+      // Use regular fetch for public access (no authentication required)
+      const res = await fetch(`/api/marketplace/products?status=active&limit=${limit}&sortBy=created_at`)
       
       console.log("Featured products response status:", res.status)
       

@@ -28,6 +28,20 @@ export async function triggerPrivateMessage(
   await pusherServer.trigger(channelName, event, data)
 }
 
+// Helper function to get notification channel name for a user
+export function getNotificationChannelName(userId: string): string {
+  return `private-notifications-${userId}`
+}
+
+// Helper function to trigger a notification to a user
+export async function triggerNotification(
+  userId: string,
+  notification: any
+) {
+  const channelName = getNotificationChannelName(userId)
+  await pusherServer.trigger(channelName, 'new-notification', notification)
+}
+
 // Pusher authentication endpoint handler
 export async function authenticateChannel(socketId: string, channel: string) {
   try {
@@ -36,11 +50,19 @@ export async function authenticateChannel(socketId: string, channel: string) {
       throw new Error('Unauthorized')
     }
 
-    // For private channels, verify the user is part of the conversation
+    // For private chat channels, verify the user is part of the conversation
     if (channel.startsWith('private-chat-')) {
       const userIds = channel.replace('private-chat-', '').split('-')
       if (!userIds.includes(user.id)) {
         throw new Error('Unauthorized to access this channel')
+      }
+    }
+
+    // For notification channels, verify the user owns the channel
+    if (channel.startsWith('private-notifications-')) {
+      const channelUserId = channel.replace('private-notifications-', '')
+      if (channelUserId !== user.id) {
+        throw new Error('Unauthorized to access this notification channel')
       }
     }
 

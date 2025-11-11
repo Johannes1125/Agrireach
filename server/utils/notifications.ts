@@ -2,6 +2,7 @@ import { connectToDatabase } from "../lib/mongodb";
 import { Notification } from "../models/Notification";
 import { User } from "../models/User";
 import { Types } from "mongoose";
+import { triggerNotification } from "../../lib/pusher-server";
 
 export interface CreateNotificationData {
   user_id: string | Types.ObjectId;
@@ -25,6 +26,23 @@ export async function createNotification(data: CreateNotificationData) {
       action_url: data.action_url,
       read: false,
     });
+
+    // Trigger real-time notification via Pusher
+    try {
+      await triggerNotification(data.user_id.toString(), {
+        id: notification._id.toString(),
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        priority: notification.priority,
+        action_url: notification.action_url,
+        read: notification.read,
+        created_at: notification.created_at,
+      });
+    } catch (pusherError) {
+      // Don't fail notification creation if Pusher fails
+      console.error("Failed to trigger Pusher notification:", pusherError);
+    }
 
     return notification;
   } catch (error) {

@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { OpportunityBoard } from "@/components/opportunities/opportunity-board";
 import { OpportunityFilters } from "@/components/opportunities/opportunity-filters";
 import { OpportunityHeader } from "@/components/opportunities/opportunity-header";
-import { SimpleHeader } from "@/components/layout/simple-header";
 import { getCurrentUser } from "@/lib/auth-server";
 import { JobSearchProvider } from "@/contexts/job-search-context";
 
@@ -15,17 +14,6 @@ export default async function OpportunitiesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader
-        user={{
-          id: user.id,
-          name: user.full_name,
-          email: user.email,
-          role: (Array.isArray(user.role) ? user.role[0] : user.role) as "worker" | "recruiter" | "buyer",
-          avatar: user.avatar_url || "",
-          location: user.location || "Not specified",
-        }}
-      />
-
       <JobSearchProvider>
         <OpportunityHeader />
 

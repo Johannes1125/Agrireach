@@ -1,14 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, Search, MoreHorizontal, Shield, Ban, CheckCircle, AlertTriangle, Settings } from "lucide-react"
+import { ArrowLeft, Search, Shield, Ban, CheckCircle, AlertTriangle, Settings, XCircle, BadgeCheck, Clock3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Link from "next/link"
 import { toast } from "sonner"
@@ -27,7 +26,7 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [roleFilter, setRoleFilter] = useState("all")
 
-  const { users, loading, error } = useAdminUsers({
+  const { users, loading, error, refetch } = useAdminUsers({
     status: statusFilter,
     role: roleFilter,
     search: searchTerm,
@@ -38,10 +37,27 @@ export default function AdminUsersPage() {
 
   const handleUserAction = async (userId: string, action: string) => {
     try {
-      const mapped = action === 'verify' || action === 'unverify' || action === 'suspend' || action === 'unsuspend' || action === 'ban' ? action : null
+      if (action === 'view') {
+        window.open(`/profile?user=${userId}`, '_blank')
+        return
+      }
+      if (action === 'edit') {
+        // TODO: Navigate to edit user page or open edit modal
+        toast.info('Edit user functionality coming soon')
+        return
+      }
+      // Map 'activate' to 'unsuspend' for the API
+      const actionMap: Record<string, string> = {
+        'activate': 'unsuspend',
+        'approve_verification': 'verify',
+        'reject_verification': 'reject',
+      }
+      const mappedAction = actionMap[action] || action
+      const mapped = mappedAction === 'verify' || mappedAction === 'unverify' || mappedAction === 'reject' || mappedAction === 'suspend' || mappedAction === 'unsuspend' || mappedAction === 'ban' ? mappedAction : null
       if (!mapped) return toast.info('Unsupported action')
-      await adminUserAction(userId, mapped as any)
+      await adminUserAction(userId, mapped as "verify" | "unverify" | "reject" | "suspend" | "unsuspend" | "ban" | "role")
       toast.success('Updated')
+      refetch()
     } catch (e: any) {
       toast.error(e.message || 'Failed')
     }
@@ -201,8 +217,9 @@ export default function AdminUsersPage() {
                     <TableHead className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-xs min-w-[300px]">User</TableHead>
                     <TableHead className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-xs min-w-[120px]">Role</TableHead>
                     <TableHead className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-xs min-w-[100px]">Status</TableHead>
+                    <TableHead className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-xs min-w-[140px]">Verification</TableHead>
                     <TableHead className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-xs min-w-[120px]">Trust Score</TableHead>
-                    <TableHead className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-xs min-w-[120px]">Last Active</TableHead>
+                    <TableHead className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-xs min-w-[140px]">Last Active</TableHead>
                     <TableHead className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-xs min-w-[100px]">Reports</TableHead>
                     <TableHead className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-xs min-w-[100px]">Actions</TableHead>
                   </TableRow>
@@ -210,19 +227,19 @@ export default function AdminUsersPage() {
                 <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8">
                       Loading users...
                     </TableCell>
                   </TableRow>
                 ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-red-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-red-500">
                       Error: {error}
                     </TableCell>
                   </TableRow>
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8">
                       No users found
                     </TableCell>
                   </TableRow>
@@ -287,6 +304,40 @@ export default function AdminUsersPage() {
                         <span className="font-medium capitalize text-gray-700">{user.status}</span>
                       </div>
                     </TableCell>
+                    <TableCell className="px-6 py-4 min-w-[140px]">
+                      {(() => {
+                        const status = (user.verification_status as string) || (user.verified ? "verified" : "none")
+                        switch (status) {
+                          case "verified":
+                            return (
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1">
+                                <BadgeCheck className="h-3 w-3" />
+                                Verified
+                              </Badge>
+                            )
+                          case "pending":
+                            return (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 flex items-center gap-1">
+                                <Clock3 className="h-3 w-3" />
+                                Pending Review
+                              </Badge>
+                            )
+                          case "rejected":
+                            return (
+                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                Rejected
+                              </Badge>
+                            )
+                          default:
+                            return (
+                              <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">
+                                Not Verified
+                              </Badge>
+                            )
+                        }
+                      })()}
+                    </TableCell>
                       <TableCell className="px-6 py-4 min-w-[120px]">
                         {user.trust_score > 0 ? (
                         <div className="flex items-center gap-2">
@@ -303,50 +354,79 @@ export default function AdminUsersPage() {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="px-6 py-4 min-w-[120px] text-sm text-gray-600">
-                      {user.last_login ? new Date(user.last_login).toLocaleDateString() : "Never"}
+                    <TableCell className="px-6 py-4 min-w-[140px] text-sm text-gray-600">
+                      {user.last_login ? new Date(user.last_login).toLocaleString() : "Never"}
                     </TableCell>
                       <TableCell className="px-6 py-4 min-w-[100px]">
                         <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-200">
                           -
                         </Badge>
                       </TableCell>
-                      <TableCell className="px-6 py-4 min-w-[100px]">
-                        <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100">
-                            <MoreHorizontal className="h-4 w-4" />
+                      <TableCell className="px-3 sm:px-6 py-4">
+                        <div className="flex flex-row flex-wrap items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUserAction(user._id, "view")}
+                            className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center"
+                          >
+                            <Search className="h-4 w-4" />
+                            <span className="sr-only">View Profile</span>
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem onClick={() => handleUserAction(user._id, "view")}>
-                            <Search className="mr-2 h-4 w-4" />
-                            View Profile
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUserAction(user._id, "edit")}>
-                            <Settings className="mr-2 h-4 w-4" />
-                            Edit User
-                          </DropdownMenuItem>
-                          {user.status === "active" ? (
-                            <DropdownMenuItem 
-                              onClick={() => handleUserAction(user._id, "suspend")}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Ban className="mr-2 h-4 w-4" />
-                              Suspend User
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem 
-                              onClick={() => handleUserAction(user._id, "activate")}
-                              className="text-green-600 focus:text-green-600"
-                            >
-                              <CheckCircle className="mr-2 h-4 w-4" />
-                              Activate User
-                            </DropdownMenuItem>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUserAction(user._id, "edit")}
+                            className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center"
+                          >
+                            <Settings className="h-4 w-4" />
+                            <span className="sr-only">Edit User</span>
+                          </Button>
+                          {(user.verification_status === "pending") && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUserAction(user._id, "approve_verification")}
+                                className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                                <span className="sr-only">Approve Verification</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleUserAction(user._id, "reject_verification")}
+                                className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                              >
+                                <XCircle className="h-4 w-4" />
+                                <span className="sr-only">Reject Verification</span>
+                              </Button>
+                            </>
                           )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                          {user.status === "active" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUserAction(user._id, "suspend")}
+                              className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                            >
+                              <Ban className="h-4 w-4" />
+                              <span className="sr-only">Suspend User</span>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUserAction(user._id, "activate")}
+                              className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="sr-only">Activate User</span>
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                   </TableRow>
                   ))
                 )}

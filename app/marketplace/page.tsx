@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Grid, List, ShoppingCart } from "lucide-react";
+import { Search, Grid, List, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SimpleHeader } from "@/components/layout/simple-header";
 import { useMarketplaceData } from "@/hooks/use-marketplace-data";
 import { useAuth } from "@/hooks/use-auth";
 import { authFetch } from "@/lib/auth-client";
@@ -41,6 +40,7 @@ export default function MarketplacePage() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [cartLoading, setCartLoading] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Use debouncedSearch to avoid firing a request on every keystroke
   useEffect(() => {
@@ -48,10 +48,21 @@ export default function MarketplacePage() {
     return () => clearTimeout(t);
   }, [searchTerm]);
 
-  const { products, categories, loading, error, total } = useMarketplaceData({
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, selectedCategory, sortBy]);
+
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
+  const { products, categories, loading, error, total, pages } = useMarketplaceData({
     search: debouncedSearch || undefined,
     category: selectedCategory || undefined,
     sortBy,
+    page: currentPage,
     limit: 20,
   });
 
@@ -155,22 +166,6 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader
-        user={
-          user
-            ? {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                // cast role to expected union
-                role: (user.role as unknown) as "worker" | "recruiter" | "buyer",
-                avatar: user.avatar || "",
-                location: user.location || "Not specified",
-              }
-            : undefined
-        }
-      />
-
       <PageTransition>
 
       {/* Header */}
@@ -395,6 +390,63 @@ export default function MarketplacePage() {
             <p className="text-muted-foreground">
               No products found matching your criteria.
             </p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {pages > 1 && !loading && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 sm:mt-8 pt-6 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {products.length > 0 ? (currentPage - 1) * 20 + 1 : 0} to{" "}
+              {Math.min(currentPage * 20, total)} of {total} products
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="gap-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(pages, 7) }, (_, i) => {
+                  let pageNum: number;
+                  if (pages <= 7) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 4) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= pages - 3) {
+                    pageNum = pages - 6 + i;
+                  } else {
+                    pageNum = currentPage - 3 + i;
+                  }
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className="min-w-[2.5rem]"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.min(pages, prev + 1))}
+                disabled={currentPage === pages}
+                className="gap-1"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
       </div>

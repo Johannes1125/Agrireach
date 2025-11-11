@@ -20,6 +20,11 @@ export interface IUser extends Document {
   skills?: any; // JSONB equivalent
   verified: boolean;
   trust_score: number;
+  verification_status: "none" | "pending" | "verified" | "rejected";
+  verification_message?: string;
+  verification_documents?: string[];
+  verification_requested_at?: Date;
+  verification_reviewed_at?: Date;
 
   email_verified: boolean;
   status: UserStatus;
@@ -50,6 +55,11 @@ const UserSchema = new Schema<IUser>(
     skills: { type: Schema.Types.Mixed }, // JSONB equivalent
     verified: { type: Boolean, default: false },
     trust_score: { type: Number, default: 0 },
+    verification_status: { type: String, enum: ["none", "pending", "verified", "rejected"], default: "none" },
+    verification_message: { type: String },
+    verification_documents: { type: [String], default: [] },
+    verification_requested_at: { type: Date },
+    verification_reviewed_at: { type: Date },
 
     email_verified: { type: Boolean, default: false },
     status: { type: String, default: "active", enum: ["active", "suspended", "banned"] },

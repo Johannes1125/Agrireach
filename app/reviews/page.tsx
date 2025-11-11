@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { SimpleHeader } from "@/components/layout/simple-header";
 import { useAuth } from "@/hooks/use-auth";
 import { useReviewsData } from "@/hooks/use-reviews-data";
 import { useTopRatedData } from "@/hooks/use-top-rated-data";
@@ -139,21 +138,6 @@ export default function ReviewsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader
-        user={
-          user
-            ? {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                avatar: user.avatar || "",
-                location: user.location || "Not specified",
-              }
-            : undefined
-        }
-      />
-
       <PageTransition>
       {/* Header */}
       <div className="bg-background border-b">

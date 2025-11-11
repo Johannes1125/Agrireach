@@ -48,7 +48,9 @@ import {
   AlertTriangle,
   Moon,
   Plus,
+  CheckCircle,
   X,
+  Clock3,
 } from "lucide-react";
 
 interface SettingsUser {
@@ -94,6 +96,8 @@ interface SettingsUser {
       dataRetention: number;
     };
   };
+  verificationStatus?: "none" | "pending" | "verified" | "rejected";
+  verificationRequestedAt?: string;
 }
 
 interface SettingsContentProps {
@@ -126,6 +130,37 @@ export function SettingsContent({ user }: SettingsContentProps) {
     level: number;
     category: string;
   }>>([]);
+  const [verificationStatus, setVerificationStatus] = useState<"none" | "pending" | "verified" | "rejected">(
+    user.verificationStatus || (user.verified ? "verified" : "none")
+  );
+  const [verificationRequestedAt, setVerificationRequestedAt] = useState<string | undefined>(user.verificationRequestedAt);
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [isRequestingVerification, setIsRequestingVerification] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadVerificationStatus = async () => {
+      try {
+        const res = await authFetch("/api/users/verification");
+        if (!res.ok) return;
+        const json = await res.json().catch(() => ({}));
+        if (!mounted) return;
+        const data = json?.data || {};
+        if (data.status) {
+          setVerificationStatus(data.status);
+        }
+        if (data.requestedAt) {
+          setVerificationRequestedAt(data.requestedAt);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    loadVerificationStatus();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Load skills from profile when available - normalize to new format
   useEffect(() => {
@@ -187,6 +222,51 @@ export function SettingsContent({ user }: SettingsContentProps) {
         "Save Failed",
         e.message || "Unable to save skills"
       );
+    }
+  };
+
+  const handleVerificationRequest = async () => {
+    if (verificationStatus === "pending") {
+      notifications.showInfo("Request Pending", "Your verification request is already pending review.");
+      return;
+    }
+    if (formData.verified) {
+      notifications.showInfo("Already Verified", "Your account is already verified.");
+      return;
+    }
+
+    try {
+      setIsRequestingVerification(true);
+      const res = await authFetch("/api/users/verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: verificationMessage,
+        }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(result?.message || "Unable to submit verification request.");
+      }
+      const data = result?.data || {};
+      setVerificationStatus((data.status as typeof verificationStatus) || "pending");
+      if (data.requestedAt) {
+        setVerificationRequestedAt(data.requestedAt);
+      } else {
+        setVerificationRequestedAt(new Date().toISOString());
+      }
+      setVerificationMessage("");
+      notifications.showSuccess(
+        "Verification Requested",
+        "We received your verification request. Our team will review it soon."
+      );
+    } catch (e: any) {
+      notifications.showError(
+        "Request Failed",
+        e?.message || "Unable to submit verification request."
+      );
+    } finally {
+      setIsRequestingVerification(false);
     }
   };
 
@@ -267,9 +347,29 @@ export function SettingsContent({ user }: SettingsContentProps) {
           body: JSON.stringify(updateData),
         });
 
+        const result = await response.json();
+
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || "Failed to save profile");
+          throw new Error(result.message || "Failed to save profile");
+        }
+
+        // Update formData with the response from the server
+        if (result.data?.user) {
+          const updatedUser = result.data.user;
+          setFormData((prev) => ({
+            ...prev,
+            name: updatedUser.full_name || prev.name,
+            bio: updatedUser.bio ?? prev.bio,
+            location: updatedUser.location || prev.location,
+            phone: updatedUser.phone ?? prev.phone,
+          }));
+          // Update userLocation if coordinates were updated
+          if (updatedUser.location_coordinates) {
+            setUserLocation((prev) => ({
+              ...prev,
+              coordinates: updatedUser.location_coordinates,
+            }));
+          }
         }
 
         notifications.showSuccess(
@@ -422,50 +522,50 @@ export function SettingsContent({ user }: SettingsContentProps) {
   };
 
   return (
-    <Tabs defaultValue="profile" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-6">
-        <TabsTrigger value="profile" className="flex items-center gap-2">
-          <Bell className="h-4 w-4" />
-          Profile
+    <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
+      <TabsList className="grid w-full grid-cols-3 grid-rows-2 gap-2 h-auto sm:grid-cols-6 sm:grid-rows-1">
+        <TabsTrigger value="profile" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+          <Bell className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+          <span>Profile</span>
         </TabsTrigger>
-        <TabsTrigger value="notifications" className="flex items-center gap-2">
-          <Shield className="h-4 w-4" />
-          Notifications
+        <TabsTrigger value="notifications" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+          <Shield className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+          <span>Notifications</span>
         </TabsTrigger>
-        <TabsTrigger value="privacy" className="flex items-center gap-2">
-          <CreditCard className="h-4 w-4" />
-          Privacy
+        <TabsTrigger value="privacy" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+          <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+          <span>Privacy</span>
         </TabsTrigger>
-        <TabsTrigger value="business" className="flex items-center gap-2">
-          <Briefcase className="h-4 w-4" />
-          Business
+        <TabsTrigger value="business" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+          <Briefcase className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+          <span>Business</span>
         </TabsTrigger>
-        <TabsTrigger value="billing" className="flex items-center gap-2">
-          <CreditCard className="h-4 w-4" />
-          Billing
+        <TabsTrigger value="billing" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+          <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+          <span>Billing</span>
         </TabsTrigger>
-        <TabsTrigger value="account" className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4" />
-          Account
+        <TabsTrigger value="account" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+          <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+          <span>Account</span>
         </TabsTrigger>
       </TabsList>
 
       {/* Profile Settings */}
-      <TabsContent value="profile" className="space-y-6">
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
+      <TabsContent value="profile" className="space-y-4 sm:space-y-6">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* Basic Information */}
             <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="font-heading text-base sm:text-lg">
                   Basic Information
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm">
                   Update your personal details and contact information
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
+              <CardContent className="space-y-4 p-4 sm:p-6">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <Input
@@ -530,7 +630,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   />
                 </div>
 
-                <Button onClick={() => handleSave("profile")} className="w-fit">
+                <Button onClick={() => handleSave("profile")} className="w-full sm:w-fit">
                   <Save className="mr-2 h-4 w-4" />
                   Save Changes
                 </Button>
@@ -539,15 +639,15 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
             {/* Role Selection */}
             <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">Platform Roles</CardTitle>
-                <CardDescription>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="font-heading text-base sm:text-lg">Platform Roles</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   Select all roles that apply to you - you can have multiple
                   roles at once
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
+              <CardContent className="space-y-4 p-4 sm:p-6">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {(["worker", "recruiter", "buyer"] as const).map((role) => {
                     const isSelected = selectedRoles.includes(role);
                     return (
@@ -595,7 +695,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 <Button
                   onClick={handleSaveRoles}
                   disabled={isSavingRoles || selectedRoles.length === 0}
-                  className="w-fit"
+                  className="w-full sm:w-fit"
                 >
                   <Save className="mr-2 h-4 w-4" />
                   {isSavingRoles ? "Saving..." : "Save Role Changes"}
@@ -612,9 +712,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
               return isWorker;
             })() && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="font-heading">My Skills</CardTitle>
-                  <CardDescription>
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="font-heading text-base sm:text-lg">My Skills</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
                     Add your skills with proficiency levels to get better job matches. 
                     Jobs matching your skills will be prioritized based on your skill levels.
                   </CardDescription>
@@ -628,7 +728,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                           Your Skills ({workerSkills.length})
                         </Label>
                       </div>
-                      <div className="grid gap-3 md:grid-cols-2">
+                      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                         {workerSkills.map((skill, index) => (
                           <SkillCard
                             key={`${skill.name}-${index}`}
@@ -672,13 +772,13 @@ export function SettingsContent({ user }: SettingsContentProps) {
           </div>
 
           {/* Profile Picture */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">Profile Picture</CardTitle>
-                <CardDescription>Upload a professional photo</CardDescription>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="font-heading text-base sm:text-lg">Profile Picture</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Upload a professional photo</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
                 <div className="flex flex-col items-center gap-4">
                   <Avatar className="h-32 w-32">
                     <AvatarImage
@@ -732,22 +832,106 @@ export function SettingsContent({ user }: SettingsContentProps) {
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="font-heading text-base sm:text-lg">Account Verification</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
+                  Verified profiles build more trust with employers and buyers.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {(() => {
+                    switch (verificationStatus) {
+                      case "verified":
+                        return (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Verified
+                          </Badge>
+                        )
+                      case "pending":
+                        return (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 flex items-center gap-1">
+                            <Clock3 className="h-3 w-3" />
+                            Pending Review
+                          </Badge>
+                        )
+                      case "rejected":
+                        return (
+                          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            Rejected
+                          </Badge>
+                        )
+                      default:
+                        return (
+                          <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">
+                            Not Verified
+                          </Badge>
+                        )
+                    }
+                  })()}
+                  {verificationRequestedAt && verificationStatus === "pending" && (
+                    <span className="text-xs text-muted-foreground">
+                      Requested on {new Date(verificationRequestedAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+
+                {verificationStatus === "verified" ? (
+                  <p className="text-sm text-muted-foreground">
+                    Your account is verified. Thanks for building trust in the community!
+                  </p>
+                ) : verificationStatus === "pending" ? (
+                  <p className="text-sm text-muted-foreground">
+                    Your request is under review. We'll notify you once it's approved.
+                  </p>
+                ) : (
+                  <>
+                    {verificationStatus === "rejected" && (
+                      <p className="text-sm text-red-600">
+                        Your previous request was not approved. You can submit another request below.
+                      </p>
+                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="verification-message">Message to reviewers (optional)</Label>
+                      <Textarea
+                        id="verification-message"
+                        placeholder="Share any supporting details for verification..."
+                        value={verificationMessage}
+                        onChange={(e) => setVerificationMessage(e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleVerificationRequest}
+                      disabled={isRequestingVerification}
+                      className="w-full sm:w-fit"
+                    >
+                      {isRequestingVerification ? "Submitting..." : "Request Verification"}
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </TabsContent>
 
       {/* Notification Settings */}
-      <TabsContent value="notifications" className="space-y-6">
+      <TabsContent value="notifications" className="space-y-4 sm:space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="font-heading text-base sm:text-lg">
               Notification Preferences
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               Choose how you want to be notified about important updates
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
             <div className="space-y-4">
               <h4 className="font-medium">Communication Channels</h4>
               <div className="space-y-3">
@@ -914,7 +1098,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
             <Button
               onClick={() => handleSave("notification")}
-              className="w-fit"
+              className="w-full sm:w-fit"
             >
               <Save className="mr-2 h-4 w-4" />
               Save Preferences
@@ -924,15 +1108,15 @@ export function SettingsContent({ user }: SettingsContentProps) {
       </TabsContent>
 
       {/* Privacy Settings */}
-      <TabsContent value="privacy" className="space-y-6">
+      <TabsContent value="privacy" className="space-y-4 sm:space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Privacy Settings</CardTitle>
-            <CardDescription>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="font-heading text-base sm:text-lg">Privacy Settings</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               Control who can see your information and how it's used
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="profile-visibility">Profile Visibility</Label>
@@ -1051,7 +1235,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               </div>
             </div>
 
-            <Button onClick={() => handleSave("privacy")} className="w-fit">
+            <Button onClick={() => handleSave("privacy")} className="w-full sm:w-fit">
               <Save className="mr-2 h-4 w-4" />
               Save Privacy Settings
             </Button>
@@ -1060,17 +1244,17 @@ export function SettingsContent({ user }: SettingsContentProps) {
       </TabsContent>
 
       {/* Billing Settings */}
-      <TabsContent value="billing" className="space-y-6">
+      <TabsContent value="billing" className="space-y-4 sm:space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="font-heading text-base sm:text-lg">
               Billing & Subscription
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               Manage your payment methods and subscription
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
             <div className="p-4 bg-muted/50 rounded-lg">
               <h4 className="font-medium mb-2">Current Plan: Free</h4>
               <p className="text-sm text-muted-foreground mb-4">
@@ -1105,16 +1289,16 @@ export function SettingsContent({ user }: SettingsContentProps) {
       </TabsContent>
 
       {/* Business Settings */}
-      <TabsContent value="business" className="space-y-6">
+      <TabsContent value="business" className="space-y-4 sm:space-y-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Business Information</CardTitle>
-            <CardDescription>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="font-heading text-base sm:text-lg">Business Information</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               Manage your business profile and company details
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div>
                 <Label htmlFor="company-name">Company Name</Label>
                 <Input
@@ -1167,7 +1351,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div>
                 <Label htmlFor="business-type">Business Type</Label>
                 <Select
@@ -1327,7 +1511,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div>
                 <Label htmlFor="business-registration">
                   Business Registration Number
@@ -1369,7 +1553,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               </div>
             </div>
 
-            <Button onClick={() => handleSave("business")} className="w-fit">
+            <Button onClick={() => handleSave("business")} className="w-full sm:w-fit">
               <Save className="mr-2 h-4 w-4" />
               Save Business Information
             </Button>
@@ -1377,13 +1561,13 @@ export function SettingsContent({ user }: SettingsContentProps) {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Business Logo</CardTitle>
-            <CardDescription>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="font-heading text-base sm:text-lg">Business Logo</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               Upload your company logo for professional branding
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6 pt-0">
             <ImageUpload
               type="business"
               maxFiles={1}
@@ -1418,19 +1602,19 @@ export function SettingsContent({ user }: SettingsContentProps) {
       </TabsContent>
 
       {/* Account Settings */}
-      <TabsContent value="account" className="space-y-6">
+      <TabsContent value="account" className="space-y-4 sm:space-y-6">
         {/* Appearance/Dark Mode card */}
         <Card>
-          <CardHeader>
-            <CardTitle className="font-heading flex items-center gap-2">
-              <Moon className="h-5 w-5" />
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="font-heading flex items-center gap-2 text-base sm:text-lg">
+              <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
               Appearance
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               Customize how AgriReach looks on your device
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="dark-mode">Dark Mode</Label>
@@ -1541,13 +1725,13 @@ export function SettingsContent({ user }: SettingsContentProps) {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Account Security</CardTitle>
-            <CardDescription>
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="font-heading text-base sm:text-lg">Account Security</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
               Manage your account security and data preferences
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 {/* Two-Factor Authentication removed */}
@@ -1586,7 +1770,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               </div>
             </div>
 
-            <Button onClick={() => handleSave("account")} className="w-fit">
+            <Button onClick={() => handleSave("account")} className="w-full sm:w-fit">
               <Save className="mr-2 h-4 w-4" />
               Save Security Settings
             </Button>
@@ -1594,15 +1778,15 @@ export function SettingsContent({ user }: SettingsContentProps) {
         </Card>
 
         <Card className="border-destructive/50">
-          <CardHeader>
-            <CardTitle className="font-heading text-destructive">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="font-heading text-destructive text-base sm:text-lg">
               Danger Zone
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs sm:text-sm">
               Irreversible actions that affect your account
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
             <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg">
               <div>
                 <h4 className="font-medium">Delete Account</h4>

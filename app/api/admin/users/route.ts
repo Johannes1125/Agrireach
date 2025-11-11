@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
   const [users, total] = await Promise.all([
     User.find(filter)
-      .select("full_name email role status verified trust_score last_login created_at avatar_url")
+      .select("full_name email role status verified trust_score last_login created_at avatar_url verification_status verification_requested_at verification_reviewed_at verification_message")
       .sort({ created_at: -1 })
       .skip(skip)
       .limit(limit)

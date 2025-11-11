@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 import { authFetch } from "@/lib/auth-client"
 
 export interface AuthUser {
@@ -16,8 +17,18 @@ export interface AuthUser {
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const pathname = usePathname()
 
   useEffect(() => {
+    // Skip auth check on homepage and auth pages to avoid unnecessary API calls
+    const isAuthPage = pathname?.startsWith('/auth') || pathname?.startsWith('/admin/login')
+    const isLandingPage = pathname === '/'
+    
+    if (isAuthPage || isLandingPage) {
+      setLoading(false)
+      return
+    }
+
     let isMounted = true
 
     const fetchUser = async () => {
@@ -52,7 +63,7 @@ export function useAuth() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [pathname])
 
   return { user, loading }
 }

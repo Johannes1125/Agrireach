@@ -16,6 +16,7 @@ import { PageAnnouncer } from "@/components/accessibility/page-announcer";
 import { LoadingProvider } from "@/contexts/loading-context";
 import { LanguageProvider } from "@/contexts/language-context";
 import { TranslationProvider } from "@/contexts/TranslationProvider";
+import { SimpleHeader } from "@/components/layout/simple-header";
 import "./globals.css";
 
 const openSans = Open_Sans({
@@ -63,6 +64,7 @@ export default function RootLayout({
                   <LoadingProvider>
                     <GlobalAnnouncer />
                     <PageAnnouncer>
+                      <SimpleHeader />
                       <NotificationProvider>{children}</NotificationProvider>
                     </PageAnnouncer>
                     <AccessibilitySettings position="bottom-left" />

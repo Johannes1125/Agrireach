@@ -36,22 +36,38 @@ export async function getGoogleIdToken(): Promise<string> {
       },
       ux_mode: "popup",
       auto_select: false,
+      // FedCM migration: opt-in to FedCM prompt
+      use_fedcm_for_prompt: true,
+      itp_support: true,
     });
-    // Use prompt to trigger One Tap / Popup
-    window.google.accounts.id.prompt((notification: any) => {
-      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        // Fallback to a button if prompt not displayed
-        const div = document.createElement("div");
-        document.body.appendChild(div);
-        window.google.accounts.id.renderButton(div, { type: "standard", shape: "rectangular", theme: "outline", size: "large", text: "continue_with", logo_alignment: "left" });
-        const btn = div.querySelector("div[role=button]") as HTMLElement | null;
+    // Trigger the FedCM/One Tap prompt (no legacy moment callbacks)
+    window.google.accounts.id.prompt();
+
+    // Fallback: if nothing happens after a short delay, render a popup button and programmatically click it
+    const fallbackTimeout = window.setTimeout(() => {
+      if (resolved) return;
+      const holder = document.createElement("div");
+      holder.style.position = "fixed";
+      holder.style.left = "-9999px";
+      document.body.appendChild(holder);
+      try {
+        window.google!.accounts.id.renderButton(holder, {
+          type: "standard",
+          shape: "rectangular",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          logo_alignment: "left",
+        });
+        const btn = holder.querySelector("div[role=button]") as HTMLElement | null;
         if (btn) btn.click();
-        setTimeout(() => {
-          if (!resolved) reject(new Error("Google sign-in canceled"));
-          div.remove();
-        }, 15000);
-      }
-    });
+      } catch { /* ignore */ }
+      // Final safety timeout to reject if still unresolved
+      window.setTimeout(() => {
+        if (!resolved) reject(new Error("Google sign-in canceled or blocked"));
+        holder.remove();
+      }, 15000);
+    }, 3500);
   });
 }
 

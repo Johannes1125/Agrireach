@@ -14,6 +14,8 @@ export interface AdminUser {
   last_login?: string
   avatar_url?: string
   verified: boolean
+  verification_status?: "none" | "pending" | "verified" | "rejected"
+  verification_requested_at?: string
 }
 
 export interface AdminReport {
@@ -83,7 +85,7 @@ export function useAdminUsers(filters: { status?: string; role?: string; search?
   return { users, loading, error, total, refetch: () => setLoading(true) }
 }
 
-export async function adminUserAction(userId: string, action: "verify" | "unverify" | "suspend" | "unsuspend" | "ban" | "role", role?: string) {
+export async function adminUserAction(userId: string, action: "verify" | "unverify" | "reject" | "suspend" | "unsuspend" | "ban" | "role", role?: string) {
   const res = await authFetch(`/api/admin/users/${userId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

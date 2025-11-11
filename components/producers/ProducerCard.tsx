@@ -21,7 +21,7 @@ export default function ProducerCard({
 }: {
   producer: Producer;
   index?: number;
-  onViewProfileAction?: () => void;
+  onViewProfileAction?: (producer: Producer) => void;
 }) {
   const bgAlt =
     index !== undefined && index % 2 === 1 ? "bg-primary/5" : "bg-card";
@@ -33,28 +33,59 @@ export default function ProducerCard({
     .join("")
     .toUpperCase();
 
+  const handleCardClick = () => {
+    if (onViewProfileAction) {
+      onViewProfileAction(producer);
+    }
+  };
+
   return (
     <div
-      className={`rounded-lg border ${bgAlt} p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md`}
+      className={`rounded-lg border ${bgAlt} p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md cursor-pointer`}
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
+      aria-label={`View ${producer.name} profile`}
     >
       <div className="mb-3 flex items-start justify-between">
         <div className="flex items-start gap-3">
-          <div
-            className="grid h-10 w-10 place-items-center rounded-full text-sm font-semibold"
-            style={{ backgroundColor: accent }}
-            aria-hidden="true"
-          >
-            {initials}
-          </div>
+          {producer.avatar ? (
+            <img
+              src={producer.avatar}
+              alt={producer.name}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <div
+              className="grid h-10 w-10 place-items-center rounded-full text-sm font-semibold"
+              style={{ backgroundColor: accent }}
+              aria-hidden="true"
+            >
+              {initials}
+            </div>
+          )}
           <div>
-            <h3 className="text-lg font-semibold">{producer.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold">{producer.name}</h3>
+              {producer.verified && (
+                <Icons.CheckCircle className="h-4 w-4 text-primary" aria-label="Verified" />
+              )}
+            </div>
             <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
               <Icons.MapPin className="h-4 w-4" aria-hidden="true" />
               <span>{producer.location}</span>
             </div>
           </div>
         </div>
-        <BookmarkToggle id={producer.id} />
+        <div onClick={(e) => e.stopPropagation()}>
+          <BookmarkToggle id={producer.id} />
+        </div>
       </div>
 
       <div className="mb-3 flex items-center gap-2 text-sm">
@@ -78,7 +109,7 @@ export default function ProducerCard({
       <p className="mb-4 text-sm text-muted-foreground">
       </p>
 
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
         <ContactButton producerId={producer.id} producerName={producer.name} />
       </div>
     </div>

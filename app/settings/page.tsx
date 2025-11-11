@@ -11,7 +11,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container px-4 py-12">
+      <main className="container px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-12">
         <SettingsContent user={{
           id: user.id,
           name: user.full_name,
@@ -20,11 +20,13 @@ export default async function SettingsPage() {
           avatar: user.avatar_url,
           location: user.location || "Not specified",
           joinDate: new Date(user.created_at).toISOString().split('T')[0],
-          bio: "Experienced member of the AgriReach community.",
+          bio: user.bio || "",
           verified: user.verified,
           rating: user.trust_score / 20,
           completedJobs: 0,
           phone: user.phone || "",
+          verificationStatus: user.verification_status || (user.verified ? "verified" : "none"),
+          verificationRequestedAt: user.verification_requested_at ? new Date(user.verification_requested_at).toISOString() : undefined,
           preferences: {
             notifications: {
               email: true,

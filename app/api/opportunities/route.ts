@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
   ]);
   
   // Calculate match scores for each job using enhanced algorithm
-  const itemsWithMatchScores = items.map((item: any) => {
+  let itemsWithMatchScores = items.map((item: any) => {
     const normalizedRequirements = normalizeSkillRequirements(item.required_skills as any);
     const matchResult = calculateEnhancedMatchScore(normalizedRequirements, workerSkills);
     return {
@@ -70,10 +70,71 @@ export async function GET(req: NextRequest) {
     };
   });
   
-  // Sort by match score if requested (via sortBy query param)
+  // Always prioritize jobs with match scores > 0, then apply requested sort
   const sortBy = q.get("sortBy");
-  if (sortBy === "match" && workerSkills.length > 0) {
-    itemsWithMatchScores.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+  const matchThreshold = 0; // Jobs with any match (score > 0) are prioritized
+  
+  if (workerSkills.length > 0) {
+    // Separate jobs into matching and non-matching
+    const matchingJobs = itemsWithMatchScores.filter((item: any) => (item.matchScore || 0) > matchThreshold);
+    const nonMatchingJobs = itemsWithMatchScores.filter((item: any) => (item.matchScore || 0) <= matchThreshold);
+    
+    // Sort each group based on sortBy parameter
+    const sortFunction = (a: any, b: any) => {
+      if (sortBy === "match") {
+        return (b.matchScore || 0) - (a.matchScore || 0);
+      } else if (sortBy === "pay-high") {
+        const aPay = a.pay_rate || 0;
+        const bPay = b.pay_rate || 0;
+        return bPay - aPay;
+      } else if (sortBy === "pay-low") {
+        const aPay = a.pay_rate || 0;
+        const bPay = b.pay_rate || 0;
+        return aPay - bPay;
+      } else if (sortBy === "deadline") {
+        const aDate = new Date(a.start_date || a.created_at).getTime();
+        const bDate = new Date(b.start_date || b.created_at).getTime();
+        return aDate - bDate;
+      } else {
+        // newest first (default)
+        const aDate = new Date(a.created_at).getTime();
+        const bDate = new Date(b.created_at).getTime();
+        return bDate - aDate;
+      }
+    };
+    
+    matchingJobs.sort(sortFunction);
+    nonMatchingJobs.sort(sortFunction);
+    
+    // Combine: matching jobs first, then non-matching
+    itemsWithMatchScores = [...matchingJobs, ...nonMatchingJobs];
+  } else {
+    // No user skills, apply normal sorting
+    if (sortBy === "match") {
+      // Can't sort by match without skills, fall back to newest
+      itemsWithMatchScores.sort((a, b) => {
+        const aDate = new Date(a.created_at).getTime();
+        const bDate = new Date(b.created_at).getTime();
+        return bDate - aDate;
+      });
+    } else if (sortBy === "pay-high") {
+      itemsWithMatchScores.sort((a, b) => (b.pay_rate || 0) - (a.pay_rate || 0));
+    } else if (sortBy === "pay-low") {
+      itemsWithMatchScores.sort((a, b) => (a.pay_rate || 0) - (b.pay_rate || 0));
+    } else if (sortBy === "deadline") {
+      itemsWithMatchScores.sort((a, b) => {
+        const aDate = new Date(a.start_date || a.created_at).getTime();
+        const bDate = new Date(b.start_date || b.created_at).getTime();
+        return aDate - bDate;
+      });
+    } else {
+      // newest first (default)
+      itemsWithMatchScores.sort((a, b) => {
+        const aDate = new Date(a.created_at).getTime();
+        const bDate = new Date(b.created_at).getTime();
+        return bDate - aDate;
+      });
+    }
   }
   
   return jsonOk({ items: itemsWithMatchScores, total, page, pages: Math.ceil(total / limit) });

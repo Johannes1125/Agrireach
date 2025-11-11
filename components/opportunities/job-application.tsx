@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Heart, Share2, Flag, Send, CheckCircle, AlertCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Heart, Share2, Flag, Send, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -32,6 +33,7 @@ interface Job {
   title: string
   company: string
   skills: SkillRequirement[]
+  poster?: { id: string; name: string; location?: string }
 }
 
 interface JobApplicationProps {
@@ -42,6 +44,7 @@ export function JobApplication({ job }: JobApplicationProps) {
   const [coverLetter, setCoverLetter] = useState("")
   const [resumeUrl, setResumeUrl] = useState<string | undefined>(undefined)
   const [isApplied, setIsApplied] = useState(false)
+  const [isCheckingApplication, setIsCheckingApplication] = useState(true)
   const [selectedSkills, setSelectedSkills] = useState<Skill[]>([])
   const { user, loading } = useAuth()
   const { profile, loading: profileLoading } = useUserProfile()
@@ -56,6 +59,32 @@ export function JobApplication({ job }: JobApplicationProps) {
     () => calculateMatchScore(jobRequirements, workerSkills),
     [jobRequirements, workerSkills]
   )
+
+  // Check if user has already applied to this job
+  useEffect(() => {
+    const checkApplication = async () => {
+      if (!user || !job.id) {
+        setIsCheckingApplication(false)
+        return
+      }
+
+      try {
+        const res = await authFetch(`/api/opportunities/${job.id}/check-application`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.data?.hasApplied) {
+            setIsApplied(true)
+          }
+        }
+      } catch (error) {
+        console.error("Error checking application:", error)
+      } finally {
+        setIsCheckingApplication(false)
+      }
+    }
+
+    checkApplication()
+  }, [user, job.id])
 
   useEffect(() => {
     if (workerSkills.length === 0) {
@@ -82,9 +111,27 @@ export function JobApplication({ job }: JobApplicationProps) {
 
   const missingSkills = matchResult.details.filter((detail) => !detail.match)
 
+  // Get required skills that are missing
+  const missingRequiredSkills = jobRequirements
+    .filter((req) => req.required === true)
+    .filter((req) => {
+      const workerSkill = workerSkills.find(
+        (ws) => ws.name.toLowerCase() === req.name.toLowerCase()
+      )
+      if (!workerSkill) return true
+      if (req.min_level && workerSkill.level < req.min_level) return true
+      return false
+    })
+    .map((req) => req.name)
+
   const matchPercentage = matchResult.total > 0 ? matchResult.score : 0
 
   const canApply = user && user.roles?.includes("worker")
+  
+  // Check if current user is the job poster
+  const isJobPoster = user && job.poster && String(user.id) === String(job.poster.id)
+
+  const [showWarningDialog, setShowWarningDialog] = useState(false)
 
   const handleApply = async () => {
     if (!user) {
@@ -97,24 +144,49 @@ export function JobApplication({ job }: JobApplicationProps) {
       return
     }
 
+    // Show warning if missing required skills
+    if (missingRequiredSkills.length > 0) {
+      setShowWarningDialog(true)
+      return
+    }
+
+    await submitApplication()
+  }
+
+  const submitApplication = async () => {
     try {
+      const requestBody: any = {}
+      if (coverLetter && coverLetter.trim()) {
+        requestBody.cover_letter = coverLetter.trim()
+      }
+      if (resumeUrl && resumeUrl.trim()) {
+        requestBody.resume_url = resumeUrl.trim()
+      }
+      if (selectedSkills.length > 0) {
+        requestBody.highlighted_skills = selectedSkills.map((skill) => ({
+          name: skill.name,
+          level: skill.level,
+        }))
+      }
+
       const res = await authFetch(`/api/opportunities/${job.id}/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cover_letter: coverLetter,
-          resume_url: resumeUrl,
-          highlighted_skills: selectedSkills.map((skill) => ({
-            name: skill.name,
-            level: skill.level,
-          })),
-        }),
+        body: JSON.stringify(requestBody),
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
-        throw new Error(json?.message || "Failed to apply")
+        const errorMessage = json?.message || json?.error || `Failed to apply (${res.status})`
+        console.error("Application API error:", {
+          status: res.status,
+          statusText: res.statusText,
+          body: json
+        })
+        throw new Error(errorMessage)
       }
+      const result = await res.json().catch(() => ({}))
       setIsApplied(true)
+      setShowWarningDialog(false)
       toast.success("Application submitted successfully!")
       // Redirect to Opportunities page after a brief delay
       setTimeout(() => {
@@ -126,7 +198,7 @@ export function JobApplication({ job }: JobApplicationProps) {
     }
   }
 
-  if (loading || profileLoading) {
+  if (loading || profileLoading || isCheckingApplication) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -134,6 +206,11 @@ export function JobApplication({ job }: JobApplicationProps) {
         </CardContent>
       </Card>
     )
+  }
+
+  // Hide the entire component if user posted this job
+  if (isJobPoster) {
+    return null
   }
 
   if (!user) {
@@ -179,9 +256,9 @@ export function JobApplication({ job }: JobApplicationProps) {
       <Card>
         <CardContent className="p-6 text-center">
           <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-          <h3 className="font-heading text-lg font-semibold mb-2">Application Submitted!</h3>
+          <h3 className="font-heading text-lg font-semibold mb-2">Job Applied</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Your application has been sent to {job.company}. They typically respond within 2-3 business days.
+            You have already applied for this position at {job.company}. They typically respond within 2-3 business days.
           </p>
           <Button variant="outline" className="w-full bg-transparent">
             View Application Status
@@ -388,6 +465,50 @@ export function JobApplication({ job }: JobApplicationProps) {
           </ul>
         </CardContent>
       </Card>
+
+      {/* Warning Dialog for Missing Required Skills */}
+      <Dialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <AlertTriangle className="h-5 w-5" />
+              Missing Required Skills
+            </DialogTitle>
+            <DialogDescription>
+              You're about to apply for a job that requires skills you don't have yet.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              This job requires the following skills that are not in your profile:
+            </p>
+            <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+              <ul className="list-disc list-inside space-y-1">
+                {missingRequiredSkills.map((skill) => (
+                  <li key={skill} className="text-sm text-orange-800 dark:text-orange-200 font-medium">
+                    {skill}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              You can still apply, but your application may be less competitive. Consider updating your skills in{" "}
+              <Link href="/settings" className="text-primary hover:underline">
+                Settings
+              </Link>{" "}
+              before applying.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowWarningDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={submitApplication} className="bg-orange-600 hover:bg-orange-700">
+              Apply Anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

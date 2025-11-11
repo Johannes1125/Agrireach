@@ -38,6 +38,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (String(job.recruiter_id) === userId) {
     return jsonError("You cannot apply to your own job posting", 400);
   }
+
+  // Check if user has already applied
+  const existingApplication = await JobApplication.findOne({
+    opportunity_id: job._id,
+    worker_id: userId,
+  });
+  if (existingApplication) {
+    return jsonError("You have already applied for this job", 400);
+  }
   
   const validate = validateBody(ApplyJobSchema);
   const result = await validate(req);
@@ -58,12 +67,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return false;
   });
 
+  // Allow applications even without required skills
+  // Missing skills will still be visible to recruiters in match_details
   if (unmetRequired.length > 0) {
-    const missingList = unmetRequired.map((req) => req.name).join(", ");
-    return jsonError(
-      `You are missing required skills: ${missingList}. Update your skills in settings before applying.`,
-      400
-    );
+    console.log(`Application submitted with missing required skills: ${unmetRequired.map((req) => req.name).join(", ")}`);
   }
 
   const { highlighted_skills = [], ...applicationBody } = result.data;
@@ -85,28 +92,36 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         )
         .map((ws) => ({ name: ws.name, level: ws.level }));
 
-  const app = await JobApplication.create({
-    opportunity_id: job._id,
-    worker_id: userId,
-    ...applicationBody,
-    highlighted_skills: highlightedSkills,
-    match_score: matchResult.score,
-    match_details: matchResult.details,
-  });
-  await Job.findByIdAndUpdate(job._id, { $inc: { applications_count: 1 } });
+  try {
+    const app = await JobApplication.create({
+      opportunity_id: job._id,
+      worker_id: userId,
+      ...applicationBody,
+      highlighted_skills: highlightedSkills,
+      match_score: matchResult.score,
+      match_details: matchResult.details,
+    });
+    await Job.findByIdAndUpdate(job._id, { $inc: { applications_count: 1 } });
 
-  // Get applicant info and notify recruiter
-  const applicant = await User.findById(userId).select("full_name").lean();
-  if (applicant) {
-    await notifyJobApplication(
-      job.recruiter_id.toString(),
-      applicant.full_name,
-      job.title,
-      job._id.toString()
+    // Get applicant info and notify recruiter
+    const applicant = await User.findById(userId).select("full_name").lean();
+    if (applicant) {
+      await notifyJobApplication(
+        job.recruiter_id.toString(),
+        applicant.full_name,
+        job.title,
+        job._id.toString()
+      );
+    }
+
+    return jsonOk({ id: app._id });
+  } catch (error: any) {
+    console.error("Error creating job application:", error);
+    return jsonError(
+      error.message || "Failed to create application",
+      500
     );
   }
-
-  return jsonOk({ id: app._id });
 }
 
 

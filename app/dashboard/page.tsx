@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation"
-import { SimpleHeader } from "@/components/layout/simple-header"
 import { UnifiedDashboard } from "@/components/dashboard/unified-dashboard"
 import { getCurrentUser } from "@/lib/auth-server"
 
@@ -12,15 +11,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader user={{
-        id: user.id,
-        name: user.full_name,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar_url || "",
-        location: user.location || "Not specified",
-      }} />
-
       <main className="container px-4 py-8">
         <UnifiedDashboard user={{
           id: user.id,

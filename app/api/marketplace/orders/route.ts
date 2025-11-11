@@ -135,15 +135,14 @@ export async function POST(req: NextRequest) {
   // Remove from cart if exists
   await CartItem.deleteOne({ user_id: userId, product_id });
 
-  // Send notification to seller
-  await Notification.create({
-    user_id: product.seller_id,
-    type: 'new_order',
-    title: 'New Order Received',
-    message: `You have received a new order for ${product.title}`,
-    priority: 'high',
-    action_url: `/marketplace/orders/${order._id}`
-  });
+  // Send notification to seller using the helper function (includes Pusher trigger)
+  const buyer = await User.findById(userId).select('full_name').lean();
+  await notifyOrderPlaced(
+    product.seller_id.toString(),
+    product.title,
+    buyer?.full_name || 'A buyer',
+    order._id.toString()
+  );
 
   return jsonOk({ 
     order_id: order._id,

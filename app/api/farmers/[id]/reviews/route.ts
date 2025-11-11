@@ -5,7 +5,8 @@ import { validateBody } from "@/server/middleware/validate";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Farmer } from "@/server/models/Farmer";
 import { Review } from "@/server/models/Review";
-import { Notification } from "@/server/models/Notification";
+import { User } from "@/server/models/User";
+import { notifyReviewReceived } from "@/server/utils/notifications";
 import { z } from "zod";
 
 const CreateReviewSchema = z.object({
@@ -119,15 +120,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
   });
 
-  // Send notification to farmer
-  await Notification.create({
-    user_id: farmer.user_id._id,
-    type: 'new_review',
-    title: 'New Review Received',
-    message: `You received a ${result.data.rating}-star review`,
-    priority: 'low',
-    action_url: `/farmers/${farmer._id}`
-  });
+  // Send notification to farmer using the helper function (includes Pusher trigger)
+  const reviewer = await User.findById(decoded.sub).select('full_name').lean();
+  await notifyReviewReceived(
+    farmer.user_id._id.toString(),
+    reviewer?.full_name || 'A reviewer',
+    result.data.rating,
+    review._id.toString()
+  );
 
   const populatedReview = await Review.findById(review._id)
     .populate('reviewer_id', 'full_name avatar_url')

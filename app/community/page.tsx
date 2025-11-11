@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { SimpleHeader } from "@/components/layout/simple-header";
 import { useCommunityData } from "@/hooks/use-community-data";
 import { PageTransition } from "@/components/ui/page-transition";
 import { InlineLoader } from "@/components/ui/page-loader";
@@ -70,8 +69,6 @@ export default function CommunityPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader />
-
       <PageTransition>
       {/* Header */}
       <div className="bg-background border-b">

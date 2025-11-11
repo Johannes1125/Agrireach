@@ -21,6 +21,10 @@ export interface AuthUser {
   trust_score?: number
   status: string
   created_at?: Date
+  verification_status?: "none" | "pending" | "verified" | "rejected"
+  verification_requested_at?: Date
+  bio?: string
+  phone?: string
 }
 
 /**
@@ -63,6 +67,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       trust_score: user.trust_score,
       status: user.status,
       created_at: user.created_at,
+      verification_status: user.verification_status,
+      verification_requested_at: user.verification_requested_at,
+      bio: user.bio,
+      phone: user.phone,
     }
   } catch (error) {
     console.error("Auth error:", error)

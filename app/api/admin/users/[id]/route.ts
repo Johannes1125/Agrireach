@@ -19,8 +19,21 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const set: any = {}
   switch (action) {
-    case "verify": set.verified = true; break
-    case "unverify": set.verified = false; break
+    case "verify":
+      set.verified = true;
+      set.verification_status = "verified";
+      set.verification_reviewed_at = new Date();
+      break
+    case "unverify":
+      set.verified = false;
+      set.verification_status = "none";
+      set.verification_reviewed_at = new Date();
+      break
+    case "reject":
+      set.verified = false;
+      set.verification_status = "rejected";
+      set.verification_reviewed_at = new Date();
+      break
     case "suspend": set.status = "suspended"; break
     case "unsuspend": set.status = "active"; break
     case "ban": set.status = "banned"; break
@@ -30,7 +43,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const updated = await User.findByIdAndUpdate(params.id, { $set: set }, { new: true })
   if (!updated) return jsonError("User not found", 404)
-  return jsonOk({ user: { _id: updated._id, role: updated.role, status: updated.status, verified: updated.verified } })
+  return jsonOk({
+    user: {
+      _id: updated._id,
+      role: updated.role,
+      status: updated.status,
+      verified: updated.verified,
+      verification_status: updated.verification_status,
+    },
+  })
 }
 
 

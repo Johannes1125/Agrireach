@@ -4,11 +4,7 @@ import Pusher from 'pusher-js'
 export const pusherClient = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
   cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
   authEndpoint: '/api/pusher/auth',
-  auth: {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  },
+  // Don't set Content-Type - Pusher-js automatically uses form-urlencoded for auth requests
 })
 
 export function getPrivateChannelName(userId1: string, userId2: string): string {
@@ -23,5 +19,19 @@ export function subscribeToPrivateChannel(userId1: string, userId2: string) {
 
 export function unsubscribeFromPrivateChannel(userId1: string, userId2: string) {
   const channelName = getPrivateChannelName(userId1, userId2)
+  pusherClient.unsubscribe(channelName)
+}
+
+export function getNotificationChannelName(userId: string): string {
+  return `private-notifications-${userId}`
+}
+
+export function subscribeToNotificationChannel(userId: string) {
+  const channelName = getNotificationChannelName(userId)
+  return pusherClient.subscribe(channelName)
+}
+
+export function unsubscribeFromNotificationChannel(userId: string) {
+  const channelName = getNotificationChannelName(userId)
   pusherClient.unsubscribe(channelName)
 }

@@ -30,6 +30,7 @@ import { useJobSearch } from "@/contexts/job-search-context";
 import { InlineLoader } from "@/components/ui/page-loader";
 import { formatDate, formatRelativeTime } from "@/lib/utils";
 import { normalizeSkillRequirements, SKILL_LEVELS } from "@/lib/skills";
+import { useAuth } from "@/hooks/use-auth";
 
 export function OpportunityBoard() {
   const [sortBy, setSortBy] = useState("newest");
@@ -39,6 +40,7 @@ export function OpportunityBoard() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const { searchQuery, location } = useJobSearch();
+  const { user } = useAuth();
 
   useEffect(() => {
     const load = async () => {
@@ -73,6 +75,7 @@ export function OpportunityBoard() {
         companyLogo: j.company_logo || "/placeholder.svg",
         companyRating: 0,
         matchScore: j.matchScore || 0,
+        recruiterId: j.recruiter_id?._id ? String(j.recruiter_id._id) : String(j.recruiter_id || ""),
       }));
       setAllJobs(items);
       setLoading(false);
@@ -105,38 +108,45 @@ export function OpportunityBoard() {
       );
     }
 
-    // Apply sorting
-    if (sortBy === "match") {
-      filtered.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
-    } else if (sortBy === "pay-high") {
-      filtered.sort((a, b) => {
+    // Apply sorting - always prioritize matching jobs first
+    const matchThreshold = 0; // Jobs with any match (score > 0) are prioritized
+    
+    // Separate matching and non-matching jobs
+    const matchingJobs = filtered.filter((job) => (job.matchScore || 0) > matchThreshold);
+    const nonMatchingJobs = filtered.filter((job) => (job.matchScore || 0) <= matchThreshold);
+    
+    // Sort each group
+    const sortFunction = (a: any, b: any) => {
+      if (sortBy === "match") {
+        return (b.matchScore || 0) - (a.matchScore || 0);
+      } else if (sortBy === "pay-high") {
         const aPay = parseInt(a.payRange.replace(/[^\d]/g, "")) || 0;
         const bPay = parseInt(b.payRange.replace(/[^\d]/g, "")) || 0;
         return bPay - aPay;
-      });
-    } else if (sortBy === "pay-low") {
-      filtered.sort((a, b) => {
+      } else if (sortBy === "pay-low") {
         const aPay = parseInt(a.payRange.replace(/[^\d]/g, "")) || 0;
         const bPay = parseInt(b.payRange.replace(/[^\d]/g, "")) || 0;
         return aPay - bPay;
-      });
-    } else if (sortBy === "deadline") {
-      filtered.sort((a, b) => {
+      } else if (sortBy === "deadline") {
         const aDate = new Date(a.deadline).getTime();
         const bDate = new Date(b.deadline).getTime();
         return aDate - bDate;
-      });
-    } else {
-      // newest first (default)
-      filtered.sort((a, b) => {
+      } else {
+        // newest first (default)
         const aDate = new Date(a.postedDate).getTime();
         const bDate = new Date(b.postedDate).getTime();
         return bDate - aDate;
-      });
-    }
+      }
+    };
+    
+    matchingJobs.sort(sortFunction);
+    nonMatchingJobs.sort(sortFunction);
+    
+    // Combine: matching jobs first, then non-matching
+    const sortedJobs = [...matchingJobs, ...nonMatchingJobs];
 
-    setJobs(filtered);
-    setTotal(filtered.length);
+    setJobs(sortedJobs);
+    setTotal(sortedJobs.length);
   }, [searchQuery, location, allJobs, sortBy]);
 
   const toggleSaveJob = (jobId: string) => {
@@ -361,12 +371,18 @@ export function OpportunityBoard() {
 
                       {/* Action Buttons */}
                       <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-                        <Link
-                          href={`/opportunities/${job.id}`}
-                          className="flex-1"
-                        >
-                          <Button className="w-full">Apply Now</Button>
-                        </Link>
+                        {user && job.recruiterId && String(job.recruiterId) === String(user.id) ? (
+                          <Button className="w-full" variant="outline" disabled>
+                            Your Job Posting
+                          </Button>
+                        ) : (
+                          <Link
+                            href={`/opportunities/${job.id}`}
+                            className="flex-1"
+                          >
+                            <Button className="w-full">Apply Now</Button>
+                          </Link>
+                        )}
 
                         <Link href={`/opportunities/${job.id}`}>
                           <Button

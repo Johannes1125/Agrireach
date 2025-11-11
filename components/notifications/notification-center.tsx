@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -9,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 import { Bell, Briefcase, ShoppingCart, MessageSquare, Star, Info, X } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { authFetch } from "@/lib/auth-client"
+import { subscribeToNotificationChannel, unsubscribeFromNotificationChannel } from "@/lib/pusher"
 
 interface Notification {
   id: string
@@ -22,6 +24,7 @@ interface Notification {
 }
 
 export function NotificationCenter() {
+  const { user } = useAuth()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -29,6 +32,37 @@ export function NotificationCenter() {
   useEffect(() => {
     fetchNotifications()
   }, [])
+
+  // Subscribe to real-time notifications via Pusher
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = subscribeToNotificationChannel(user.id)
+    
+    channel.bind('new-notification', (data: any) => {
+      // Format the notification to match the component's expected format
+      const formattedNotification: Notification = {
+        id: data.id,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        timestamp: new Date(data.created_at),
+        read: data.read || false,
+        priority: data.priority || 'medium',
+        actionUrl: data.action_url,
+      }
+      
+      // Add new notification to the list
+      setNotifications((prev) => [formattedNotification, ...prev])
+      // Increment unread count
+      setUnreadCount((prev) => prev + 1)
+    })
+
+    return () => {
+      channel.unbind('new-notification')
+      unsubscribeFromNotificationChannel(user.id)
+    }
+  }, [user?.id])
 
   const fetchNotifications = async () => {
     try {
@@ -112,12 +146,16 @@ export function NotificationCenter() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="relative hover:bg-primary/10 transition-all duration-200 hover:scale-105 rounded-full p-2"
+        >
+          <Bell className="h-5 w-5 transition-transform duration-200 hover:rotate-12" />
           {unreadCount > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs ring-2 ring-background animate-pulse"
             >
               {unreadCount > 9 ? "9+" : unreadCount}
             </Badge>

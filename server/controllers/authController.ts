@@ -31,6 +31,8 @@ export const AuthController = {
     if (!user) return jsonError("Invalid credentials", 401);
     const valid = await verifyPassword(payload.password, user.password_hash);
     if (!valid) return jsonError("Invalid credentials", 401);
+    await User.findByIdAndUpdate(user._id, { last_login: new Date() });
+
     const accessToken = signAccessToken({ 
       sub: String(user._id), 
       role: user.role,
@@ -57,16 +59,14 @@ export const AuthController = {
     } catch {
       return jsonError("Invalid token", 401);
     }
-
     // Validate that the presented refresh token corresponds to an active session
+    
     await connectToDatabase();
     const sessions = await UserSession.find({ user_id: decoded.sub, expires_at: { $gt: new Date() } }).lean();
 
-    let matched = false;
     for (const session of sessions) {
       // Compare the presented refresh token with the stored bcrypt hash
       if (await bcrypt.compare(token, session.token)) {
-        matched = true;
         // Rotate refresh token: delete old session, issue new one
         await UserSession.deleteOne({ _id: (session as any)._id });
         // Fetch fresh user data for token generation
@@ -92,9 +92,7 @@ export const AuthController = {
       }
     }
 
-    if (!matched) {
-      return jsonError("Session not found or expired", 401);
-    }
+    return jsonError("Session not found or expired", 401);
   },
 
   async logout(req: NextRequest) {
@@ -136,6 +134,7 @@ export const AuthController = {
         verified: true,
       });
     }
+    await User.findByIdAndUpdate(user._id, { last_login: new Date() });
     const accessToken = signAccessToken({ sub: String(user._id), role: user.role });
     const refreshToken = signRefreshToken({ sub: String(user._id), role: user.role });
     const tokenHash = await bcrypt.hash(refreshToken, 10);
