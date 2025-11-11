@@ -1,45 +1,45 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react"
+import type React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 // Removed TwoFactorModal (2FA)
-import { ForgotPasswordModal } from "@/components/auth/forgot-password-modal"
-import { toast } from "sonner"
-import { login as loginClient } from "@/lib/auth-client"
-import { getGoogleIdToken } from "@/lib/google"
+import { ForgotPasswordModal } from "@/components/auth/forgot-password-modal";
+import { toast } from "sonner";
+import { login as loginClient } from "@/lib/auth-client";
+import { getGoogleIdToken } from "@/lib/google";
 
 export function LoginForm() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
-  const [userEmail, setUserEmail] = useState("")
-  const [userPassword, setUserPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [userPassword, setUserPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
-    const formData = new FormData(e.target as HTMLFormElement)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    setUserEmail(email)
-    setUserPassword(password)
+    const formData = new FormData(e.target as HTMLFormElement);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    setUserEmail(email);
+    setUserPassword(password);
 
     try {
-      const resp = await loginClient(email, password)
-      if (!resp.success) throw new Error(resp.message || "Login failed")
-      window.location.href = "/dashboard"
+      const resp = await loginClient(email, password);
+      if (!resp.success) throw new Error(resp.message || "Login failed");
+      window.location.href = "/dashboard";
     } catch (err: any) {
-      toast.error(err?.message || "Login failed")
+      toast.error(err?.message || "Login failed");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // 2FA removed
 
@@ -49,25 +49,30 @@ export function LoginForm() {
         <div className="space-y-3">
           <Button
             variant="outline"
-            className="w-full h-12 text-sm font-medium bg-card hover:bg-accent/50 border-border/50 transition-all duration-200"
+            className="group relative w-full h-12 text-sm font-medium bg-white hover:bg-zinc-100 border border-border/50 shadow-sm dark:bg-primary/25 dark:hover:bg-primary/35 dark:border-primary/50 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_16px_-2px_rgba(0,0,0,0.5)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 text-zinc-900 dark:text-white"
             disabled={isLoading}
+            aria-label="Continue with Google"
             onClick={async () => {
               try {
-                const idToken = await getGoogleIdToken()
+                const idToken = await getGoogleIdToken();
                 const res = await fetch("/api/auth/google", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ idToken }),
-                })
-                const json = await res.json().catch(() => ({}))
-                if (!res.ok) throw new Error(json?.message || "Google sign-in failed")
-                window.location.href = "/dashboard"
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok)
+                  throw new Error(json?.message || "Google sign-in failed");
+                window.location.href = "/dashboard";
               } catch (e: any) {
-                toast.error(e?.message || "Google sign-in failed")
+                toast.error(e?.message || "Google sign-in failed");
               }
             }}
           >
-            <svg className="mr-3 h-5 w-5" viewBox="0 0 24 24">
+            <svg
+              className="mr-3 h-5 w-5 text-zinc-900 dark:text-white"
+              viewBox="0 0 24 24"
+            >
               <path
                 fill="currentColor"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -90,10 +95,15 @@ export function LoginForm() {
 
           <Button
             variant="outline"
-            className="w-full h-12 text-sm font-medium bg-card hover:bg-accent/50 border-border/50 transition-all duration-200"
+            className="group relative w-full h-12 text-sm font-medium bg-white hover:bg-zinc-100 border border-border/50 shadow-sm dark:bg-primary/25 dark:hover:bg-primary/35 dark:border-primary/50 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_4px_16px_-2px_rgba(0,0,0,0.5)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 text-zinc-900 dark:text-white"
             disabled={isLoading}
+            aria-label="Continue with Facebook"
           >
-            <svg className="mr-3 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="mr-3 h-5 w-5 text-zinc-900 dark:text-white"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
             </svg>
             Continue with Facebook
@@ -105,13 +115,18 @@ export function LoginForm() {
             <Separator className="w-full" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-3 text-muted-foreground font-medium">Or continue with email</span>
+            <span className="bg-card px-3 text-muted-foreground font-medium">
+              Or continue with email
+            </span>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium text-foreground">
+            <Label
+              htmlFor="email"
+              className="text-sm font-medium text-foreground"
+            >
               Email Address
             </Label>
             <div className="relative">
@@ -128,7 +143,10 @@ export function LoginForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm font-medium text-foreground">
+            <Label
+              htmlFor="password"
+              className="text-sm font-medium text-foreground"
+            >
               Password
             </Label>
             <div className="relative">
@@ -187,7 +205,10 @@ export function LoginForm() {
 
       {/* 2FA modal removed */}
 
-      <ForgotPasswordModal open={showForgotPasswordModal} onOpenChange={setShowForgotPasswordModal} />
+      <ForgotPasswordModal
+        open={showForgotPasswordModal}
+        onOpenChange={setShowForgotPasswordModal}
+      />
     </>
-  )
+  );
 }

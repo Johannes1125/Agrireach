@@ -319,7 +319,7 @@ const COURSES = {
             <li>Remove contaminated clothing immediately</li>
             <li>Rinse affected area with clean water for at least 15 minutes</li>
             <li>Seek medical attention and bring the product label</li>
-            <li>Call emergency hotline: PGH Poison Control - (02) 8554-8400</li>
+            <li>Call emergency hotline: PGH Poison Control - 911</li>
           </ul>
         `,
       },
@@ -1373,7 +1373,8 @@ const Certificate = ({
     try {
       // Try html-to-image first (better SVG/CSS support)
       const htmlToImage = await import("html-to-image");
-      const toPng = (htmlToImage as any).toPng || (htmlToImage as any).default?.toPng;
+      const toPng =
+        (htmlToImage as any).toPng || (htmlToImage as any).default?.toPng;
       const dataUrl = await toPng(certificate, {
         cacheBust: true,
         backgroundColor: "#ffffff",
@@ -1388,7 +1389,11 @@ const Certificate = ({
       });
 
       const { jsPDF } = await import("jspdf");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -1409,7 +1414,10 @@ const Certificate = ({
       pdf.save(fileName);
       return;
     } catch (err) {
-      console.warn("html-to-image / jsPDF failed, falling back to html2canvas:", err);
+      console.warn(
+        "html-to-image / jsPDF failed, falling back to html2canvas:",
+        err
+      );
     }
 
     // Fallback: html2canvas -> PNG -> jsPDF
@@ -1430,7 +1438,11 @@ const Certificate = ({
       });
 
       const { jsPDF } = await import("jspdf");
-      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -1551,8 +1563,8 @@ const Certificate = ({
                 </div>
                 <div className="text-center">
                   <div className="mb-2">
-                  <div className="h-12 w-12 mx-auto flex items-center justify-center bg-green-50 rounded-full">
-                   <Leaf className="h-7 w-7 text-green-700" />
+                    <div className="h-12 w-12 mx-auto flex items-center justify-center bg-green-50 rounded-full">
+                      <Leaf className="h-7 w-7 text-green-700" />
                     </div>
                   </div>
                   <div className="border-t-2 border-gray-800 pt-1">
@@ -1868,11 +1880,11 @@ export default function CoursePage() {
                                 <span className="text-2xl">🌾</span>
                               </div>
                               <div className="flex-1">
-                                <h4 className="text-lg font-bold text-gray-900 mb-2">
+                                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                                   Case Study 1: Smart Rice Farming in Nueva
                                   Ecija
                                 </h4>
-                                <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
                                   Farmer Juan Dela Cruz increased his rice yield
                                   by{" "}
                                   <span className="font-bold text-green-600">
@@ -1907,11 +1919,11 @@ export default function CoursePage() {
                                 <span className="text-2xl">🥬</span>
                               </div>
                               <div className="flex-1">
-                                <h4 className="text-lg font-bold text-gray-900 mb-2">
+                                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                                   Case Study 2: Vegetable Farm Management in
                                   Benguet
                                 </h4>
-                                <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
                                   Maria Santos transformed her family's
                                   vegetable farm using digital record-keeping
                                   and market access platforms. She now connects
@@ -1950,10 +1962,10 @@ export default function CoursePage() {
                                 <span className="text-2xl">🐄</span>
                               </div>
                               <div className="flex-1">
-                                <h4 className="text-lg font-bold text-gray-900 mb-2">
+                                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                                   Case Study 3: Livestock Monitoring in Mindanao
                                 </h4>
-                                <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
                                   Pedro Garcia implemented IoT sensors for his
                                   livestock operation, reducing disease
                                   outbreaks by{" "}
@@ -1988,7 +2000,7 @@ export default function CoursePage() {
                           <CardContent className="p-6">
                             <div className="flex items-center gap-2 mb-4">
                               <Trophy className="h-6 w-6 text-yellow-600" />
-                              <h4 className="text-xl font-bold text-gray-900">
+                              <h4 className="text-xl font-bold text-gray-900 dark:text-black">
                                 Key Takeaways
                               </h4>
                             </div>
@@ -1996,10 +2008,10 @@ export default function CoursePage() {
                               <div className="flex items-start gap-3 bg-white p-3 rounded-lg">
                                 <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
                                 <div>
-                                  <p className="text-sm font-semibold text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-900">
                                     Reduce Costs
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-gray-700 dark:text-gray-700">
                                     Digital tools reduce input costs by 15-30%
                                   </p>
                                 </div>
@@ -2007,10 +2019,10 @@ export default function CoursePage() {
                               <div className="flex items-start gap-3 bg-white p-3 rounded-lg">
                                 <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
                                 <div>
-                                  <p className="text-sm font-semibold text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-900">
                                     Better Pricing
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-gray-700 dark:text-gray-700">
                                     Mobile apps improve market access and fair
                                     pricing
                                   </p>
@@ -2019,10 +2031,10 @@ export default function CoursePage() {
                               <div className="flex items-start gap-3 bg-white p-3 rounded-lg">
                                 <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
                                 <div>
-                                  <p className="text-sm font-semibold text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-900">
                                     Higher Yields
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-gray-700 dark:text-gray-700">
                                     Data-driven decisions lead to better yields
                                   </p>
                                 </div>
@@ -2030,10 +2042,10 @@ export default function CoursePage() {
                               <div className="flex items-start gap-3 bg-white p-3 rounded-lg">
                                 <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
                                 <div>
-                                  <p className="text-sm font-semibold text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-900">
                                     Low Investment
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-gray-700 dark:text-gray-700">
                                     Technology adoption doesn't require large
                                     investments
                                   </p>
@@ -2048,11 +2060,11 @@ export default function CoursePage() {
                         {/* Pesticide Safety Reading */}
                         {/* Main Title */}
                         <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-lg border-l-4 border-red-600">
-                          <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                          <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-900 mb-2">
                             Pesticide Safety: Health Guidelines and Best
                             Practices
                           </h3>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-gray-700 dark:text-gray-800">
                             Essential safety protocols to protect yourself and
                             the environment
                           </p>
@@ -2066,10 +2078,10 @@ export default function CoursePage() {
                                 <span className="text-2xl">🏥</span>
                               </div>
                               <div className="flex-1">
-                                <h4 className="text-lg font-bold text-gray-900 mb-2">
+                                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                                   WHO Guidelines for Pesticide Use
                                 </h4>
-                                <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
                                   The World Health Organization emphasizes that
                                   proper pesticide handling is crucial for
                                   farmer health and environmental protection.
@@ -2107,10 +2119,10 @@ export default function CoursePage() {
                                 <span className="text-2xl">🇵🇭</span>
                               </div>
                               <div className="flex-1">
-                                <h4 className="text-lg font-bold text-gray-900 mb-2">
+                                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                                   Philippine Regulatory Standards
                                 </h4>
-                                <p className="text-sm text-gray-700 leading-relaxed mb-3">
+                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
                                   The Fertilizer and Pesticide Authority (FPA)
                                   mandates strict compliance with safety
                                   standards. All applications must follow label
@@ -2145,10 +2157,10 @@ export default function CoursePage() {
                                 <span className="text-2xl">⚠️</span>
                               </div>
                               <div className="flex-1">
-                                <h4 className="text-lg font-bold text-gray-900 mb-2">
+                                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                                   Key Health Risks
                                 </h4>
-                                <div className="space-y-2 text-sm text-gray-700">
+                                <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
                                   <div>
                                     <p className="font-semibold">
                                       Acute Exposure:
@@ -2190,15 +2202,15 @@ export default function CoursePage() {
                                 <span className="text-2xl">✅</span>
                               </div>
                               <div className="flex-1">
-                                <h4 className="text-lg font-bold text-gray-900 mb-3">
+                                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
                                   Safety Best Practices
                                 </h4>
                                 <div className="space-y-3">
                                   <div className="bg-blue-50 p-3 rounded-lg">
-                                    <p className="font-semibold text-sm mb-2">
+                                    <p className="font-semibold text-sm mb-2 text-gray-900 dark:text-gray-900">
                                       Before Application:
                                     </p>
-                                    <ul className="text-xs space-y-1 text-gray-700 list-disc list-inside">
+                                    <ul className="text-xs space-y-1 text-gray-700 dark:text-gray-800 list-disc list-inside">
                                       <li>Read product labels completely</li>
                                       <li>Check weather conditions</li>
                                       <li>Inspect equipment for leaks</li>
@@ -2206,10 +2218,10 @@ export default function CoursePage() {
                                     </ul>
                                   </div>
                                   <div className="bg-green-50 p-3 rounded-lg">
-                                    <p className="font-semibold text-sm mb-2">
+                                    <p className="font-semibold text-sm mb-2 text-gray-900 dark:text-gray-900">
                                       During Application:
                                     </p>
-                                    <ul className="text-xs space-y-1 text-gray-700 list-disc list-inside">
+                                    <ul className="text-xs space-y-1 text-gray-700 dark:text-gray-800 list-disc list-inside">
                                       <li>Wear complete PPE</li>
                                       <li>Mix in well-ventilated areas</li>
                                       <li>Never eat, drink, or smoke</li>
@@ -2217,10 +2229,10 @@ export default function CoursePage() {
                                     </ul>
                                   </div>
                                   <div className="bg-orange-50 p-3 rounded-lg">
-                                    <p className="font-semibold text-sm mb-2">
+                                    <p className="font-semibold text-sm mb-2 text-gray-900 dark:text-gray-900">
                                       After Application:
                                     </p>
-                                    <ul className="text-xs space-y-1 text-gray-700 list-disc list-inside">
+                                    <ul className="text-xs space-y-1 text-gray-700 dark:text-gray-800 list-disc list-inside">
                                       <li>Wash hands thoroughly</li>
                                       <li>Clean equipment properly</li>
                                       <li>Dispose containers safely</li>
@@ -2238,21 +2250,21 @@ export default function CoursePage() {
                           <CardContent className="p-6">
                             <div className="flex items-center gap-2 mb-4">
                               <AlertCircle className="h-6 w-6 text-red-600" />
-                              <h4 className="text-xl font-bold text-gray-900">
+                              <h4 className="text-xl font-bold text-gray-900 dark:text-gray-900">
                                 Emergency Response
                               </h4>
                             </div>
-                            <p className="text-sm font-semibold mb-3">
+                            <p className="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-800">
                               In case of pesticide exposure:
                             </p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <div className="flex items-start gap-3 bg-white p-3 rounded-lg">
                                 <CheckCircle2 className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                                 <div>
-                                  <p className="text-sm font-semibold text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-900">
                                     Immediate Action
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p className="text-xs text-gray-700 dark:text-gray-700">
                                     Remove contaminated clothing and rinse for
                                     15 minutes
                                   </p>
@@ -2261,11 +2273,11 @@ export default function CoursePage() {
                               <div className="flex items-start gap-3 bg-white p-3 rounded-lg">
                                 <CheckCircle2 className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                                 <div>
-                                  <p className="text-sm font-semibold text-gray-900">
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-900">
                                     Seek Medical Help
                                   </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Call PGH Poison Control: (02) 8554-8400
+                                  <p className="text-xs text-gray-700 dark:text-gray-700">
+                                    Call PGH Poison Control: 911
                                   </p>
                                 </div>
                               </div>
@@ -2282,19 +2294,19 @@ export default function CoursePage() {
               {activeLesson.type === "quiz" && activeLesson.questions && (
                 <div className="space-y-6">
                   {/* Quiz Header */}
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg border-l-4 border-purple-600">
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg border-l-4 border-purple-600 dark:text-gray-900">
                     <div className="flex items-center gap-3 mb-2">
                       <Award className="h-8 w-8 text-purple-600" />
                       <div>
-                        <h3 className="text-2xl font-bold text-gray-900">
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-900">
                           Agritech Basics Quiz
                         </h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-gray-700 dark:text-gray-800">
                           Test your understanding of core concepts
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 mt-3 text-sm">
+                    <div className="flex items-center gap-4 mt-3 text-sm text-gray-700 dark:text-gray-800">
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-purple-600" />
                         <span>{activeLesson.duration}</span>
@@ -2344,7 +2356,7 @@ export default function CoursePage() {
                                 ? "Congratulations! You Passed!"
                                 : "Keep Learning!"}
                             </h4>
-                            <p className="text-sm text-gray-700 mb-3">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
                               You got {calculateQuizScore().correct} out of{" "}
                               {calculateQuizScore().total} questions correct (
                               {calculateQuizScore().percentage}%)
@@ -2400,7 +2412,7 @@ export default function CoursePage() {
                                 </span>
                               </div>
                               <div className="flex-1">
-                                <h4 className="font-semibold text-gray-900 mb-4">
+                                <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
                                   {question.question}
                                 </h4>
 
@@ -2425,13 +2437,13 @@ export default function CoursePage() {
                                         className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                                           quizSubmitted
                                             ? isCorrectOption
-                                              ? "border-green-500 bg-green-100"
+                                              ? "border-green-500 bg-green-100 dark:border-green-600 dark:bg-green-900"
                                               : isSelected
-                                              ? "border-red-500 bg-red-100"
-                                              : "border-gray-200 bg-gray-50"
+                                              ? "border-red-500 bg-red-100 dark:border-red-600 dark:bg-red-900"
+                                              : "border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-800"
                                             : isSelected
-                                            ? "border-purple-500 bg-purple-50"
-                                            : "border-gray-200 hover:border-purple-300 hover:bg-purple-50/50"
+                                            ? "border-purple-500 bg-purple-50 dark:border-purple-600 dark:bg-purple-900"
+                                            : "border-gray-200 hover:border-purple-300 hover:bg-purple-50/50 dark:border-zinc-700 dark:hover:bg-zinc-800"
                                         } ${
                                           quizSubmitted
                                             ? "cursor-not-allowed"
@@ -2458,7 +2470,7 @@ export default function CoursePage() {
                                               <CheckCircle2 className="h-3 w-3 text-white" />
                                             )}
                                           </div>
-                                          <span className="text-sm">
+                                          <span className="text-sm dark:text-white">
                                             {option}
                                           </span>
                                         </div>
@@ -2486,7 +2498,7 @@ export default function CoursePage() {
                                         <p className="font-semibold text-sm mb-1">
                                           {isCorrect ? "Correct!" : "Incorrect"}
                                         </p>
-                                        <p className="text-sm text-gray-700">
+                                        <p className="text-sm text-gray-700 dark:text-gray-300">
                                           {question.explanation}
                                         </p>
                                       </div>

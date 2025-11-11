@@ -1,37 +1,47 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { X, Plus } from "lucide-react"
-import { useState } from "react"
-import { toast } from "sonner"
-import { authFetch } from "@/lib/auth-client"
-import { useRouter } from "next/navigation"
-import { LocationPicker, LocationData } from "@/components/ui/location-picker"
-import { Switch } from "@/components/ui/switch"
-import { SkillLevelSelector } from "@/components/ui/skill-level-selector"
-import { SkillLevel, SkillRequirement, normalizeSkillRequirements } from "@/lib/skills"
+import type React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { X, Plus } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { authFetch } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { LocationPicker, LocationData } from "@/components/ui/location-picker";
+import { Switch } from "@/components/ui/switch";
+import { SkillLevelSelector } from "@/components/ui/skill-level-selector";
+import {
+  SkillLevel,
+  SkillRequirement,
+  normalizeSkillRequirements,
+} from "@/lib/skills";
 
 interface EditJobFormProps {
-  job: any
+  job: any;
 }
 
 export function EditJobForm({ job }: EditJobFormProps) {
-  const router = useRouter()
-  const [skillRequirements, setSkillRequirements] = useState<SkillRequirement[]>(
-    normalizeSkillRequirements(job.required_skills)
-  )
-  const [customSkill, setCustomSkill] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter();
+  const [skillRequirements, setSkillRequirements] = useState<
+    SkillRequirement[]
+  >(normalizeSkillRequirements(job.required_skills));
+  const [customSkill, setCustomSkill] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [jobLocation, setJobLocation] = useState<LocationData>({
     address: job.location || "",
     coordinates: job.location_coordinates,
-  })
+  });
 
   const availableSkills = [
     "Crop Harvesting",
@@ -50,11 +60,20 @@ export function EditJobForm({ job }: EditJobFormProps) {
     "Animal Husbandry",
     "Food Processing",
     "Packaging",
-  ]
+  ];
 
-  const addSkill = (skill: string, level: SkillLevel = 2, required: boolean = true) => {
-    if (!skill.trim()) return
-    if (skillRequirements.some((s) => s.name.toLowerCase() === skill.toLowerCase())) return
+  const addSkill = (
+    skill: string,
+    level: SkillLevel = 2,
+    required: boolean = true
+  ) => {
+    if (!skill.trim()) return;
+    if (
+      skillRequirements.some(
+        (s) => s.name.toLowerCase() === skill.toLowerCase()
+      )
+    )
+      return;
     setSkillRequirements((prev) => [
       ...prev,
       {
@@ -62,19 +81,19 @@ export function EditJobForm({ job }: EditJobFormProps) {
         min_level: level,
         required,
       },
-    ])
-  }
+    ]);
+  };
 
   const removeSkill = (skill: string) => {
-    setSkillRequirements((prev) => prev.filter((s) => s.name !== skill))
-  }
+    setSkillRequirements((prev) => prev.filter((s) => s.name !== skill));
+  };
 
   const addCustomSkill = () => {
     if (customSkill.trim()) {
-      addSkill(customSkill.trim())
-      setCustomSkill("")
+      addSkill(customSkill.trim());
+      setCustomSkill("");
     }
-  }
+  };
 
   const updateSkillLevel = (skillName: string, level: SkillLevel) => {
     setSkillRequirements((prev) =>
@@ -86,8 +105,8 @@ export function EditJobForm({ job }: EditJobFormProps) {
             }
           : skill
       )
-    )
-  }
+    );
+  };
 
   const toggleSkillRequired = (skillName: string, value: boolean) => {
     setSkillRequirements((prev) =>
@@ -99,20 +118,26 @@ export function EditJobForm({ job }: EditJobFormProps) {
             }
           : skill
       )
-    )
-  }
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+    e.preventDefault();
+    setIsSubmitting(true);
 
     try {
-      const formData = new FormData(e.target as HTMLFormElement)
-      
-      const benefitsText = formData.get("benefits") as string || ""
-      const requirementsText = formData.get("requirements") as string || ""
-      const benefits = benefitsText.split(/\n|,|;/).map((s) => s.trim()).filter(Boolean)
-      const requirements = requirementsText.split(/\n|,|;/).map((s) => s.trim()).filter(Boolean)
+      const formData = new FormData(e.target as HTMLFormElement);
+
+      const benefitsText = (formData.get("benefits") as string) || "";
+      const requirementsText = (formData.get("requirements") as string) || "";
+      const benefits = benefitsText
+        .split(/\n|,|;/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const requirements = requirementsText
+        .split(/\n|,|;/)
+        .map((s) => s.trim())
+        .filter(Boolean);
 
       const payload: any = {
         title: formData.get("title"),
@@ -127,8 +152,8 @@ export function EditJobForm({ job }: EditJobFormProps) {
         // Persist pay min/max to new fields
         pay_rate: Number(formData.get("salary_min")) || 0,
         pay_rate_max: ((): number | undefined => {
-          const v = Number(formData.get("salary_max")) || 0
-          return v > 0 ? v : undefined
+          const v = Number(formData.get("salary_max")) || 0;
+          return v > 0 ? v : undefined;
         })(),
         required_skills: skillRequirements.map((skill) => ({
           name: skill.name,
@@ -139,28 +164,28 @@ export function EditJobForm({ job }: EditJobFormProps) {
         benefits,
         work_schedule: (formData.get("work_schedule") as string) || undefined,
         start_date: formData.get("start_date") || undefined,
-      }
+      };
 
       const res = await authFetch(`/api/opportunities/${job._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-      })
+      });
 
       if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error?.message || "Failed to update job")
+        const error = await res.json();
+        throw new Error(error?.message || "Failed to update job");
       }
 
-      toast.success("Job updated successfully!")
-      router.push("/dashboard")
+      toast.success("Job updated successfully!");
+      router.push("/dashboard");
     } catch (error: any) {
-      console.error("Error updating job:", error)
-      toast.error(error.message || "Failed to update job")
+      console.error("Error updating job:", error);
+      toast.error(error.message || "Failed to update job");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -223,8 +248,11 @@ export function EditJobForm({ job }: EditJobFormProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="job_type">Job Type *</Label>
-              <Select name="job_type" defaultValue={job.duration || job.job_type || "full-time"}>
-                <SelectTrigger>
+              <Select
+                name="job_type"
+                defaultValue={job.duration || job.job_type || "full-time"}
+              >
+                <SelectTrigger className="border-zinc-300 dark:border-white/40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -240,7 +268,7 @@ export function EditJobForm({ job }: EditJobFormProps) {
             <div>
               <Label htmlFor="urgency">Urgency *</Label>
               <Select name="urgency" defaultValue={job.urgency || "medium"}>
-                <SelectTrigger>
+                <SelectTrigger className="border-zinc-300 dark:border-white/40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -291,7 +319,7 @@ export function EditJobForm({ job }: EditJobFormProps) {
             <div>
               <Label>Select from common skills</Label>
               <Select onValueChange={(value) => addSkill(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="border-zinc-300 dark:border-white/40">
                   <SelectValue placeholder="Choose a skill..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -315,8 +343,8 @@ export function EditJobForm({ job }: EditJobFormProps) {
                 placeholder="Or add a custom skill..."
                 onKeyPress={(e) => {
                   if (e.key === "Enter") {
-                    e.preventDefault()
-                    addCustomSkill()
+                    e.preventDefault();
+                    addCustomSkill();
                   }
                 }}
               />
@@ -346,19 +374,27 @@ export function EditJobForm({ job }: EditJobFormProps) {
                   </div>
                   <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center md:gap-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Minimum Level</span>
+                      <span className="text-xs text-muted-foreground">
+                        Minimum Level
+                      </span>
                       <SkillLevelSelector
                         value={(skill.min_level as SkillLevel) || 2}
-                        onChange={(level) => updateSkillLevel(skill.name, level)}
+                        onChange={(level) =>
+                          updateSkillLevel(skill.name, level)
+                        }
                         label=""
                         className="w-40"
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Required</span>
+                      <span className="text-xs text-muted-foreground">
+                        Required
+                      </span>
                       <Switch
                         checked={skill.required !== false}
-                        onCheckedChange={(checked) => toggleSkillRequired(skill.name, checked)}
+                        onCheckedChange={(checked) =>
+                          toggleSkillRequired(skill.name, checked)
+                        }
                         aria-label={`Toggle ${skill.name} required flag`}
                       />
                     </div>
@@ -404,7 +440,11 @@ export function EditJobForm({ job }: EditJobFormProps) {
                 id="start_date"
                 name="start_date"
                 type="date"
-                defaultValue={job.start_date ? new Date(job.start_date).toISOString().split('T')[0] : ""}
+                defaultValue={
+                  job.start_date
+                    ? new Date(job.start_date).toISOString().split("T")[0]
+                    : ""
+                }
               />
             </div>
 
@@ -447,6 +487,5 @@ export function EditJobForm({ job }: EditJobFormProps) {
         </Button>
       </div>
     </form>
-  )
+  );
 }
-

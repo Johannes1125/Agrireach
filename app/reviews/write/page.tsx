@@ -73,7 +73,7 @@ export default function WriteReviewPage() {
     <RouteGuard requireAuth>
       <WriteReviewPageContent />
     </RouteGuard>
-  )
+  );
 }
 
 function WriteReviewPageContent() {
@@ -189,7 +189,7 @@ function WriteReviewPageContent() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b dark:bg-black dark:border-black">
         <div className="container mx-auto px-4 py-4">
           <Link
             href="/reviews"
