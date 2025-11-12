@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { toast } from "sonner";
 import {
   BookOpen,
   Clock,
@@ -1461,7 +1462,7 @@ const Certificate = ({
       pdf.save(fileName);
     } catch (error) {
       console.error("Error generating PDF certificate:", error);
-      alert("Failed to download certificate. Please try again.");
+      toast.error("Failed to download certificate. Please try again.");
     }
   };
 
@@ -1647,6 +1648,8 @@ export default function CoursePage() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [showQuizResults, setShowQuizResults] = useState(false);
   const [showCertificate, setShowCertificate] = useState(false);
+  // Track which video lessons have actually been watched to the end using YouTube IFrame API
+  const [videoWatched, setVideoWatched] = useState<Record<number, boolean>>({});
 
   const completedLessons = Object.values(lessonProgress).filter(Boolean).length;
   const totalLessons = course.lessons.length;
@@ -1668,6 +1671,66 @@ export default function CoursePage() {
     }
   };
 
+  // Initialize / attach YouTube player to capture video end event for completion sensor
+  useEffect(() => {
+    if (
+      !activeLesson ||
+      activeLesson.type !== "video" ||
+      !activeLesson.videoUrl
+    )
+      return;
+
+    // Capture the lesson id so inner callbacks don't reference possibly-null activeLesson
+    const lessonId = activeLesson.id;
+    const iframeId = `video-player-${lessonId}`;
+
+    // Load YouTube IFrame API if not present
+    if (typeof window !== "undefined" && !(window as any).YT) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(tag);
+    }
+
+    let poll: number | undefined;
+    function attachPlayer() {
+      const YT = (window as any).YT;
+      if (!YT || !YT.Player) return;
+      // Avoid re-attaching if already marked watched
+      if (videoWatched[lessonId]) return;
+      try {
+        // eslint-disable-next-line no-new
+        new YT.Player(iframeId, {
+          events: {
+            onStateChange: (e: any) => {
+              // 0 == ended
+              if (e.data === (window as any).YT.PlayerState.ENDED) {
+                setVideoWatched((prev) => ({ ...prev, [lessonId]: true }));
+                toast.success(
+                  "Video completed! You can now mark it as complete."
+                );
+              }
+            },
+          },
+        });
+        if (poll) window.clearInterval(poll);
+      } catch (err) {
+        // Fail silently; user can still manually mark complete if API fails after watching (not ideal but graceful)
+        console.warn("YT Player init error", err);
+      }
+    }
+
+    poll = window.setInterval(() => {
+      attachPlayer();
+      if ((window as any).YT && (window as any).YT.Player) {
+        window.clearInterval(poll);
+      }
+    }, 500);
+
+    return () => {
+      if (poll) window.clearInterval(poll);
+    };
+  }, [activeLesson, videoWatched]);
+
   const handleQuizAnswer = (questionId: number, answerIndex: number) => {
     if (!quizSubmitted) {
       setQuizAnswers((prev) => ({
@@ -1683,7 +1746,9 @@ export default function CoursePage() {
     const answeredQuestions = Object.keys(quizAnswers).length;
 
     if (answeredQuestions < totalQuestions) {
-      alert(`Please answer all ${totalQuestions} questions before submitting.`);
+      toast.error(
+        `Please answer all ${totalQuestions} questions before submitting.`
+      );
       return;
     }
 
@@ -1698,9 +1763,14 @@ export default function CoursePage() {
 
     // Auto-mark as complete if passed (70% or higher)
     if (score >= 70) {
+      toast.success(`Quiz passed! Score: ${score}%`);
       setTimeout(() => {
         handleMarkComplete();
       }, 500);
+    } else {
+      toast.error(
+        `Quiz completed. Score: ${score}%. You need 70% to pass. You can review and retake.`
+      );
     }
   };
 
@@ -1726,11 +1796,29 @@ export default function CoursePage() {
 
   const handleMarkComplete = () => {
     if (activeLesson) {
+      // Guard: quizzes must be submitted AND passed (>=70%) before manual completion
+      if (
+        activeLesson.type === "quiz" &&
+        (!quizSubmitted || calculateQuizScore().percentage < 70)
+      ) {
+        toast.error(
+          "You need to submit and score at least 70% on the quiz before completing this lesson."
+        );
+        return;
+      }
+      // Guard: video must be watched to the end (captured via YouTube API end event)
+      if (activeLesson.type === "video" && !videoWatched[activeLesson.id]) {
+        toast.error(
+          "Please watch the entire video before marking it complete."
+        );
+        return;
+      }
       const newProgress = {
         ...lessonProgress,
         [activeLesson.id]: true,
       };
       setLessonProgress(newProgress);
+      toast.success(`Lesson "${activeLesson.title}" marked complete`);
 
       // Check if this was the last lesson
       const completedCount = Object.values(newProgress).filter(Boolean).length;
@@ -1745,6 +1833,18 @@ export default function CoursePage() {
 
   const handleNextLesson = () => {
     if (activeLesson) {
+      // Block navigation for quizzes until passed (progress marked complete)
+      if (activeLesson.type === "quiz" && !lessonProgress[activeLesson.id]) {
+        const score = calculateQuizScore().percentage;
+        if (!quizSubmitted) {
+          toast.error("Submit the quiz before proceeding to the next lesson.");
+        } else if (score < 70) {
+          toast.error(
+            `Score at least 70% (current: ${score}%) to unlock the next lesson. Retake the quiz.`
+          );
+        }
+        return;
+      }
       const currentIndex = course.lessons.findIndex(
         (l) => l.id === activeLesson.id
       );
@@ -1761,7 +1861,7 @@ export default function CoursePage() {
           setActiveLesson(null);
           setShowCertificate(true);
         } else {
-          alert("Congratulations! You've completed all lessons!");
+          toast.success("Congratulations! You've completed all lessons!");
           setActiveLesson(null);
         }
       }
@@ -1840,6 +1940,7 @@ export default function CoursePage() {
                 <div className="space-y-4">
                   <div className="aspect-video w-full rounded-lg overflow-hidden bg-black">
                     <iframe
+                      id={`video-player-${activeLesson.id}`}
                       src={getYouTubeEmbedUrl(activeLesson.videoUrl)}
                       className="w-full h-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -1849,6 +1950,16 @@ export default function CoursePage() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Clock className="h-4 w-4" />
                     <span>{activeLesson.duration}</span>
+                    {!videoWatched[activeLesson.id] && (
+                      <span className="ml-2 text-xs text-yellow-600 dark:text-yellow-400">
+                        Watch to the end to unlock completion
+                      </span>
+                    )}
+                    {videoWatched[activeLesson.id] && (
+                      <Badge className="ml-2 bg-green-600">
+                        Ready to mark complete
+                      </Badge>
+                    )}
                   </div>
                 </div>
               )}
@@ -2544,27 +2655,72 @@ export default function CoursePage() {
 
                 {/* Mark as Complete Button */}
                 <div className="flex-1 flex justify-center">
-                  {!lessonProgress[activeLesson.id] ? (
-                    <Button onClick={handleMarkComplete} size="lg">
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Mark as Complete
-                    </Button>
-                  ) : (
+                  {lessonProgress[activeLesson.id] ? (
                     <Badge variant="default" className="bg-green-600 py-2 px-4">
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Completed
+                      <CheckCircle2 className="h-4 w-4 mr-2" /> Completed
                     </Badge>
+                  ) : activeLesson.type === "quiz" ? (
+                    // Quiz lesson: only show enabled button if submitted & passed
+                    quizSubmitted && calculateQuizScore().percentage >= 70 ? (
+                      <Button
+                        onClick={handleMarkComplete}
+                        size="lg"
+                        className="animate-pulse"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Mark as Complete
+                      </Button>
+                    ) : (
+                      <Button disabled size="lg" variant="outline">
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Pass quiz (≥70%) to complete
+                      </Button>
+                    )
+                  ) : activeLesson.type === "video" ? (
+                    videoWatched[activeLesson.id] ? (
+                      <Button
+                        onClick={handleMarkComplete}
+                        size="lg"
+                        className="animate-pulse"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-2" /> Mark as
+                        Complete
+                      </Button>
+                    ) : (
+                      <Button disabled size="lg" variant="outline">
+                        <PlayCircle className="h-4 w-4 mr-2" /> Watch full video
+                        to complete
+                      </Button>
+                    )
+                  ) : (
+                    // Non-quiz lessons can be marked complete anytime
+                    <Button onClick={handleMarkComplete} size="lg">
+                      <CheckCircle2 className="h-4 w-4 mr-2" /> Mark as Complete
+                    </Button>
                   )}
                 </div>
 
                 {/* Next Button */}
-                <Button
-                  onClick={handleNextLesson}
-                  className="flex-1 max-w-[200px]"
-                >
-                  {isLastLesson ? "Finish Course" : "Next Lesson"}
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
+                {activeLesson.type === "quiz" &&
+                !lessonProgress[activeLesson.id] ? (
+                  <Button
+                    onClick={handleNextLesson}
+                    className="flex-1 max-w-[200px]"
+                    disabled
+                    variant="outline"
+                  >
+                    Pass quiz to continue
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleNextLesson}
+                    className="flex-1 max-w-[200px]"
+                  >
+                    {isLastLesson ? "Finish Course" : "Next Lesson"}
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
