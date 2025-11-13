@@ -67,7 +67,7 @@ The chat system uses two MongoDB collections:
 
 ### Context
 - `ChatProvider` - React context for chat state management
-- `useChat` - Hook for accessing chat functionality
+- `useChat` - Hook for accessing chat functionality qweqweqweqwe
 
 ## Usage
 
