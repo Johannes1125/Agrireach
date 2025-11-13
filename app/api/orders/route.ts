@@ -40,10 +40,18 @@ export async function POST(req: NextRequest) {
     subtotal: (ci.product_id as any).price * ci.quantity,
   }));
 
-  const total_amount = orderItemsData.reduce((sum, i) => sum + i.subtotal, 0);
+  const total_price = orderItemsData.reduce((sum, i) => sum + i.subtotal, 0);
+  const total_quantity = orderItemsData.reduce((sum, i) => sum + i.quantity, 0);
   const seller_id = (cart[0].product_id as any).seller_id;
 
-  const order = await Order.create({ buyer_id: decoded.sub, seller_id, total_amount, status: "pending" });
+  const order = await Order.create({ 
+    buyer_id: decoded.sub, 
+    seller_id, 
+    total_price, 
+    quantity: total_quantity,
+    delivery_address: "", // Will be set during checkout
+    status: "pending" 
+  });
 
   await Promise.all(
     orderItemsData.map((oi) => OrderItem.create({ ...oi, order_id: order._id }))

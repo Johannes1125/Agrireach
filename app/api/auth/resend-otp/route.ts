@@ -4,7 +4,7 @@ import { validateBody } from "@/server/middleware/validate";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { OtpCode } from "@/server/models/OtpCode";
 import { verificationOtpEmailHtml, verificationOtpEmailSubject, verificationOtpEmailText } from "@/server/utils/emailTemplates";
-import { sendEmail } from "@/server/utils/mailer";
+import { sendMail } from "@/server/utils/mailer";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     expireMinutes: 10
   });
 
-  await sendEmail({
+  await sendMail({
     to: email,
     subject,
     html,

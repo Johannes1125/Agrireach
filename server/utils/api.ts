@@ -94,3 +94,16 @@ export function getCookieToken(req: NextRequest, kind: "access" | "refresh"): st
   const cookie = req.cookies.get(key)?.value;
   return cookie || null;
 }
+
+export async function requireAuth(req: NextRequest): Promise<void> {
+  const { verifyToken } = await import("@/server/utils/auth");
+  const token = getAuthToken(req, "access");
+  if (!token) {
+    throw new Error("Unauthorized");
+  }
+  try {
+    verifyToken<any>(token, "access");
+  } catch {
+    throw new Error("Unauthorized");
+  }
+}

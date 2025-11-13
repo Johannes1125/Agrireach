@@ -182,3 +182,24 @@ JobApplicationSchema.index(
 export const JobApplication: Model<IJobApplication> =
   mongoose.models.JobApplication ||
   mongoose.model<IJobApplication>("JobApplication", JobApplicationSchema);
+
+export interface ISavedJob extends Document {
+  job_id: Types.ObjectId;
+  user_id: Types.ObjectId;
+  created_at: Date;
+  updated_at: Date;
+}
+
+const SavedJobSchema = new Schema<ISavedJob>(
+  {
+    job_id: { type: Schema.Types.ObjectId, ref: "Opportunity", required: true, index: true },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+  },
+  { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
+);
+
+SavedJobSchema.index({ job_id: 1, user_id: 1 }, { unique: true });
+
+export const SavedJob: Model<ISavedJob> =
+  mongoose.models.SavedJob ||
+  mongoose.model<ISavedJob>("SavedJob", SavedJobSchema);

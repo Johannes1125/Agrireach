@@ -113,3 +113,28 @@ const OrderSchema = new Schema<IOrder>(
 OrderSchema.index({ buyer_id: 1, created_at: -1 });
 
 export const Order: Model<IOrder> = mongoose.models.Order || mongoose.model<IOrder>("Order", OrderSchema);
+
+export interface IOrderItem extends Document {
+  order_id: Types.ObjectId;
+  product_id: Types.ObjectId;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+const OrderItemSchema = new Schema<IOrderItem>(
+  {
+    order_id: { type: Schema.Types.ObjectId, ref: "Order", required: true, index: true },
+    product_id: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+    quantity: { type: Number, required: true, min: 1 },
+    unit_price: { type: Number, required: true },
+    subtotal: { type: Number, required: true },
+  },
+  { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
+);
+
+OrderItemSchema.index({ order_id: 1 });
+
+export const OrderItem: Model<IOrderItem> = mongoose.models.OrderItem || mongoose.model<IOrderItem>("OrderItem", OrderItemSchema);
