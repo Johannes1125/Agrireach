@@ -21,8 +21,12 @@ export {
   deleteFromCloudinary,
   generateImageUrl,
   getImageInfo,
-  type CloudinaryUploadResult,
-  type UploadOptions,
+} from "@/server/utils/cloudinary";
+
+// Re-export types
+export type {
+  CloudinaryUploadResult,
+  UploadOptions,
 } from "@/server/utils/cloudinary";
 
 export default cloudinary;
