@@ -13,13 +13,14 @@ const UpdateReviewSchema = z.object({
   category: z.string().optional(),
 });
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["GET"]);
   if (mm) return mm;
 
+  const { id } = await params;
   await connectToDatabase();
   
-  const review = await Review.findById(params.id)
+  const review = await Review.findById(id)
     .populate('reviewer_id', 'full_name avatar_url')
     .populate('reviewee_id', 'full_name avatar_url')
     .lean();
@@ -29,10 +30,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   return jsonOk({ review });
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -45,7 +47,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   await connectToDatabase();
   
-  const review = await Review.findById(params.id);
+  const review = await Review.findById(id);
   if (!review) return jsonError("Review not found", 404);
 
   // Check if user owns this review
@@ -58,7 +60,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!result.ok) return result.res;
 
   const updatedReview = await Review.findByIdAndUpdate(
-    params.id,
+    id,
     { $set: result.data },
     { new: true }
   )
@@ -68,10 +70,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   return jsonOk({ review: updatedReview });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["DELETE"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -84,7 +87,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
   await connectToDatabase();
   
-  const review = await Review.findById(params.id);
+  const review = await Review.findById(id);
   if (!review) return jsonError("Review not found", 404);
 
   // Check if user owns this review
@@ -93,7 +96,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
 
   // Soft delete by setting status to hidden
-  await Review.findByIdAndUpdate(params.id, {
+  await Review.findByIdAndUpdate(id, {
     $set: { status: "hidden" }
   });
 

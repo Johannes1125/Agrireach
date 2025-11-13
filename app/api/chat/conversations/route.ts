@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     // Format conversations with participant info
     const formattedConversations = conversations.map(conv => {
       const otherParticipant = conv.participants.find(
-        (p: any) => p._id.toString() !== user.id
+        (p: any) => String(p._id) !== user.id
       )
 
       return {

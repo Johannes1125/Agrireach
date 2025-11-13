@@ -4,10 +4,11 @@ import { verifyToken } from "@/server/utils/auth";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Review, ReviewVote } from "@/server/models/Review";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   await connectToDatabase();
   
   // Check if review exists
-  const review = await Review.findById(params.id);
+  const review = await Review.findById(id);
   if (!review) return jsonError("Review not found", 404);
 
   // Check if user is trying to vote on their own review
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Check if user has already voted
   const existingVote = await ReviewVote.findOne({
-    review_id: params.id,
+    review_id: id,
     user_id: decoded.sub
   });
 
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (existingVote.vote_type === "helpful") {
       // Remove helpful vote
       await ReviewVote.findByIdAndDelete(existingVote._id);
-      await Review.findByIdAndUpdate(params.id, {
+      await Review.findByIdAndUpdate(id, {
         $inc: { helpful_count: -1 }
       });
       return jsonOk({ message: "Helpful vote removed" });
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       await ReviewVote.findByIdAndUpdate(existingVote._id, {
         $set: { vote_type: "helpful" }
       });
-      await Review.findByIdAndUpdate(params.id, {
+      await Review.findByIdAndUpdate(id, {
         $inc: { helpful_count: 1 }
       });
       return jsonOk({ message: "Vote changed to helpful" });
@@ -56,12 +57,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   } else {
     // Create new helpful vote
     await ReviewVote.create({
-      review_id: params.id,
+      review_id: id,
       user_id: decoded.sub,
       vote_type: "helpful"
     });
 
-    await Review.findByIdAndUpdate(params.id, {
+    await Review.findByIdAndUpdate(id, {
       $inc: { helpful_count: 1 }
     });
 

@@ -36,34 +36,36 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return jsonOk(formattedThread);
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
   let decoded: any; try { decoded = verifyToken<any>(token, "access"); } catch { return jsonError("Unauthorized", 401); }
   await connectToDatabase();
-  const thr = await Thread.findById(params.id);
+  const thr = await Thread.findById(id);
   if (!thr) return jsonError("Not found", 404);
   if (String(thr.author_id) !== decoded.sub && decoded.role !== "admin") return jsonError("Forbidden", 403);
   const validate = validateBody(UpdateThreadSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;
-  await Thread.findByIdAndUpdate(params.id, { $set: { ...result.data, last_activity: new Date() } });
+  await Thread.findByIdAndUpdate(id, { $set: { ...result.data, last_activity: new Date() } });
   return jsonOk({});
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["DELETE"]);
   if (mm) return mm;
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
   let decoded: any; try { decoded = verifyToken<any>(token, "access"); } catch { return jsonError("Unauthorized", 401); }
   await connectToDatabase();
-  const thr = await Thread.findById(params.id);
+  const thr = await Thread.findById(id);
   if (!thr) return jsonError("Not found", 404);
   if (String(thr.author_id) !== decoded.sub && decoded.role !== "admin") return jsonError("Forbidden", 403);
-  await Thread.findByIdAndDelete(params.id);
+  await Thread.findByIdAndDelete(id);
   return jsonOk({});
 }
 

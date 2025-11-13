@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     urgency,
     deadline,
     skills_required: Array.isArray(skills_required) ? skills_required : [],
-    status: status || "open",
+    status: status === "closed" || status === "filled" ? status : "active",
   });
 
   return jsonOk({ id: doc._id });

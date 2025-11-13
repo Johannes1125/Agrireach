@@ -31,7 +31,7 @@ interface ModerationQueueProps {
 export function ModerationQueue({ items, onApprove, onReject, onView }: ModerationQueueProps) {
   const [selectedItems, setSelectedItems] = useState<number[]>([])
 
-  const priorityColors = {
+  const priorityColors: Record<ModerationItem["priority"], "default" | "secondary" | "destructive"> = {
     high: "destructive",
     medium: "default",
     low: "secondary",

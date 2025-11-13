@@ -194,8 +194,19 @@ export async function GET(req: NextRequest) {
     }
 
     // Return refund information
-    const refunds = payment.metadata?.refunds || [];
-    const totalRefunded = refunds.reduce((sum: number, refund: any) => sum + refund.amount, 0);
+    type PaymentRefundMetadata = {
+      id: string;
+      amount: number;
+      reason?: string;
+      status?: string;
+      created_at?: Date | string;
+    };
+
+    const refunds: PaymentRefundMetadata[] = Array.isArray(payment.metadata?.refunds)
+      ? (payment.metadata?.refunds as PaymentRefundMetadata[])
+      : [];
+
+    const totalRefunded = refunds.reduce((sum, refund) => sum + (refund.amount || 0), 0);
     const remainingRefundable = payment.amount - totalRefunded;
 
     return jsonOk({
@@ -204,7 +215,7 @@ export async function GET(req: NextRequest) {
       total_refunded: totalRefunded / 100,
       remaining_refundable: remainingRefundable / 100,
       currency: payment.currency,
-      refunds: refunds.map(refund => ({
+      refunds: refunds.map((refund) => ({
         id: refund.id,
         amount: refund.amount / 100,
         reason: refund.reason,

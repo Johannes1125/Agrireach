@@ -15,7 +15,7 @@ export interface GeocodeResult {
 }
 
 // Simple in-memory cache (consider Redis for production)
-const geocodeCache = new Map<string, GeocodeResult>();
+const geocodeCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 interface CacheEntry {
@@ -63,8 +63,8 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
   // Check cache
   const cacheKey = `geocode:${address.toLowerCase().trim()}`;
   const cached = geocodeCache.get(cacheKey);
-  if (cached && (Date.now() - (cached as any).timestamp) < CACHE_TTL_MS) {
-    return (cached as any).result;
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.result;
   }
 
   try {
@@ -98,7 +98,7 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
     geocodeCache.set(cacheKey, {
       result: geocodeResult,
       timestamp: Date.now(),
-    } as CacheEntry);
+    });
 
     return geocodeResult;
   } catch (error) {
@@ -117,8 +117,8 @@ export async function reverseGeocode(
   // Check cache
   const cacheKey = `reverse:${latitude.toFixed(6)},${longitude.toFixed(6)}`;
   const cached = geocodeCache.get(cacheKey);
-  if (cached && (Date.now() - (cached as any).timestamp) < CACHE_TTL_MS) {
-    return (cached as any).result;
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.result;
   }
 
   try {
@@ -143,7 +143,7 @@ export async function reverseGeocode(
     geocodeCache.set(cacheKey, {
       result: geocodeResult,
       timestamp: Date.now(),
-    } as CacheEntry);
+    });
 
     return geocodeResult;
   } catch (error) {

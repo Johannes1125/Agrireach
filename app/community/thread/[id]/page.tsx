@@ -619,9 +619,15 @@ export default function ThreadPage({
                   };
 
                   // Only add reported_user_id if we can find it
-                  if (reportedUser?._id) {
+                  const reportedUserId =
+                    reportedUser && typeof reportedUser === "object"
+                      ? ("_id" in reportedUser && reportedUser._id) ||
+                        ("id" in reportedUser && (reportedUser as { id?: string }).id)
+                      : undefined;
+
+                  if (reportedUserId) {
                     Object.assign(reportPayload, {
-                      reported_user_id: reportedUser._id.toString(),
+                      reported_user_id: reportedUserId.toString(),
                     });
                   } else if (!isThreadReport) {
                     // For reply, try the author_id field directly if available

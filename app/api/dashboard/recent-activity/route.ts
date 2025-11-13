@@ -63,13 +63,15 @@ export async function GET(req: NextRequest) {
     .limit(limit / 2)
     .lean();
 
-    recentApplications.forEach(app => {
+    recentApplications.forEach((app: any) => {
+      const worker = typeof app.worker_id === 'object' ? app.worker_id : null;
+      const opportunity = typeof app.opportunity_id === 'object' ? app.opportunity_id : null;
       activities.push({
         type: 'application_received',
         title: 'Application Received',
-        description: `${app.worker_id.full_name} applied to "${app.opportunity_id.title}"`,
+        description: `${worker?.full_name || 'A worker'} applied to "${opportunity?.title || 'a job'}"`,
         timestamp: app.created_at,
-        data: { application_id: app._id, job_title: app.opportunity_id.title }
+        data: { application_id: app._id, job_title: opportunity?.title }
       });
     });
   }
@@ -82,13 +84,14 @@ export async function GET(req: NextRequest) {
       .limit(limit)
       .lean();
 
-    recentApplications.forEach(app => {
+    recentApplications.forEach((app: any) => {
+      const opportunity = typeof app.opportunity_id === 'object' ? app.opportunity_id : null;
       activities.push({
         type: app.status === 'accepted' ? 'application_accepted' : app.status === 'rejected' ? 'application_rejected' : 'application_submitted',
         title: app.status === 'accepted' ? 'Application Accepted' : app.status === 'rejected' ? 'Application Rejected' : 'Application Submitted',
-        description: `${app.status} • "${app.opportunity_id.title}"`,
+        description: `${app.status} • "${opportunity?.title || 'a job'}"`,
         timestamp: app.created_at,
-        data: { application_id: app._id, job_title: app.opportunity_id.title }
+        data: { application_id: app._id, job_title: opportunity?.title }
       });
     });
   }
@@ -117,13 +120,14 @@ export async function GET(req: NextRequest) {
       .limit(limit / 3)
       .lean();
 
-    recentOrders.forEach(order => {
+    recentOrders.forEach((order: any) => {
+      const product = typeof order.product_id === 'object' ? order.product_id : null;
       activities.push({
         type: 'order_placed',
         title: 'Order Placed',
-        description: `Ordered "${order.product_id?.title || 'Product'}"`,
+        description: `Ordered "${product?.title || 'Product'}"`,
         timestamp: order.created_at,
-        data: { order_id: order._id, product_title: order.product_id?.title }
+        data: { order_id: order._id, product_title: product?.title }
       });
     });
 
@@ -135,13 +139,15 @@ export async function GET(req: NextRequest) {
       .limit(limit / 3)
       .lean();
 
-    receivedOrders.forEach(order => {
+    receivedOrders.forEach((order: any) => {
+      const buyer = typeof order.buyer_id === 'object' ? order.buyer_id : null;
+      const product = typeof order.product_id === 'object' ? order.product_id : null;
       activities.push({
         type: 'order_received',
         title: 'Order Received',
-        description: `${order.buyer_id.full_name} ordered "${order.product_id?.title || 'Product'}"`,
+        description: `${buyer?.full_name || 'A buyer'} ordered "${product?.title || 'Product'}"`,
         timestamp: order.created_at,
-        data: { order_id: order._id, product_title: order.product_id?.title }
+        data: { order_id: order._id, product_title: product?.title }
       });
     });
   }
@@ -155,11 +161,12 @@ export async function GET(req: NextRequest) {
     .limit(3)
     .lean();
 
-  recentReviews.forEach(review => {
+  recentReviews.forEach((review: any) => {
+    const reviewer = typeof review.reviewer_id === 'object' ? review.reviewer_id : null;
     activities.push({
       type: 'review_received',
       title: 'Review Received',
-      description: `${review.reviewer_id.full_name} gave you ${review.rating} stars`,
+      description: `${reviewer?.full_name || 'Someone'} gave you ${review.rating} stars`,
       timestamp: review.created_at,
       data: { review_id: review._id, rating: review.rating }
     });

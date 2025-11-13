@@ -29,8 +29,12 @@ export async function createNotification(data: CreateNotificationData) {
 
     // Trigger real-time notification via Pusher
     try {
+      const notificationId =
+        (notification as any)?._id?.toString?.() ??
+        (notification as any)?.id?.toString?.() ??
+        String(notification?._id ?? "");
       await triggerNotification(data.user_id.toString(), {
-        id: notification._id.toString(),
+        id: notificationId,
         type: notification.type,
         title: notification.title,
         message: notification.message,

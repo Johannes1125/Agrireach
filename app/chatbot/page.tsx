@@ -2,6 +2,8 @@ import { redirect } from "next/navigation"
 import { ChatbotWindow } from '@/components/chat/chatbot-window'
 import { getCurrentUser } from "@/lib/auth-server"
 
+export const dynamic = "force-dynamic"
+
 export default async function ChatbotPage() {
   const user = await getCurrentUser()
 

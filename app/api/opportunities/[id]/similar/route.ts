@@ -4,11 +4,12 @@ import { Job } from "@/server/models/Job";
 import { jsonOk, jsonError, requireMethod } from "@/server/utils/api";
 import { normalizeSkillRequirements } from "@/lib/skills";
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(_req, ["GET"]);
   if (mm) return mm;
+  const { id } = await params;
   await connectToDatabase();
-  const job = await Job.findById(params.id).lean();
+  const job = await Job.findById(id).lean();
   if (!job) return jsonError("Not found", 404);
   const normalizedSkills = normalizeSkillRequirements(job.required_skills as any);
   const skillNames = normalizedSkills.map((skill) => skill.name);

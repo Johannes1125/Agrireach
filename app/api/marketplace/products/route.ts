@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
   const sellerName = seller?.full_name || "A seller";
   
   // Notify all users about new product listing (don't await to avoid slowing down the response)
-  notifyAllUsersNewProduct(result.data.title, sellerName, product._id.toString()).catch(err => 
+  notifyAllUsersNewProduct(result.data.title, sellerName, String(product._id)).catch(err => 
     console.error("Failed to send product notifications:", err)
   );
 

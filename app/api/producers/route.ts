@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
 
     const ratingMap = new Map(
       reviews.map((r: any) => [
-        r._id.toString(),
+        String(r._id),
         {
           rating: Math.round((r.averageRating || 0) * 10) / 10,
           reviewsCount: r.totalReviews,
@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
 
     const productMap = new Map(
       productCounts.map((p: any) => [
-        p._id.toString(),
+        String(p._id),
         {
           count: p.count,
           categories: p.categories || [],
@@ -133,9 +133,9 @@ export async function GET(req: NextRequest) {
     // Format producers
     const producers = users
       .map((user: any) => {
-        const profile = profileMap.get(user._id.toString());
-        const ratingData = ratingMap.get(user._id.toString()) || { rating: 0, reviewsCount: 0 };
-        const productData = productMap.get(user._id.toString()) || { count: 0, categories: [] };
+        const profile = profileMap.get(String(user._id));
+        const ratingData = ratingMap.get(String(user._id)) || { rating: 0, reviewsCount: 0 };
+        const productData = productMap.get(String(user._id)) || { count: 0, categories: [] };
 
         // Determine category from services_offered or product categories
         const services = profile?.services_offered || [];
@@ -164,7 +164,7 @@ export async function GET(req: NextRequest) {
         const isFeatured = user.verified || user.trust_score >= 80 || ratingData.rating >= 4.5;
 
         return {
-          id: user._id.toString(),
+          id: String(user._id),
           name: profile?.company_name || user.full_name,
           location: locationValue,
           description: profile?.business_description || user.bio || `${user.full_name} is a producer on AgriReach.`,
@@ -175,7 +175,7 @@ export async function GET(req: NextRequest) {
           avatar: user.avatar_url || profile?.business_logo || null,
           verified: user.verified || user.verification_status === "verified",
           trustScore: user.trust_score || 0,
-          userId: user._id.toString(),
+          userId: String(user._id),
           productsCount: productData.count,
           services: services,
           industry: profile?.industry,

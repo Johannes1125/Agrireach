@@ -55,7 +55,7 @@ export const PaymentIntentSchema = z.object({
   payment_method: PaymentMethodSchema,
   billing_details: BillingDetailsSchema,
   delivery_address: DeliveryAddressSchema.optional(),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional()
 })
 
 // Payment confirmation validation
@@ -71,7 +71,7 @@ export const WebhookEventSchema = z.object({
   data: z.object({
     id: z.string(),
     type: z.string(),
-    attributes: z.record(z.any())
+    attributes: z.record(z.string(), z.any())
   }),
   created: z.number()
 })
@@ -81,7 +81,7 @@ export const PaymentStatusUpdateSchema = z.object({
   payment_id: z.string().min(1, 'Payment ID is required'),
   status: z.enum(['paid', 'failed', 'cancelled', 'refunded']),
   failure_reason: z.string().optional(),
-  payment_data: z.record(z.any()).optional()
+  payment_data: z.record(z.string(), z.any()).optional()
 })
 
 // Refund request validation

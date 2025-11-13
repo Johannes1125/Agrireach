@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       const decoded = verifyToken<any>(token, "access");
       const profile = await UserProfile.findOne({ user_id: decoded.sub }).lean();
       if (profile?.skills && Array.isArray(profile.skills)) {
-        workerSkills = normalizeSkills(profile.skills);
+        workerSkills = normalizeSkills(profile.skills as any);
       }
     }
   } catch (error) {
@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
   const validate = validateBody(CreateJobSchema);
   const result = await validate(req);
   if (!result.ok) return result.res;
-  const normalizedSkills = normalizeSkillRequirements(result.data.required_skills);
+  const normalizedSkills = normalizeSkillRequirements(result.data.required_skills as any);
   const job = await Opportunity.create({
     ...result.data,
     recruiter_id: userId,
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
   const companyName = result.data.company_name || recruiter?.full_name || "A company";
   
   // Notify all users about new job posting (don't await to avoid slowing down the response)
-  notifyAllUsersNewJob(result.data.title, companyName, result.data.location, job._id.toString()).catch(err => 
+  notifyAllUsersNewJob(result.data.title, companyName, result.data.location, String(job._id)).catch(err => 
     console.error("Failed to send job notifications:", err)
   );
   

@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 
     return jsonOk({
       message: {
-        id: message._id.toString(),
+        id: String(message._id),
         sender_id: user.id,
         recipient_id,
         content,
@@ -141,12 +141,12 @@ export async function GET(req: NextRequest) {
     // Format messages properly - ensure sender_id is a string and sender object is included
     const formattedMessages = messages.reverse().map((msg: any) => {
       const senderId = typeof msg.sender_id === 'object' && msg.sender_id?._id 
-        ? msg.sender_id._id.toString() 
+        ? String(msg.sender_id._id)
         : msg.sender_id?.toString() || msg.sender_id
       
       const sender = typeof msg.sender_id === 'object' && msg.sender_id
         ? {
-            id: msg.sender_id._id.toString(),
+            id: String(msg.sender_id._id),
             name: msg.sender_id.full_name || msg.sender_id.email || 'Unknown',
             avatar: msg.sender_id.avatar_url,
             email: msg.sender_id.email,
@@ -154,10 +154,10 @@ export async function GET(req: NextRequest) {
         : undefined
 
       return {
-        id: msg._id.toString(),
+        id: String(msg._id),
         sender_id: senderId,
         recipient_id: typeof msg.recipient_id === 'object' && msg.recipient_id?._id
-          ? msg.recipient_id._id.toString()
+          ? String(msg.recipient_id._id)
           : msg.recipient_id?.toString() || msg.recipient_id,
         content: msg.content,
         message_type: msg.message_type,

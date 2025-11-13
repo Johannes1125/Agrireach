@@ -4,13 +4,15 @@ import { Thread, ThreadReply } from "@/server/models/Thread";
 import { jsonOk, jsonError, getBearerToken } from "@/server/utils/api";
 import { verifyToken } from "@/server/utils/auth";
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   await connectToDatabase();
-  const replies = await ThreadReply.find({ thread_id: params.id }).sort({ created_at: 1 }).lean();
+  const replies = await ThreadReply.find({ thread_id: id }).sort({ created_at: 1 }).lean();
   return jsonOk({ items: replies });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const token = getBearerToken(req);
   if (!token) return jsonError("Unauthorized", 401);
   let decoded: any;
@@ -20,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return jsonError("Unauthorized", 401);
   }
   await connectToDatabase();
-  const thread = await Thread.findById(params.id);
+  const thread = await Thread.findById(id);
   if (!thread) return jsonError("Not found", 404);
   const body = await req.json();
   const { content, parent_reply_id } = body || {};

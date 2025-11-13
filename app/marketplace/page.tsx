@@ -29,6 +29,7 @@ import { PageTransition } from "@/components/ui/page-transition";
 import { InlineLoader } from "@/components/ui/page-loader";
 import { ProductCardSkeleton } from "@/components/ui/skeleton-loader";
 import Link from "next/link";
+import { SimpleHeader } from "@/components/layout/simple-header";
 
 export default function MarketplacePage() {
   const { user, loading: authLoading } = useAuth();

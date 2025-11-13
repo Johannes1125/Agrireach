@@ -31,6 +31,7 @@ export interface DashboardStats {
     totalSpent: number
   }
   seller?: {
+    activeProducts: number
     totalOrders: number
     totalEarnings: number
   }

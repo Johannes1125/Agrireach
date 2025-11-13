@@ -138,10 +138,13 @@ export function ChatWindow() {
         ) : (
           <div className="space-y-4">
             {state.messages.map((message, i) => {
+              const messageData = message as any;
               // Handle both string IDs and ObjectId comparisons
-              const messageSenderId = typeof message.sender_id === 'object' && message.sender_id?._id
-                ? message.sender_id._id.toString()
-                : message.sender_id?.toString() || message.sender_id
+              const rawSenderId = messageData?.sender_id;
+              const messageSenderId =
+                rawSenderId && typeof rawSenderId === "object" && "_id" in rawSenderId
+                  ? rawSenderId._id?.toString()
+                  : rawSenderId?.toString?.() ?? rawSenderId;
               const currentUserId = user?.id?.toString() || user?.id
               const isOwnMessage = messageSenderId === currentUserId
               

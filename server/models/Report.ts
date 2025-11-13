@@ -1,6 +1,6 @@
 import mongoose, { Schema, Model, Document, Types } from "mongoose";
 
-export type ReportType = "user" | "forum_post" | "product" | "review";
+export type ReportType = "user" | "forum_post" | "thread" | "product" | "review";
 export type ReportStatus = "pending" | "investigating" | "resolved" | "dismissed";
 export type ReportPriority = "low" | "medium" | "high";
 
@@ -25,7 +25,7 @@ const ReportSchema = new Schema<IReport>(
   {
     reporter_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     reported_user_id: { type: Schema.Types.ObjectId, ref: "User" },
-    type: { type: String, required: true, enum: ["user", "forum_post", "product", "review"] },
+    type: { type: String, required: true, enum: ["user", "forum_post", "thread", "product", "review"] },
     content_id: { type: Schema.Types.ObjectId },
     reason: { type: String, required: true },
     description: { type: String, required: true },

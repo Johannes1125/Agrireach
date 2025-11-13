@@ -4,14 +4,16 @@ import { Thread } from "@/server/models/Thread";
 import { jsonOk, jsonError, getBearerToken } from "@/server/utils/api";
 import { verifyToken } from "@/server/utils/auth";
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   await connectToDatabase();
-  const doc = await Thread.findById(params.id).lean();
+  const doc = await Thread.findById(id).lean();
   if (!doc) return jsonError("Not found", 404);
   return jsonOk(doc);
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const token = getBearerToken(req);
   if (!token) return jsonError("Unauthorized", 401);
   let decoded: any;
@@ -21,7 +23,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return jsonError("Unauthorized", 401);
   }
   await connectToDatabase();
-  const doc = await Thread.findById(params.id);
+  const doc = await Thread.findById(id);
   if (!doc) return jsonError("Not found", 404);
   if (String(doc.author_id) !== decoded.sub && decoded.role !== "admin") {
     return jsonError("Forbidden", 403);

@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
         ...report,
         reporter,
         createdAt: report.created_at ? new Date(report.created_at).toLocaleString() : '',
-        id: report._id.toString()
+        id: String(report._id)
       }
     })
 

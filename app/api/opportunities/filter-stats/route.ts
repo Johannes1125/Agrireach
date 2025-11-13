@@ -40,10 +40,10 @@ export async function GET(req: NextRequest) {
       {
         $group: {
           _id: null,
-          minPay: { $min: "$pay_min" },
-          maxPay: { $max: "$pay_max" },
-          avgMinPay: { $avg: "$pay_min" },
-          avgMaxPay: { $avg: "$pay_max" }
+          minPay: { $min: "$pay_rate" },
+          maxPay: { $max: { $ifNull: ["$pay_rate_max", "$pay_rate"] } },
+          avgMinPay: { $avg: "$pay_rate" },
+          avgMaxPay: { $avg: { $ifNull: ["$pay_rate_max", "$pay_rate"] } }
         }
       }
     ]);

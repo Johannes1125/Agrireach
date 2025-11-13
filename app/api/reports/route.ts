@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate type
-    if (!["user", "forum_post", "product", "review"].includes(type)) {
+    if (!["user", "forum_post", "thread", "product", "review"].includes(type)) {
       return jsonError("Invalid report type", 400);
     }
 

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const records = await OtpCode.find({ email, type: "registration", used: false }).sort({ created_at: -1 }).limit(5).lean();
   if (records.length === 0) return jsonError("Invalid token", 400);
   for (const rec of records) {
-    const ok = await bcrypt.compare(token, rec.token_hash);
+    const ok = await bcrypt.compare(token, rec.code);
     if (ok && rec.expires_at > new Date()) {
       user.verified = true;
       await user.save();

@@ -83,7 +83,7 @@ async function getUserAnalytics(userId: string) {
                             isCentralLuzon(job.location)
       
       return {
-        id: job._id.toString(),
+        id: String(job._id),
         title: job.title,
         company: job.company_name || 'Unknown',
         location: job.location,

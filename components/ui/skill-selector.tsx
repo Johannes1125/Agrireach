@@ -45,7 +45,7 @@ export function SkillSelector({
   const selectedSkillNames = selectedSkills.map((s) => s.name.toLowerCase());
 
   const getAvailableSkillsForCategory = (category: SkillCategory): string[] => {
-    const categorySkills = SKILL_CATEGORIES[category];
+    const categorySkills = Array.from(SKILL_CATEGORIES[category]);
     if (availableSkills) {
       return categorySkills.filter((skill) => availableSkills.includes(skill));
     }

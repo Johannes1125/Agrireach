@@ -4,10 +4,11 @@ import { Job, JobApplication } from "@/server/models/Job";
 import { jsonOk, jsonError, requireMethod, getBearerToken } from "@/server/utils/api";
 import { verifyToken } from "@/server/utils/auth";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getBearerToken(req);
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -19,8 +20,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   await connectToDatabase();
-  const job = await Job.findById(params.id).lean();
-  if (!job || job.status !== "open") return jsonError("Job not available", 400);
+  const job = await Job.findById(id).lean();
+  if (!job || job.status !== "active") return jsonError("Job not available", 400);
 
   // Prevent users from applying to their own job postings
   if (String(job.recruiter_id) === decoded.sub) {

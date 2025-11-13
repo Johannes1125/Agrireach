@@ -107,7 +107,7 @@ export function PostJobForm() {
   useEffect(() => {
     if (!jobLocation.address && user?.location) {
       setJobLocation((prev) => ({
-        address: user.location,
+        address: user.location || prev.address || "",
         coordinates: prev.coordinates,
       }));
     }

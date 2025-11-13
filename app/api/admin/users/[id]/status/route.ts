@@ -27,10 +27,11 @@ async function requireAdmin(req: NextRequest) {
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const admin = await requireAdmin(req);
   if (!admin) return jsonError("Forbidden - Admin access required", 403);
 
@@ -42,18 +43,18 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   await connectToDatabase();
   
-  const user = await User.findById(params.id);
+  const user = await User.findById(id);
   if (!user) return jsonError("User not found", 404);
 
   // Prevent admin from changing their own status
-  if (user._id.toString() === admin.sub) {
+  if (String(user._id) === admin.sub) {
     return jsonError("Cannot change your own status", 400);
   }
 
   const oldStatus = user.status;
   
   // Update user status
-  await User.findByIdAndUpdate(params.id, {
+  await User.findByIdAndUpdate(id, {
     $set: { status }
   });
 
@@ -62,7 +63,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     admin_id: admin.sub,
     action: `user_status_changed`,
     target_type: 'user',
-    target_id: params.id,
+    target_id: id,
     details: {
       old_status: oldStatus,
       new_status: status,
@@ -85,7 +86,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 
   await Notification.create({
-    user_id: params.id,
+    user_id: id,
     type: 'account_status',
     title: 'Account Status Updated',
     message: notificationMessage,
@@ -95,7 +96,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   return jsonOk({ 
     message: `User status updated to ${status}`,
     user: {
-      id: user._id,
+      id: String(user._id),
       full_name: user.full_name,
       email: user.email,
       status

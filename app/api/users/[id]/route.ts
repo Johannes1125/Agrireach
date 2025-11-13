@@ -30,19 +30,21 @@ function canModify(userId: string, req: NextRequest): string | null {
   }
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(_req, ["GET"]);
   if (mm) return mm;
+  const { id } = await params;
   await connectToDatabase();
-  const user = await User.findById(params.id).select("-password_hash -two_fa_secret").lean();
+  const user = await User.findById(id).select("-password_hash -two_fa_secret").lean();
   if (!user) return jsonError("User not found", 404);
   return jsonOk({ user });
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
-  const actor = canModify(params.id, req);
+  const { id } = await params;
+  const actor = canModify(id, req);
   if (!actor) return jsonError("Unauthorized", 401);
 
   const validate = validateBody(UpdateUserSchema);
@@ -58,7 +60,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
   
   const user = await User.findByIdAndUpdate(
-    params.id,
+    id,
     { $set: updateData },
     { new: true }
   ).select("-password_hash -two_fa_secret");
@@ -67,13 +69,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   return jsonOk({ user });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["DELETE"]);
   if (mm) return mm;
-  const actor = canModify(params.id, req);
+  const { id } = await params;
+  const actor = canModify(id, req);
   if (!actor) return jsonError("Unauthorized", 401);
   await connectToDatabase();
-  const user = await User.findByIdAndDelete(params.id);
+  const user = await User.findByIdAndDelete(id);
   if (!user) return jsonError("User not found", 404);
   return jsonOk({ message: "Account deleted successfully" });
 }

@@ -248,7 +248,7 @@ export default function ReviewsPage() {
                               {review.reviewer_id.full_name
                                 ? review.reviewer_id.full_name
                                     .split(" ")
-                                    .map((n) => n[0])
+                                    .map((part: string) => part[0])
                                     .join("")
                                 : "U"}
                             </AvatarFallback>

@@ -148,13 +148,12 @@ function NewThreadPageContent() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     console.log("Form submitted!");
     console.log("Form data:", formData);
-    console.log("Form validity:", e.currentTarget.checkValidity());
-    console.log("Form validation message:", e.currentTarget.validationMessage);
-    e.preventDefault();
-    console.log("Setting confirm dialog to true");
+    const form = e.currentTarget;
+    console.log("Form validity:", form.checkValidity());
     setShowConfirmDialog(true);
   };
 

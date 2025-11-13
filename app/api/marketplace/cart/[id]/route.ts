@@ -10,10 +10,11 @@ const UpdateCartItemSchema = z.object({
   quantity: z.number().min(1),
 });
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -27,7 +28,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   await connectToDatabase();
   
   // Check if user owns this cart item
-  const cartItem = await CartItem.findById(params.id);
+  const cartItem = await CartItem.findById(id);
   if (!cartItem) return jsonError("Cart item not found", 404);
   
   if (cartItem.user_id.toString() !== decoded.sub) {
@@ -39,7 +40,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!result.ok) return result.res;
 
   const updatedCartItem = await CartItem.findByIdAndUpdate(
-    params.id,
+    id,
     { $set: { quantity: result.data.quantity } },
     { new: true }
   ).populate('product_id');
@@ -47,10 +48,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   return jsonOk({ cartItem: updatedCartItem });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["DELETE"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -64,14 +66,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   await connectToDatabase();
   
   // Check if user owns this cart item
-  const cartItem = await CartItem.findById(params.id);
+  const cartItem = await CartItem.findById(id);
   if (!cartItem) return jsonError("Cart item not found", 404);
   
   if (cartItem.user_id.toString() !== decoded.sub) {
     return jsonError("Forbidden", 403);
   }
 
-  await CartItem.findByIdAndDelete(params.id);
+  await CartItem.findByIdAndDelete(id);
 
   return jsonOk({ message: "Item removed from cart" });
 }

@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary'
+import type { UploadApiResponse } from 'cloudinary'
 
 // Configure Cloudinary - support either CLOUDINARY_URL or individual credentials
 if (process.env.CLOUDINARY_URL) {
@@ -49,7 +50,20 @@ export async function uploadToCloudinary(
       ...options
     }
 
-    const result = await cloudinary.uploader.upload(file, uploadOptions)
+    let result: UploadApiResponse
+    if (typeof file === 'string') {
+      result = await cloudinary.uploader.upload(file, uploadOptions)
+    } else {
+      result = await new Promise<UploadApiResponse>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
+          if (error || !result) {
+            return reject(error)
+          }
+          resolve(result)
+        })
+        stream.end(file)
+      })
+    }
     
     return {
       public_id: result.public_id,

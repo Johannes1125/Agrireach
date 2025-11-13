@@ -4,7 +4,7 @@ import { verifyToken } from "@/server/utils/auth"
 import { connectToDatabase } from "@/server/lib/mongodb"
 import { User } from "@/server/models/User"
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"])
   if (mm) return mm
 
@@ -13,6 +13,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   let decoded: any; try { decoded = verifyToken<any>(token, "access") } catch { return jsonError("Unauthorized", 401) }
   if (decoded.role !== "admin") return jsonError("Forbidden", 403)
 
+  const { id } = await params
   await connectToDatabase()
   const body = await req.json().catch(() => ({}))
   const { action, role } = body || {}
@@ -41,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     default: return jsonError("Invalid action", 400)
   }
 
-  const updated = await User.findByIdAndUpdate(params.id, { $set: set }, { new: true })
+  const updated = await User.findByIdAndUpdate(id, { $set: set }, { new: true })
   if (!updated) return jsonError("User not found", 404)
   return jsonOk({
     user: {

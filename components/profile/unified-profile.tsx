@@ -63,12 +63,12 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
           },
           skills: profile?.skills && Array.isArray(profile.skills) && profile.skills.length > 0
             ? (typeof profile.skills[0] === 'string'
-              ? profile.skills.map((skillName: string) => ({ 
+              ? (profile.skills as string[]).map((skillName) => ({ 
                   name: skillName, 
                   level: 2, 
                   category: "Farm Management"
                 }))
-              : profile.skills)
+              : (profile.skills as Array<{ name: string; level: number; category: string }>))
             : [],
           recentActivity: [
             {
@@ -245,7 +245,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
               <div className="pt-4 border-t">
                 <h4 className="font-medium mb-3">My Skills</h4>
                 <div className="flex flex-wrap gap-2">
-                  {normalizeSkills(profileData.skills).map((skill, index) => {
+                  {normalizeSkills((profileData.skills ?? []) as any).map((skill, index) => {
                     const levelLabel = SKILL_LEVELS[skill.level as keyof typeof SKILL_LEVELS]
                     const levelColor = SKILL_LEVEL_COLORS[skill.level as keyof typeof SKILL_LEVEL_COLORS]
                     const categoryColor = CATEGORY_COLORS[skill.category as keyof typeof CATEGORY_COLORS] || CATEGORY_COLORS["Crop Farming"]
@@ -268,7 +268,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
 
         {/* Skills Section (Workers only) */}
         {user.role === "worker" && profileData.skills && profileData.skills.length > 0 && (() => {
-          const normalizedSkills = normalizeSkills(profileData.skills);
+          const normalizedSkills = normalizeSkills((profileData.skills ?? []) as any);
           const groupedSkills = groupSkillsByCategory(normalizedSkills);
           const categories = Object.keys(groupedSkills) as SkillCategory[];
           
@@ -345,16 +345,18 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
 
                   <div className="flex items-center gap-2">
                     <Badge variant={activity.status === "active" ? "default" : "secondary"}>{activity.status}</Badge>
-                    {activity.rating && (
+                    {"rating" in activity && activity.rating ? (
                       <div className="flex items-center gap-1 text-sm">
                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                         <span>{activity.rating}</span>
                       </div>
-                    )}
-                    {activity.applicants && (
+                    ) : null}
+                    {"applicants" in activity && activity.applicants ? (
                       <span className="text-sm text-muted-foreground">{activity.applicants} applicants</span>
-                    )}
-                    {activity.amount && <span className="text-sm font-medium text-primary">{activity.amount}</span>}
+                    ) : null}
+                    {"amount" in activity && activity.amount ? (
+                      <span className="text-sm font-medium text-primary">{activity.amount}</span>
+                    ) : null}
                   </div>
                 </div>
 

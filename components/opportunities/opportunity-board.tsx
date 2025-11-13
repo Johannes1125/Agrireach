@@ -29,7 +29,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useJobSearch } from "@/contexts/job-search-context";
 import { InlineLoader } from "@/components/ui/page-loader";
 import { formatDate, formatRelativeTime } from "@/lib/utils";
-import { normalizeSkillRequirements, SKILL_LEVELS } from "@/lib/skills";
+import { normalizeSkillRequirements, SKILL_LEVELS, SkillLevel } from "@/lib/skills";
 import { useAuth } from "@/hooks/use-auth";
 
 export function OpportunityBoard() {
@@ -361,7 +361,7 @@ export function OpportunityBoard() {
                               <span>{skill.name}</span>
                               {skill.min_level && (
                                 <span className="ml-1 text-[10px] text-muted-foreground">
-                                  {SKILL_LEVELS[skill.min_level]}
+                                  {SKILL_LEVELS[skill.min_level as SkillLevel]}
                                 </span>
                               )}
                             </Badge>

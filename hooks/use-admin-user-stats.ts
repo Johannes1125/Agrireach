@@ -33,10 +33,10 @@ export function useAdminUserStats() {
           throw new Error("Failed to fetch user statistics");
         }
         
-        const data: AdminUserStats = await res.json();
+        const data = await res.json();
         console.log("Raw API response:", data);
         // Handle response format like other admin APIs
-        const statsData = data?.data || data;
+        const statsData: AdminUserStats = (data?.data as AdminUserStats) || (data as AdminUserStats);
         console.log("Processed stats data:", statsData);
         setStats(statsData);
       } catch (err: any) {

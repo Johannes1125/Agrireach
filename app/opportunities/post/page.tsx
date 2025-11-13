@@ -1,12 +1,19 @@
-import { PostJobForm } from "@/components/opportunities/post-job-form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ArrowLeft, Briefcase } from "lucide-react"
-import Link from "next/link"
-import { requireRecruiter } from "@/lib/auth-server"
+import { redirect } from "next/navigation";
+import { requireRecruiter } from "@/lib/auth-server";
+import { PostJobForm } from "@/components/opportunities/post-job-form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { ArrowLeft, Briefcase } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 export default async function PostJobPage() {
-  // Server-side route guard: Only recruiters can post jobs
-  await requireRecruiter()
+  const user = await requireRecruiter();
+
+  if (!user) {
+    redirect("/auth/login");
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container px-4 py-8">

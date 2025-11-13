@@ -16,14 +16,15 @@ const CreateReviewSchema = z.object({
   category: z.string().optional(),
 });
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["GET"]);
   if (mm) return mm;
 
+  const { id } = await params;
   await connectToDatabase();
   
   // Get farmer to get user_id
-  const farmer = await Farmer.findById(params.id);
+  const farmer = await Farmer.findById(id);
   if (!farmer) return jsonError("Farmer not found", 404);
 
   const url = new URL(req.url);
@@ -55,10 +56,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -76,11 +78,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   await connectToDatabase();
   
   // Get farmer to get user_id
-  const farmer = await Farmer.findById(params.id).populate('user_id', 'full_name');
+  const farmer = await Farmer.findById(id).populate('user_id', 'full_name');
   if (!farmer) return jsonError("Farmer not found", 404);
 
   // Check if user is trying to review themselves
-  if (farmer.user_id._id.toString() === decoded.sub) {
+  if (String(farmer.user_id._id) === decoded.sub) {
     return jsonError("Cannot review yourself", 400);
   }
 
@@ -113,7 +115,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   
   const avgRating = allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length;
   
-  await Farmer.findByIdAndUpdate(params.id, {
+  await Farmer.findByIdAndUpdate(id, {
     $set: {
       rating: Math.round(avgRating * 100) / 100,
       reviews_count: allReviews.length
@@ -123,10 +125,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // Send notification to farmer using the helper function (includes Pusher trigger)
   const reviewer = await User.findById(decoded.sub).select('full_name').lean();
   await notifyReviewReceived(
-    farmer.user_id._id.toString(),
+    String(farmer.user_id._id),
     reviewer?.full_name || 'A reviewer',
     result.data.rating,
-    review._id.toString()
+    String(review._id)
   );
 
   const populatedReview = await Review.findById(review._id)

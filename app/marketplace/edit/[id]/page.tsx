@@ -10,7 +10,7 @@ interface EditProductPageProps {
 }
 
 async function fetchProductData(id: string) {
-  const h = headers()
+  const h = await headers()
   const cookie = h.get("cookie") || ""
   
   try {

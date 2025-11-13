@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
     // For each job, get the applicant count
     const jobsWithApplicants = await Promise.all(
-      jobs.map(async (job) => {
+      jobs.map(async (job: any) => {
         const applicantCount = await JobApplication.countDocuments({
           opportunity_id: job._id
         })
@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
           _id: job._id,
           title: job.title,
           location: job.location,
-          jobType: job.job_type,
+          jobType: job.job_type || job.category,
           urgency: job.urgency || "medium",
-          salary_range: job.salary_range,
+          salary_range: job.salary_range || (job.pay_rate ? { min: job.pay_rate, max: job.pay_rate_max || job.pay_rate } : null),
           created_at: job.created_at,
           status: job.status,
           applicantCount

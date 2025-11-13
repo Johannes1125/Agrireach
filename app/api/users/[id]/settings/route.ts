@@ -4,9 +4,10 @@ import { UserProfile } from "@/server/models/UserProfile";
 import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/api";
 import { verifyToken } from "@/server/utils/auth";
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
   let decoded: any;
@@ -15,10 +16,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   } catch {
     return jsonError("Unauthorized", 401);
   }
-  if (decoded.sub !== params.id && decoded.role !== "admin") return jsonError("Forbidden", 403);
+  if (decoded.sub !== id && decoded.role !== "admin") return jsonError("Forbidden", 403);
   const body = await req.json();
   await connectToDatabase();
-  await UserProfile.findOneAndUpdate({ user_id: params.id }, { $set: { preferences: body?.preferences || body } }, { upsert: true });
+  await UserProfile.findOneAndUpdate({ user_id: id }, { $set: { preferences: body?.preferences || body } }, { upsert: true });
   return jsonOk({});
 }
 

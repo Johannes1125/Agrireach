@@ -15,6 +15,7 @@ export interface FeaturedProduct {
   }
   status: string
   created_at: string
+  category?: string
   rating?: number
   reviews_count?: number
 }

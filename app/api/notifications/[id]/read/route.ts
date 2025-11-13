@@ -4,10 +4,11 @@ import { verifyToken } from "@/server/utils/auth";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Notification } from "@/server/models/Notification";
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -20,7 +21,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   await connectToDatabase();
   
-  const notification = await Notification.findById(params.id);
+  const notification = await Notification.findById(id);
   if (!notification) return jsonError("Notification not found", 404);
 
   // Check if user owns this notification
@@ -28,7 +29,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return jsonError("Forbidden", 403);
   }
 
-  await Notification.findByIdAndUpdate(params.id, {
+  await Notification.findByIdAndUpdate(id, {
     $set: { read: true }
   });
 

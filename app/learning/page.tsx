@@ -6,6 +6,8 @@ import LearningStats from "@/components/learning/learning-stats";
 import LearningProgress from "@/components/learning/learning-progress";
 import RecommendedCourses from "@/components/learning/recommended-courses";
 
+export const dynamic = "force-dynamic";
+
 export default async function LearningPage() {
   const user = await getCurrentUser();
   if (!user) {

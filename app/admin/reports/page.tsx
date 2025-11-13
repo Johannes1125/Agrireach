@@ -33,13 +33,15 @@ const reportTypes = {
   fake_profile: "Fake Profile",
 }
 
-const priorityColors = {
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline"
+
+const priorityColors: Record<string, BadgeVariant> = {
   high: "destructive",
   medium: "secondary", 
   low: "outline",
 }
 
-const statusColors = {
+const statusColors: Record<string, BadgeVariant> = {
   pending: "secondary",
   resolved: "default",
   dismissed: "outline",
@@ -258,7 +260,7 @@ const statusColors = {
                           </p>
                         </td>
                         <td className="p-4">
-                        <Badge variant={priorityColors[report.priority as keyof typeof priorityColors] || 'secondary'}>
+                        <Badge variant={(priorityColors[report.priority as keyof typeof priorityColors] || 'secondary') as BadgeVariant}>
                           {report.priority}
                         </Badge>
                         </td>
@@ -289,13 +291,13 @@ const statusColors = {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Badge 
-                                    variant={statusColors[selectedReport?.status as keyof typeof statusColors] || 'outline'}
+                                    variant={(statusColors[selectedReport?.status as keyof typeof statusColors] || 'outline') as BadgeVariant}
                                     className="px-3 py-1 text-sm font-medium"
                                   >
                                     {selectedReport?.status || 'Unknown'}
                                   </Badge>
                                   <Badge 
-                                    variant={priorityColors[selectedReport?.priority as keyof typeof priorityColors] || 'secondary'}
+                                    variant={(priorityColors[selectedReport?.priority as keyof typeof priorityColors] || 'secondary') as BadgeVariant}
                                     className="px-3 py-1 text-sm font-medium"
                                   >
                                     {selectedReport?.priority || 'Unknown'} Priority
@@ -353,7 +355,7 @@ const statusColors = {
                                         <h4 className="font-semibold text-gray-900">Priority</h4>
                                       </div>
                                       <Badge 
-                                        variant={priorityColors[selectedReport.priority as keyof typeof priorityColors] || 'secondary'}
+                                        variant={(priorityColors[selectedReport.priority as keyof typeof priorityColors] || 'secondary') as BadgeVariant}
                                         className="px-3 py-1 text-sm font-medium"
                                       >
                                         {selectedReport.priority || 'Unknown'}

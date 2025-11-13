@@ -4,9 +4,10 @@ import { Opportunity, JobApplication } from "@/server/models/Job";
 import { jsonOk, jsonError, requireMethod, getAuthToken } from "@/server/utils/api";
 import { verifyToken } from "@/server/utils/auth";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["GET"]);
   if (mm) return mm;
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
   let decoded: any; 
@@ -18,14 +19,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   
   await connectToDatabase();
   
-  const opportunity = await Opportunity.findById(params.id);
+  const opportunity = await Opportunity.findById(id);
   if (!opportunity) return jsonError("Not found", 404);
   if (String(opportunity.recruiter_id) !== decoded.sub && decoded.role !== "admin") {
     return jsonError("Forbidden", 403);
   }
   
   // Fetch applications with populated worker information
-  const apps = await JobApplication.find({ opportunity_id: params.id })
+  const apps = await JobApplication.find({ opportunity_id: id })
     .populate('worker_id', 'full_name email phone avatar_url trust_score location')
     .sort({ created_at: -1 })
     .lean();

@@ -4,13 +4,14 @@ import { connectToDatabase } from "@/server/lib/mongodb";
 import { Farmer } from "@/server/models/Farmer";
 import { User } from "@/server/models/User";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["GET"]);
   if (mm) return mm;
 
+  const { id } = await params;
   await connectToDatabase();
   
-  const farmer = await Farmer.findById(params.id)
+  const farmer = await Farmer.findById(id)
     .populate({
       path: 'user_id',
       select: 'full_name email location avatar_url bio verified status',

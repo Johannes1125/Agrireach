@@ -7,9 +7,13 @@ export type MailParams = {
   text?: string;
 };
 
-let transporter: nodemailer.Transporter | null = null;
+type MailTransporter = {
+  sendMail: (options: any) => Promise<any>;
+};
 
-function getTransporter(): nodemailer.Transporter {
+let transporter: MailTransporter | null = null;
+
+function getTransporter(): MailTransporter {
   if (transporter) return transporter;
   const host = process.env.SMTP_HOST as string;
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
@@ -21,7 +25,7 @@ function getTransporter(): nodemailer.Transporter {
     port,
     secure: port === 465,
     auth: { user, pass },
-  });
+  }) as MailTransporter;
   return transporter;
 }
 

@@ -11,7 +11,7 @@ interface EditJobPageProps {
 }
 
 async function fetchJob(id: string) {
-  const h = headers()
+  const h = await headers()
   const protocol = h.get("x-forwarded-proto") || "http"
   const host = h.get("host")
   const baseUrl = `${protocol}://${host}`

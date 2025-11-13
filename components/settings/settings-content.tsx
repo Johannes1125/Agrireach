@@ -33,7 +33,7 @@ import { authFetch } from "@/lib/auth-client";
 import { showRoleUpdateSuccess } from "@/lib/role-validation-client";
 import { SkillCard } from "@/components/ui/skill-card";
 import { SkillSelector } from "@/components/ui/skill-selector";
-import { Skill, getSkillCategory } from "@/lib/skills";
+import { Skill, SkillLevel, getSkillCategory } from "@/lib/skills";
 import { useTranslation } from "@/contexts/TranslationProvider";
 import {
   Bell,
@@ -60,7 +60,11 @@ interface SettingsUser {
   role: "worker" | "recruiter" | "buyer" | ("worker" | "recruiter" | "buyer")[];
   avatar: string;
   location: string;
+  joinDate?: string;
   bio?: string;
+  verified?: boolean;
+  rating?: number;
+  completedJobs?: number;
   phone?: string;
   business?: {
     name?: string;
@@ -125,11 +129,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
   });
 
   // Skills management state - support both old and new formats
-  const [workerSkills, setWorkerSkills] = useState<Array<{
-    name: string;
-    level: number;
-    category: string;
-  }>>([]);
+  const [workerSkills, setWorkerSkills] = useState<Skill[]>([]);
   const [verificationStatus, setVerificationStatus] = useState<"none" | "pending" | "verified" | "rejected">(
     user.verificationStatus || (user.verified ? "verified" : "none")
   );
@@ -166,14 +166,14 @@ export function SettingsContent({ user }: SettingsContentProps) {
   useEffect(() => {
     if (profile?.skills) {
       // Normalize skills to new format
-      const normalized = Array.isArray(profile.skills) && profile.skills.length > 0
+      const normalized: Skill[] = Array.isArray(profile.skills) && profile.skills.length > 0
         ? (typeof profile.skills[0] === 'string'
-          ? profile.skills.map((s: string) => ({
+          ? (profile.skills as string[]).map((s) => ({
               name: s,
-              level: 2,
+              level: 2 as SkillLevel,
               category: getSkillCategory(s) || "Farm Management"
             }))
-          : profile.skills)
+          : (profile.skills as Skill[]))
         : [];
       setWorkerSkills(normalized);
     }

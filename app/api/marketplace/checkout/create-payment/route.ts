@@ -7,6 +7,7 @@ import { Product, CartItem, Order } from "@/server/models/Product";
 import { Payment } from "@/server/models/Payment";
 import { CheckoutRequestSchema, convertToCentavos, PAYMENT_ERRORS } from "@/server/validators/payment";
 import { createPaymentIntent, createCheckoutSession, StripeError } from "@/lib/stripe";
+import type Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
   const mm = requireMethod(req, ["POST"]);
@@ -87,10 +88,10 @@ export async function POST(req: NextRequest) {
       totalAmount += itemTotal;
 
       orderItems.push({
-        product_id: product._id.toString(),
+        product_id: String(product._id),
         quantity: cartItem.quantity,
         price: product.price,
-        seller_id: product.seller_id.toString()
+        seller_id: String(product.seller_id)
       });
     }
 
@@ -120,7 +121,7 @@ export async function POST(req: NextRequest) {
       const createdOrders = [];
       
       for (const item of orderItems) {
-        const cartItem = cartItems.find(ci => ci.product_id._id.toString() === item.product_id);
+        const cartItem = cartItems.find(ci => String(ci.product_id._id) === item.product_id);
         const product = cartItem?.product_id as any;
         
         const order = await Order.create({
@@ -174,13 +175,13 @@ export async function POST(req: NextRequest) {
         const amountInCentavos = convertToCentavos(totalAmount);
         
         // Determine payment method types for Stripe
-        let paymentMethodTypes: string[] = [];
+        let paymentMethodTypes: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] | undefined;
         if (payment_method === "card") {
           paymentMethodTypes = ['card'];
         } else if (payment_method === "gcash") {
-          paymentMethodTypes = ['external_gcash'];
+          paymentMethodTypes = ['external_gcash'] as unknown as Stripe.Checkout.SessionCreateParams.PaymentMethodType[];
         } else if (payment_method === "grab_pay") {
-          paymentMethodTypes = ['external_grabpay'];
+          paymentMethodTypes = ['external_grabpay'] as unknown as Stripe.Checkout.SessionCreateParams.PaymentMethodType[];
         }
         
         // Use Checkout Session for all payment methods (simpler and supports redirects)
@@ -191,7 +192,7 @@ export async function POST(req: NextRequest) {
           success_url: `${process.env.BASE_URL || 'http://localhost:3000'}/marketplace/payment/success?payment_id=${payment._id}&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${process.env.BASE_URL || 'http://localhost:3000'}/marketplace/payment/failed?payment_id=${payment._id}`,
           metadata: {
-            payment_id: payment._id.toString(),
+            payment_id: String(payment._id),
             buyer_id: userId,
           },
           customer_email: billing_details.email,

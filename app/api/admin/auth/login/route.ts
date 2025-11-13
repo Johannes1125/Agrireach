@@ -53,13 +53,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Generate tokens
+  const userId = String(user._id);
   const accessToken = signAccessToken({ 
-    sub: user._id.toString(), 
+    sub: userId, 
     role: user.role,
     roles: user.roles || [user.role]
   });
   const refreshToken = signRefreshToken({ 
-    sub: user._id.toString(), 
+    sub: userId, 
     role: user.role,
     roles: user.roles || [user.role]
   });
@@ -67,18 +68,18 @@ export async function POST(req: NextRequest) {
   // Save session
   const tokenHash = await bcrypt.hash(refreshToken, 10);
   await UserSession.create({
-    user_id: user._id,
+    user_id: user._id as any,
     token: tokenHash,
     expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
   });
 
   // Update last login
-  await User.findByIdAndUpdate(user._id, { last_login: new Date() });
+  await User.findByIdAndUpdate(user._id as any, { last_login: new Date() });
 
   // Create response with cookies
   const response = jsonOk({ 
     user: {
-      id: user._id,
+      id: userId,
       email: user.email,
       full_name: user.full_name,
       role: user.role,

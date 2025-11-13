@@ -107,10 +107,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const applicant = await User.findById(userId).select("full_name").lean();
     if (applicant) {
       await notifyJobApplication(
-        job.recruiter_id.toString(),
+        String(job.recruiter_id),
         applicant.full_name,
         job.title,
-        job._id.toString()
+        String(job._id)
       );
     }
 

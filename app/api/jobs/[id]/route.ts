@@ -4,17 +4,19 @@ import { Job } from "@/server/models/Job";
 import { jsonOk, jsonError, requireMethod, getBearerToken } from "@/server/utils/api";
 import { verifyToken } from "@/server/utils/auth";
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   await connectToDatabase();
-  const job = await Job.findById(params.id).lean();
+  const job = await Job.findById(id).lean();
   if (!job) return jsonError("Not found", 404);
   return jsonOk(job);
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getBearerToken(req);
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -26,7 +28,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 
   await connectToDatabase();
-  const job = await Job.findById(params.id);
+  const job = await Job.findById(id);
   if (!job) return jsonError("Not found", 404);
   if (String(job.recruiter_id) !== decoded.sub && decoded.role !== "admin") {
     return jsonError("Forbidden", 403);

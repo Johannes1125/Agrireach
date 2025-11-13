@@ -4,13 +4,14 @@ import { verifyToken } from "@/server/utils/auth"
 import { connectToDatabase } from "@/server/lib/mongodb"
 import { Opportunity } from "@/server/models/Job"
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"])
   if (mm) return mm
   const token = getAuthToken(req, "access")
   if (!token) return jsonError("Unauthorized", 401)
   let decoded: any; try { decoded = verifyToken<any>(token, "access") } catch { return jsonError("Unauthorized", 401) }
   if (decoded.role !== "admin") return jsonError("Forbidden", 403)
+  const { id } = await params
   await connectToDatabase()
   const body = await req.json().catch(() => ({}))
   const { action } = body || {}
@@ -20,7 +21,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   else if (action === 'close') set.status = 'closed'
   else if (action === 'remove') set.status = 'hidden'
   else return jsonError('Invalid action', 400)
-  const updated = await Opportunity.findByIdAndUpdate(params.id, { $set: set }, { new: true })
+  const updated = await Opportunity.findByIdAndUpdate(id, { $set: set }, { new: true })
   if (!updated) return jsonError('Opportunity not found', 404)
   return jsonOk({ opportunity: updated })
 }

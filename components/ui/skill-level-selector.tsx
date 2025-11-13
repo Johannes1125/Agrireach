@@ -43,14 +43,14 @@ export function SkillLevelSelector({
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {(Object.keys(SKILL_LEVELS) as Array<keyof typeof SKILL_LEVELS>).map((level) => {
-            const levelNum = parseInt(level) as SkillLevel;
+          {(Object.entries(SKILL_LEVELS) as Array<[string, string]>).map(([level, label]) => {
+            const levelNum = parseInt(level, 10) as SkillLevel;
             const levelColor = SKILL_LEVEL_COLORS[levelNum];
             return (
               <SelectItem key={level} value={level}>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className={levelColor}>
-                    {SKILL_LEVELS[levelNum]}
+                    {label}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
                     {levelNum === 1 && "Basic knowledge"}

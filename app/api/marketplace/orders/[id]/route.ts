@@ -12,10 +12,11 @@ const UpdateOrderSchema = z.object({
   payment_status: z.enum(["pending", "paid", "refunded"]).optional(),
 });
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["GET"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   await connectToDatabase();
   
-  const order = await Order.findById(params.id)
+  const order = await Order.findById(id)
     .populate('buyer_id', 'full_name email location')
     .populate('seller_id', 'full_name email location')
     .populate('product_id', 'title price unit images')
@@ -37,18 +38,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (!order) return jsonError("Order not found", 404);
 
   // Check if user is buyer or seller
-  if (order.buyer_id._id.toString() !== decoded.sub && 
-      order.seller_id._id.toString() !== decoded.sub) {
+  if (String(order.buyer_id._id) !== decoded.sub && 
+      String(order.seller_id._id) !== decoded.sub) {
     return jsonError("Forbidden", 403);
   }
 
   return jsonOk({ order });
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"]);
   if (mm) return mm;
 
+  const { id } = await params;
   const token = getAuthToken(req, "access");
   if (!token) return jsonError("Unauthorized", 401);
 
@@ -61,7 +63,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   await connectToDatabase();
   
-  const order = await Order.findById(params.id)
+  const order = await Order.findById(id)
     .populate('buyer_id', 'full_name')
     .populate('seller_id', 'full_name')
     .populate('product_id', 'title');
@@ -69,8 +71,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (!order) return jsonError("Order not found", 404);
 
   // Only seller can update order status, buyer can cancel
-  const isSeller = order.seller_id._id.toString() === decoded.sub;
-  const isBuyer = order.buyer_id._id.toString() === decoded.sub;
+  const isSeller = String(order.seller_id._id) === decoded.sub;
+  const isBuyer = String(order.buyer_id._id) === decoded.sub;
 
   if (!isSeller && !isBuyer) {
     return jsonError("Forbidden", 403);
@@ -95,7 +97,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 
   const updatedOrder = await Order.findByIdAndUpdate(
-    params.id,
+    id,
     { $set: result.data },
     { new: true }
   ).populate('buyer_id', 'full_name')
@@ -107,12 +109,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const statusMessage = result.data.status ? 
     `Order status updated to ${result.data.status}` :
     `Payment status updated to ${result.data.payment_status}`;
+  const product = order.product_id as any;
 
   await Notification.create({
     user_id: notificationTarget,
     type: 'order_update',
     title: 'Order Status Updated',
-    message: `${statusMessage} for "${order.product_id.title}"`,
+    message: `${statusMessage} for "${product?.title || 'product'}"`,
     priority: 'medium',
     action_url: `/marketplace/orders/${order._id}`
   });

@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         action: "started",
         topic: thread.title,
         time: formatTimeAgo(thread.created_at),
-        thread_id: thread._id.toString()
+        thread_id: String(thread._id)
       });
     }
 

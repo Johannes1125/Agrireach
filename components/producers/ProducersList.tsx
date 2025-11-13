@@ -125,9 +125,9 @@ export default function ProducersList() {
           setPages(data.data.pages || 0);
 
           // Extract unique locations and categories for filters
-          const locations = Array.from(new Set(items.map((p: Producer) => p.location))).sort();
+          const locations = Array.from(new Set<string>(items.map((p: Producer) => p.location))).sort();
           const categories = Array.from(
-            new Set([
+            new Set<string>([
               ...items.map((p: Producer) => p.category),
               ...items.flatMap((p: Producer) => p.services || []),
             ])

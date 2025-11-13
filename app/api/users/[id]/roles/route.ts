@@ -83,7 +83,8 @@ export async function PUT(
   const result = UpdateRolesSchema.safeParse(body);
 
   if (!result.success) {
-    return jsonError(result.error.errors[0].message, 400);
+    const firstIssue = result.error.issues[0];
+    return jsonError(firstIssue?.message || "Invalid payload", 400);
   }
 
   const { roles } = result.data;

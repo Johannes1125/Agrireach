@@ -2,6 +2,8 @@ import { redirect } from "next/navigation"
 import { UnifiedDashboard } from "@/components/dashboard/unified-dashboard"
 import { getCurrentUser } from "@/lib/auth-server"
 
+export const dynamic = "force-dynamic"
+
 export default async function DashboardPage() {
   const user = await getCurrentUser()
 
@@ -17,7 +19,7 @@ export default async function DashboardPage() {
           name: user.full_name,
           role: (user as any).roles?.[0] || user.role,
           location: user.location || "Not specified",
-          joinDate: new Date(user.created_at).toISOString().split('T')[0],
+          joinDate: user.created_at ? new Date(user.created_at).toISOString().split("T")[0] : "",
         }} />
       </main>
     </div>

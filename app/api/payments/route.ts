@@ -24,11 +24,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const queryParams = Object.fromEntries(searchParams.entries());
     
-    // Parse numeric parameters
-    if (queryParams.page) queryParams.page = parseInt(queryParams.page);
-    if (queryParams.limit) queryParams.limit = parseInt(queryParams.limit);
+    // Parse numeric parameters for validation (without mutating original string values)
+    const parsedQueryParams = {
+      ...queryParams,
+      page: queryParams.page ? parseInt(queryParams.page, 10) : undefined,
+      limit: queryParams.limit ? parseInt(queryParams.limit, 10) : undefined,
+    };
 
-    const result = PaymentFilterSchema.safeParse(queryParams);
+    const result = PaymentFilterSchema.safeParse(parsedQueryParams);
 
     if (!result.success) {
       return jsonError(result.error.issues[0].message, 400);
@@ -40,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     // Check user role
     try {
-      const { user, userId } = await validateUserRole(req, ["buyer", "seller", "admin"]);
+      const { user, userId } = await validateUserRole(req, ["buyer", "admin"]);
     } catch (roleError: any) {
       return jsonError(roleError.message, 403);
     }
@@ -89,38 +92,42 @@ export async function GET(req: NextRequest) {
     ]);
 
     // Format response
-    const formattedPayments = payments.map(payment => ({
-      id: payment._id,
-      amount: payment.amount / 100, // Convert to pesos
-      currency: payment.currency,
-      description: payment.description,
-      payment_method: payment.payment_method,
-      payment_type: payment.payment_type,
-      status: payment.status,
-      failure_reason: payment.failure_reason,
-      paid_at: payment.paid_at,
-      failed_at: payment.failed_at,
-      cancelled_at: payment.cancelled_at,
-      created_at: payment.created_at,
-      updated_at: payment.updated_at,
-      expires_at: payment.expires_at,
-      buyer: payment.buyer_id ? {
-        id: payment.buyer_id._id,
-        name: payment.buyer_id.full_name,
-        email: payment.buyer_id.email,
-        avatar: payment.buyer_id.avatar_url
-      } : null,
-      seller: payment.seller_id ? {
-        id: payment.seller_id._id,
-        name: payment.seller_id.full_name,
-        email: payment.seller_id.email,
-        avatar: payment.seller_id.avatar_url
-      } : null,
-      order: payment.order_id,
-      billing_details: payment.billing_details,
-      delivery_address: payment.delivery_address,
-      metadata: payment.metadata
-    }));
+    const formattedPayments = payments.map(payment => {
+      const buyer = payment.buyer_id as any;
+      const seller = payment.seller_id as any;
+      return {
+        id: payment._id,
+        amount: payment.amount / 100, // Convert to pesos
+        currency: payment.currency,
+        description: payment.description,
+        payment_method: payment.payment_method,
+        payment_type: payment.payment_type,
+        status: payment.status,
+        failure_reason: payment.failure_reason,
+        paid_at: payment.paid_at,
+        failed_at: payment.failed_at,
+        cancelled_at: payment.cancelled_at,
+        created_at: payment.created_at,
+        updated_at: payment.updated_at,
+        expires_at: payment.expires_at,
+        buyer: buyer ? {
+          id: buyer._id,
+          name: buyer.full_name,
+          email: buyer.email,
+          avatar: buyer.avatar_url
+        } : null,
+        seller: seller ? {
+          id: seller._id,
+          name: seller.full_name,
+          email: seller.email,
+          avatar: seller.avatar_url
+        } : null,
+        order: payment.order_id,
+        billing_details: payment.billing_details,
+        delivery_address: payment.delivery_address,
+        metadata: payment.metadata
+      };
+    });
 
     return jsonOk({
       payments: formattedPayments,

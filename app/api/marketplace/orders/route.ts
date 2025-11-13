@@ -138,10 +138,10 @@ export async function POST(req: NextRequest) {
   // Send notification to seller using the helper function (includes Pusher trigger)
   const buyer = await User.findById(userId).select('full_name').lean();
   await notifyOrderPlaced(
-    product.seller_id.toString(),
+    String(product.seller_id),
     product.title,
     buyer?.full_name || 'A buyer',
-    order._id.toString()
+    String(order._id)
   );
 
   return jsonOk({ 

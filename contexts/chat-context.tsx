@@ -177,8 +177,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       created_at: new Date().toISOString(),
       sender: {
         id: user.id,
-        name: user.full_name || user.email || 'You',
-        avatar: user.avatar_url,
+        name: user.name || user.email || "You",
+        avatar: user.avatar,
         email: user.email,
       },
     }

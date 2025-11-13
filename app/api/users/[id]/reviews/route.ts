@@ -3,10 +3,11 @@ import { requireMethod, jsonOk } from "@/server/utils/api";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Review } from "@/server/models/Review";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["GET"]);
   if (mm) return mm;
 
+  const { id } = await params;
   await connectToDatabase();
 
   const { searchParams } = new URL(req.url);
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const [reviews, total, stats] = await Promise.all([
     Review.find({ 
-      reviewee_id: params.id,
+      reviewee_id: id,
       status: "active"
     })
     .populate('reviewer_id', 'full_name avatar_url')
@@ -25,11 +26,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .limit(limit)
     .lean(),
     Review.countDocuments({ 
-      reviewee_id: params.id,
+      reviewee_id: id,
       status: "active"
     }),
     Review.aggregate([
-      { $match: { reviewee_id: params.id, status: "active" } },
+      { $match: { reviewee_id: id, status: "active" } },
       {
         $group: {
           _id: null,

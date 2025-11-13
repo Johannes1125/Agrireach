@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
           posts_count: 0
         })
       }
-      category_id = category._id.toString()
+      category_id = String(category._id)
     }
 
     // Ensure we have a category_id
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
     const authorName = author?.full_name || "A user";
     
     // Notify all users about new community thread (don't await to avoid slowing down the response)
-    notifyAllUsersNewThread(authorName, result.data.title, thread._id.toString()).catch(err => 
+    notifyAllUsersNewThread(authorName, result.data.title, String(thread._id)).catch(err => 
       console.error("Failed to send thread notifications:", err)
     );
     
