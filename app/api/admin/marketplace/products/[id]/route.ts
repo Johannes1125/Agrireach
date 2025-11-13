@@ -4,14 +4,14 @@ import { verifyToken } from "@/server/utils/auth"
 import { connectToDatabase } from "@/server/lib/mongodb"
 import { Product } from "@/server/models/Product"
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["PUT"])
   if (mm) return mm
   const token = getAuthToken(req, "access")
   if (!token) return jsonError("Unauthorized", 401)
   let decoded: any; try { decoded = verifyToken<any>(token, "access") } catch { return jsonError("Unauthorized", 401) }
   if (decoded.role !== "admin") return jsonError("Forbidden", 403)
-  const { id } = await params
+  const { id } = await context.params
   await connectToDatabase()
   const body = await req.json().catch(() => ({}))
   const { action } = body || {}
