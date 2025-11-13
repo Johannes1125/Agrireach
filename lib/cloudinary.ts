@@ -11,4 +11,18 @@ if (process.env.CLOUDINARY_URL) {
   });
 }
 
+// Re-export functions from server/utils/cloudinary for convenience
+export {
+  uploadToCloudinary,
+  uploadProfileAvatar,
+  uploadProductImage,
+  uploadBusinessLogo,
+  uploadCommunityImage,
+  deleteFromCloudinary,
+  generateImageUrl,
+  getImageInfo,
+  type CloudinaryUploadResult,
+  type UploadOptions,
+} from "@/server/utils/cloudinary";
+
 export default cloudinary;
