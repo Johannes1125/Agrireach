@@ -1650,6 +1650,9 @@ export default function CoursePage() {
   const [showCertificate, setShowCertificate] = useState(false);
   // Track which video lessons have actually been watched to the end using YouTube IFrame API
   const [videoWatched, setVideoWatched] = useState<Record<number, boolean>>({});
+  // Server sync flags
+  const [loadedFromServer, setLoadedFromServer] = useState(false);
+  const saveTimerRef = useRef<number | undefined>(undefined);
 
   const completedLessons = Object.values(lessonProgress).filter(Boolean).length;
   const totalLessons = course.lessons.length;
@@ -1670,6 +1673,146 @@ export default function CoursePage() {
       setShowQuizResults(false);
     }
   };
+
+  // Resume and hydrate from server on mount
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProgress() {
+      try {
+        const res = await fetch(`/api/learning/progress/${id}`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!res.ok) throw new Error(`Failed to load progress: ${res.status}`);
+        const data = await res.json();
+        if (!data || cancelled) return setLoadedFromServer(true);
+
+        // Merge lesson completion
+        if (data.lessonProgress) {
+          const serverProgress = data.lessonProgress as Record<
+            string,
+            {
+              completed?: boolean;
+              videoWatched?: boolean;
+              quizPassed?: boolean;
+            }
+          >;
+          const nextLessonProgress: Record<number, boolean> = {
+            ...lessonProgress,
+          };
+          const nextVideoWatched: Record<number, boolean> = { ...videoWatched };
+          for (const key of Object.keys(serverProgress)) {
+            const lid = Number(key);
+            if (Number.isFinite(lid)) {
+              if (typeof serverProgress[key]?.completed === "boolean") {
+                nextLessonProgress[lid] = !!serverProgress[key].completed;
+              }
+              if (typeof serverProgress[key]?.videoWatched === "boolean") {
+                nextVideoWatched[lid] = !!serverProgress[key].videoWatched;
+              }
+            }
+          }
+          if (!cancelled) {
+            setLessonProgress(nextLessonProgress);
+            setVideoWatched(nextVideoWatched);
+          }
+        }
+
+        // Auto resume last lesson by opening modal to that lesson
+        if (data.lastLessonId) {
+          const lesson = course.lessons.find((l) => l.id === data.lastLessonId);
+          if (lesson && !cancelled) {
+            setActiveTab("lessons");
+            // small delay to ensure UI mounts
+            setTimeout(() => setActiveLesson(lesson), 50);
+            toast.success(`Resumed at: ${lesson.title}`);
+          }
+        }
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        if (!cancelled) setLoadedFromServer(true);
+      }
+    }
+    loadProgress();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  // Helper to parse duration strings like "5 mins", "1 hour and 30 mins", "2 hours 14 mins"
+  function parseDurationToSeconds(s?: string): number {
+    if (!s) return 0;
+    const lower = s.toLowerCase();
+    let total = 0;
+    const hourMatch = lower.match(/(\d+)\s*hour/);
+    const hours = hourMatch ? parseInt(hourMatch[1], 10) : 0;
+    const minMatch = lower.match(/(\d+)\s*min/);
+    const mins = minMatch ? parseInt(minMatch[1], 10) : 0;
+    const secMatch = lower.match(/(\d+)\s*sec/);
+    const secs = secMatch ? parseInt(secMatch[1], 10) : 0;
+    total = hours * 3600 + mins * 60 + secs;
+    return total;
+  }
+
+  // Debounced save to server whenever progress or last active lesson changes
+  useEffect(() => {
+    if (!loadedFromServer) return; // avoid overwriting before hydration
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+
+    saveTimerRef.current = window.setTimeout(async () => {
+      try {
+        // Compose lessonProgress payload
+        const lessonPayload: Record<
+          number,
+          { completed: boolean; videoWatched?: boolean; quizPassed?: boolean }
+        > = {};
+        let totalTimeSeconds = 0;
+        for (const lesson of course.lessons) {
+          const completed = !!lessonProgress[lesson.id];
+          const videoFlag = !!videoWatched[lesson.id];
+          const item: {
+            completed: boolean;
+            videoWatched?: boolean;
+            quizPassed?: boolean;
+          } = { completed };
+          if (lesson.type === "video") item.videoWatched = videoFlag;
+          if (lesson.type === "quiz") item.quizPassed = completed; // we only allow complete when passed
+          lessonPayload[lesson.id] = item;
+          if (completed)
+            totalTimeSeconds += parseDurationToSeconds(lesson.duration);
+        }
+
+        const payload = {
+          courseTitle: course.title,
+          hasCertificate: isCourseCompleted && !!course.certificate,
+          totalLessons,
+          lessonProgress: lessonPayload,
+          lastLessonId: activeLesson?.id,
+          totalTimeSeconds,
+        };
+        await fetch(`/api/learning/progress/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+      } catch (e) {
+        console.warn("Failed to save progress", e);
+      }
+    }, 600);
+
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, [
+    lessonProgress,
+    videoWatched,
+    activeLesson,
+    isCourseCompleted,
+    totalLessons,
+    loadedFromServer,
+  ]);
 
   // Initialize / attach YouTube player to capture video end event for completion sensor
   useEffect(() => {
