@@ -32,7 +32,7 @@ NEXT_PUBLIC_PUSHER_CLUSTER=ap1
 
 1. Create a Pusher account at [pusher.com](https://pusher.com)
 2. Create a new app in your Pusher dashboard
-3. Copy the credentials to your environment variablesqweqweqewqwe
+3. Copy the credentials to your environment variables
 4. Enable private channels in your Pusher app settings
 
 ### 3. Database Models
