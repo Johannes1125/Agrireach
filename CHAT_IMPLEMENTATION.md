@@ -13,7 +13,7 @@ This implementation provides a complete real-time chat system using Pusher for y
 
 ## Setup Instructions
 
-### 1. Environment Variables
+### 1. Environment Variablesssssssss
 
 Add these variables to your `.env.local` file:
 
