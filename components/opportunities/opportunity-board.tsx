@@ -21,8 +21,20 @@ import {
   Users,
   Search,
   Filter,
+  Flag,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { OpportunityFilters } from "./opportunity-filters";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
@@ -31,6 +43,8 @@ import { InlineLoader } from "@/components/ui/page-loader";
 import { formatDate, formatRelativeTime } from "@/lib/utils";
 import { normalizeSkillRequirements, SKILL_LEVELS, SkillLevel } from "@/lib/skills";
 import { useAuth } from "@/hooks/use-auth";
+import { authFetch } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 export function OpportunityBoard() {
   const [sortBy, setSortBy] = useState("newest");
@@ -39,50 +53,62 @@ export function OpportunityBoard() {
   const [allJobs, setAllJobs] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportingJobId, setReportingJobId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDescription, setReportDescription] = useState("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const { searchQuery, location } = useJobSearch();
   const { user } = useAuth();
 
+  // Load jobs only once on mount
   useEffect(() => {
+    if (hasLoaded) return; // Only load once
+    
     const load = async () => {
       setLoading(true);
-      // Build API URL with sortBy parameter if needed
-      const apiUrl = `/api/opportunities?limit=100&page=1${sortBy === "match" ? "&sortBy=match" : ""}`;
-      // Add minimum delay for loading state
-      const [data] = await Promise.all([
-        fetch(apiUrl).then(res => res.json().catch(() => ({}))),
-        new Promise(resolve => setTimeout(resolve, 2000)) // Minimum 2 second delay
-      ]);
-      
-      const items: any[] = (data?.data?.items || []).map((j: any) => ({
-        id: String(j._id),
-        title: j.title,
-        company: j.company_name || "",
-        location: j.location,
-        type: j.duration || j.pay_type || "",
-        payRange: ((): string => {
-          const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
-          const hasMax = typeof j.pay_rate_max === "number" && j.pay_rate_max > j.pay_rate
-          if (!hasMin) return ""
-          const payType = j.pay_type || "hourly"
-          const base = hasMax ? `P${j.pay_rate}–P${j.pay_rate_max}` : `P${j.pay_rate}`
-          return `${base}/${payType}`
-        })(),
-        urgency: j.urgency,
-        postedDate: j.created_at,
-        deadline: j.start_date || j.created_at,
-        applicants: j.applications_count || 0,
-        description: j.description,
-        skills: normalizeSkillRequirements(j.required_skills as any),
-        companyLogo: j.company_logo || "/placeholder.svg",
-        companyRating: 0,
-        matchScore: j.matchScore || 0,
-        recruiterId: j.recruiter_id?._id ? String(j.recruiter_id._id) : String(j.recruiter_id || ""),
-      }));
-      setAllJobs(items);
-      setLoading(false);
+      try {
+        // Build API URL - get all jobs for client-side filtering/sorting
+        const apiUrl = `/api/opportunities?limit=100&page=1`;
+        const response = await fetch(apiUrl);
+        const data = await response.json().catch(() => ({}));
+        
+        const items: any[] = (data?.data?.items || []).map((j: any) => ({
+          id: String(j._id),
+          title: j.title,
+          company: j.company_name || "",
+          location: j.location,
+          type: j.duration || j.pay_type || "",
+          payRange: ((): string => {
+            const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
+            const hasMax = typeof j.pay_rate_max === "number" && j.pay_rate_max > j.pay_rate
+            if (!hasMin) return ""
+            const payType = j.pay_type || "hourly"
+            const base = hasMax ? `P${j.pay_rate}–P${j.pay_rate_max}` : `P${j.pay_rate}`
+            return `${base}/${payType}`
+          })(),
+          urgency: j.urgency,
+          postedDate: j.created_at,
+          deadline: j.start_date || j.created_at,
+          applicants: j.applications_count || 0,
+          description: j.description,
+          skills: normalizeSkillRequirements(j.required_skills as any),
+          companyLogo: j.company_logo || "/placeholder.svg",
+          companyRating: 0,
+          matchScore: j.matchScore || 0,
+          recruiterId: j.recruiter_id?._id ? String(j.recruiter_id._id) : String(j.recruiter_id || ""),
+        }));
+        setAllJobs(items);
+        setHasLoaded(true);
+      } catch (error) {
+        console.error("Failed to load opportunities:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     load();
-  }, [sortBy]);
+  }, [hasLoaded]);
 
   // Filter and sort jobs based on search query, location, and sortBy
   useEffect(() => {
@@ -158,6 +184,55 @@ export function OpportunityBoard() {
     );
   };
 
+  const handleReportClick = (jobId: string) => {
+    setReportingJobId(jobId);
+    setReportOpen(true);
+    setReportReason("");
+    setReportDescription("");
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportingJobId || !reportReason || !reportDescription.trim()) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if (!user) {
+      toast.error("Please log in to report a job");
+      return;
+    }
+
+    setIsSubmittingReport(true);
+    try {
+      const response = await authFetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "job",
+          content_id: reportingJobId,
+          reason: reportReason,
+          description: reportDescription.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to submit report");
+      }
+
+      toast.success("Report submitted successfully. Thank you for helping keep our community safe.");
+      setReportOpen(false);
+      setReportReason("");
+      setReportDescription("");
+      setReportingJobId(null);
+    } catch (error: any) {
+      console.error("Error submitting report:", error);
+      toast.error(error.message || "Failed to submit report. Please try again.");
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
       case "urgent":
@@ -180,53 +255,62 @@ export function OpportunityBoard() {
   }
 
   return (
-    <section className="space-y-4 sm:space-y-6" aria-label="Job Opportunities">
-      {/* Sort and View Options */}
-      <header className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="font-heading text-lg sm:text-xl font-semibold">
-            {total} Job Opportunities
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Showing jobs matching your profile and preferences
-          </p>
+    <div className="flex gap-4 lg:gap-6">
+      {/* Desktop Filter Sidebar */}
+      <aside className="hidden lg:block w-64 flex-shrink-0">
+        <div className="sticky top-4">
+          <OpportunityFilters />
         </div>
+      </aside>
 
-        <div className="flex items-center gap-2 sm:gap-4">
-          {/* Mobile Filter Button */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="lg:hidden">
-                <Filter className="h-4 w-4 mr-2" />
-                Filters
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-full sm:w-96 overflow-y-auto">
-              <div className="py-4">
-                <h3 className="text-lg font-semibold mb-4">Filters</h3>
-                <OpportunityFilters />
-              </div>
-            </SheetContent>
-          </Sheet>
+      {/* Main Content */}
+      <section className="flex-1 space-y-4 sm:space-y-6" aria-label="Job Opportunities">
+        {/* Sort and View Options */}
+        <header className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="font-heading text-lg sm:text-xl font-semibold">
+              {total} Job Opportunities
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Showing jobs matching your profile and preferences
+            </p>
+          </div>
 
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-32 sm:w-48">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest First</SelectItem>
-              <SelectItem value="match">Best Match</SelectItem>
-              <SelectItem value="pay-high">Highest Pay</SelectItem>
-              <SelectItem value="pay-low">Lowest Pay</SelectItem>
-              <SelectItem value="deadline">Deadline Soon</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </header>
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Mobile Filter Button */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="lg:hidden">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-full sm:w-96 overflow-y-auto">
+                <div className="py-4">
+                  <h3 className="text-lg font-semibold mb-4">Filters</h3>
+                  <OpportunityFilters />
+                </div>
+              </SheetContent>
+            </Sheet>
 
-      {/* Job Listings */}
-      <section aria-label="Job Listings">
-        <div className="space-y-3 sm:space-y-4 max-h-[900px] overflow-y-auto pr-1 sm:pr-2">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-32 sm:w-48">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="match">Best Match</SelectItem>
+                <SelectItem value="pay-high">Highest Pay</SelectItem>
+                <SelectItem value="pay-low">Lowest Pay</SelectItem>
+                <SelectItem value="deadline">Deadline Soon</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </header>
+
+        {/* Job Listings */}
+        <section aria-label="Job Listings">
+          <div className="space-y-3 sm:space-y-4 max-h-[900px] overflow-y-auto pr-1 sm:pr-2">
         {jobs.length === 0 ? (
           <div className="text-center py-12">
             <Search className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
@@ -283,19 +367,31 @@ export function OpportunityBoard() {
                           </div>
                         </div>
 
-                        {/* Bookmark Icon - Top Right */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleSaveJob(job.id)}
-                          className="flex-shrink-0 h-8 w-8 p-0"
-                        >
-                          <Bookmark
-                            className={`h-4 w-4 ${
-                              savedJobs.includes(job.id) ? "fill-current text-primary" : ""
-                            }`}
-                          />
-                        </Button>
+                        {/* Bookmark and Report Icons - Top Right */}
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleSaveJob(job.id)}
+                            className="flex-shrink-0 h-8 w-8 p-0"
+                            aria-label="Save job"
+                          >
+                            <Bookmark
+                              className={`h-4 w-4 ${
+                                savedJobs.includes(job.id) ? "fill-current text-primary" : ""
+                              }`}
+                            />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleReportClick(job.id)}
+                            className="flex-shrink-0 h-8 w-8 p-0"
+                            aria-label="Report job"
+                          >
+                            <Flag className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                          </Button>
+                        </div>
                       </div>
 
                       {/* Job Description */}
@@ -387,7 +483,70 @@ export function OpportunityBoard() {
           ))
         )}
         </div>
-  </section>
-</section>
+      </section>
+    </section>
+
+    {/* Report Dialog */}
+    <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Report Job Posting</DialogTitle>
+          <DialogDescription>
+            Help us maintain a safe community by reporting inappropriate or suspicious job postings.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="report-reason">Reason for Reporting</Label>
+            <Select value={reportReason} onValueChange={setReportReason}>
+              <SelectTrigger id="report-reason">
+                <SelectValue placeholder="Select a reason" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="spam">Spam or Scam</SelectItem>
+                <SelectItem value="misleading">Misleading Information</SelectItem>
+                <SelectItem value="inappropriate">Inappropriate Content</SelectItem>
+                <SelectItem value="fake">Fake Job Posting</SelectItem>
+                <SelectItem value="discrimination">Discrimination</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="report-description">Additional Details</Label>
+            <Textarea
+              id="report-description"
+              placeholder="Please provide more details about why you're reporting this job posting..."
+              value={reportDescription}
+              onChange={(e) => setReportDescription(e.target.value)}
+              rows={4}
+              className="resize-none"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setReportOpen(false);
+              setReportReason("");
+              setReportDescription("");
+              setReportingJobId(null);
+            }}
+            disabled={isSubmittingReport}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmitReport}
+            disabled={!reportReason || !reportDescription.trim() || isSubmittingReport}
+            variant="destructive"
+          >
+            {isSubmittingReport ? "Submitting..." : "Submit Report"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </div>
   );
 }

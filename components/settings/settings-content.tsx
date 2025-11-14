@@ -808,16 +808,6 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     onUploadComplete={(images) => {
                       if (images.length > 0) {
                         setFormData({ ...formData, avatar: images[0].url });
-                        notifications.showSuccess(
-                          "Profile Picture Updated",
-                          "Your profile picture has been updated successfully."
-                        );
-                        // Persist avatar to user
-                        authFetch(`/api/users/${user.id}`, {
-                          method: "PUT",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ avatar_url: images[0].url }),
-                        }).catch(() => {});
                       }
                     }}
                     onUploadError={(error) => {
@@ -825,6 +815,37 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     }}
                     className="w-full max-w-md"
                   />
+
+                  {formData.avatar && formData.avatar !== user.avatar && (
+                    <div className="flex flex-col gap-2 w-full max-w-md">
+                      <Button
+                        onClick={async () => {
+                          try {
+                            await authFetch(`/api/users/${user.id}`, {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ avatar_url: formData.avatar }),
+                            });
+                            notifications.showSuccess(
+                              "Profile Picture Saved",
+                              "Your profile picture has been saved successfully."
+                            );
+                            // Update user object to reflect saved state
+                            window.location.reload();
+                          } catch (error) {
+                            notifications.showError("Save Failed", "Failed to save profile picture. Please try again.");
+                          }
+                        }}
+                        className="w-full"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Profile Picture
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Click save to update your profile picture
+                      </p>
+                    </div>
+                  )}
 
                   <p className="text-xs text-muted-foreground text-center">
                     Recommended: Square image, at least 400x400px. Max 5MB.

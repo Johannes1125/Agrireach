@@ -145,6 +145,34 @@ export function ImageUpload({
         maxFileSize: maxSizeMB * 1024 * 1024,
         cropping: false,
         tags: [type, ...(entityId ? [entityId] : [])],
+        styles: {
+          palette: {
+            window: "#FFFFFF",
+            windowBorder: "#90A0B3",
+            tabIcon: "#0078FF",
+            menuIcons: "#5A616A",
+            textDark: "#000000",
+            textLight: "#FFFFFF",
+            link: "#0078FF",
+            action: "#FF620C",
+            inactiveTabIcon: "#0E2F5A",
+            error: "#F44235",
+            inProgress: "#0078FF",
+            complete: "#20B832",
+            sourceBg: "#E4EBF1"
+          },
+          fonts: {
+            default: null,
+            "'Poppins', sans-serif": {
+              url: "https://fonts.googleapis.com/css?family=Poppins",
+              active: true
+            }
+          }
+        },
+        // Prevent widget from blocking page scroll
+        showAdvancedOptions: false,
+        showCompletedButton: true,
+        showUploadMoreButton: false,
       },
       (error: any, result: any) => {
         if (error) {
@@ -190,7 +218,33 @@ export function ImageUpload({
       }
     )
 
+    // Ensure page remains scrollable when widget opens
     widget.open()
+    
+    // Prevent body scroll lock that Cloudinary might add
+    const checkScrollLock = setInterval(() => {
+      const body = document.body
+      if (body.style.overflow === 'hidden') {
+        body.style.overflow = ''
+      }
+    }, 100)
+    
+    // Clean up interval when widget closes (check every 500ms if widget is still open)
+    const checkWidgetClosed = setInterval(() => {
+      // Cloudinary widget adds a class when open, check if it's gone
+      const widgetElement = document.querySelector('[data-cloudinary-widget]') || 
+                           document.querySelector('.cloudinary-widget')
+      if (!widgetElement) {
+        clearInterval(checkScrollLock)
+        clearInterval(checkWidgetClosed)
+      }
+    }, 500)
+    
+    // Fallback: clear intervals after 5 minutes
+    setTimeout(() => {
+      clearInterval(checkScrollLock)
+      clearInterval(checkWidgetClosed)
+    }, 300000)
   }
 
   const handleFiles = useCallback(async (files: FileList) => {

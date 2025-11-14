@@ -6,6 +6,7 @@ import { Report } from "@/server/models/Report"
 import { Thread, ThreadReply } from "@/server/models/Thread"
 import { Product } from "@/server/models/Product"
 import { Review } from "@/server/models/Review"
+import { Opportunity } from "@/server/models/Job"
 
 // Placeholder: If you have a dedicated Report model, replace this aggregation accordingly
 
@@ -108,6 +109,10 @@ export async function PUT(req: NextRequest) {
           case 'review':
             // Delete the review
             await Review.findByIdAndDelete(report.content_id)
+            break
+          case 'job':
+            // Delete the job/opportunity posting
+            await Opportunity.findByIdAndDelete(report.content_id)
             break
           default:
             console.log(`Unknown content type: ${report.type}`)

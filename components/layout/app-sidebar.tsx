@@ -88,7 +88,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
   onClick={() => setCollapsed(!collapsed)}
   className={cn(
     "hidden lg:flex h-8 w-8 p-0 absolute -right-4 top-4 z-50 rounded-full border bg-background shadow-sm transition-all duration-300 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-    collapsed ? "rotate-180" : ""
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
   )}
   aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
   aria-pressed={collapsed}
@@ -168,7 +168,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
           />
           {collapsed ? (
             <span className="relative z-10 flex items-center justify-center p-3">
-              <Settings className="h-6 w-6" aria-hidden="true" />
+              <Settings className="h-5 w-5" aria-hidden="true" />
             </span>
           ) : (
             <span className="relative z-10 flex items-center gap-3 px-3 py-2.5">
