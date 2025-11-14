@@ -29,8 +29,6 @@ import { PageTransition } from "@/components/ui/page-transition";
 import { InlineLoader } from "@/components/ui/page-loader";
 import { ProductCardSkeleton } from "@/components/ui/skeleton-loader";
 import Link from "next/link";
-import { SimpleHeader } from "@/components/layout/simple-header";
-
 export default function MarketplacePage() {
   const { user, loading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -170,22 +168,6 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SimpleHeader
-        user={
-          user
-            ? {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                // cast role to expected union
-                role: user.role as unknown as "worker" | "recruiter" | "buyer",
-                avatar: user.avatar || "",
-                location: user.location || "Not specified",
-              }
-            : undefined
-        }
-      />
-
       <PageTransition>
         {/* Header */}
         <div className="bg-background border-b">
