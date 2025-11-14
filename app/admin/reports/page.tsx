@@ -23,8 +23,6 @@ export default function AdminReportsPage() {
   const [pendingAction, setPendingAction] = useState<{ reportId: string; action: string; resolution?: string } | null>(null)
   const { reports, loading, error } = useAdminReports({ status: statusFilter, priority: priorityFilter })
 
-  console.log('Reports in component:', reports, 'Loading:', loading, 'Error:', error)
-
 const reportTypes = {
   inappropriate_content: "Inappropriate Content",
   spam: "Spam",
