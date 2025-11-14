@@ -63,8 +63,9 @@ export function OpportunityBoard() {
           const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
           const hasMax = typeof j.pay_rate_max === "number" && j.pay_rate_max > j.pay_rate
           if (!hasMin) return ""
-          const base = hasMax ? `₱${j.pay_rate}–₱${j.pay_rate_max}` : `₱${j.pay_rate}`
-          return j.pay_type ? `${base}/${j.pay_type}` : base
+          const payType = j.pay_type || "hourly"
+          const base = hasMax ? `P${j.pay_rate}–P${j.pay_rate_max}` : `P${j.pay_rate}`
+          return `${base}/${payType}`
         })(),
         urgency: j.urgency,
         postedDate: j.created_at,
@@ -238,17 +239,17 @@ export function OpportunityBoard() {
         ) : (
           jobs.map((job) => (
             <article key={job.id} className="hover:shadow-md transition-shadow">
-              <Card>
-                <CardContent className="p-3 sm:p-4 md:p-6">
-                  <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start">
-                    {/* Company Logo and Match Score */}
-                    <div className="flex items-start gap-3 sm:gap-4 lg:flex-col lg:items-center lg:gap-2">
-                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16">
+              <Card className="relative">
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex gap-4">
+                    {/* Company Logo */}
+                    <div className="flex-shrink-0">
+                      <Avatar className="h-12 w-12 md:h-16 md:w-16">
                         <AvatarImage
                           src={job.companyLogo || "/placeholder.svg"}
                           alt={job.company}
                         />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-black text-white">
                           {job.company
                             ? job.company
                                 .split(" ")
@@ -257,74 +258,61 @@ export function OpportunityBoard() {
                             : "C"}
                         </AvatarFallback>
                       </Avatar>
-
-                      {job.matchScore > 0 && (
-                        <div className="text-center">
-                          <Badge 
-                            variant={job.matchScore >= 80 ? "secondary" : "outline"} 
-                            className="text-xs"
-                          >
-                            {job.matchScore}% Match
-                          </Badge>
-                        </div>
-                      )}
                     </div>
 
                     {/* Job Details */}
-                    <div className="flex-1 space-y-2 sm:space-y-3">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex-1 min-w-0 space-y-3">
+                      {/* Header with Title, Company, Rating, and Bookmark */}
+                      <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <Link href={`/opportunities/${job.id}`}>
-                            <h3 className="font-heading text-lg font-semibold hover:text-primary transition-colors">
+                            <h3 className="font-heading text-lg md:text-xl font-semibold hover:text-primary transition-colors mb-1">
                               {job.title}
                             </h3>
                           </Link>
-
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2">
                             <span className="font-medium text-muted-foreground">
-                              {job.company}
+                              {job.company || "Not specified"}
                             </span>
                             <div className="flex items-center gap-1">
                               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                               <span className="text-sm text-muted-foreground">
-                                {job.companyRating}
+                                {job.companyRating || 0}
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleSaveJob(job.id)}
-                            className={
-                              savedJobs.includes(job.id) ? "text-primary" : ""
-                            }
-                          >
-                            <Bookmark
-                              className={`h-4 w-4 ${
-                                savedJobs.includes(job.id) ? "fill-current" : ""
-                              }`}
-                            />
-                          </Button>
-                        </div>
+                        {/* Bookmark Icon - Top Right */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleSaveJob(job.id)}
+                          className="flex-shrink-0 h-8 w-8 p-0"
+                        >
+                          <Bookmark
+                            className={`h-4 w-4 ${
+                              savedJobs.includes(job.id) ? "fill-current text-primary" : ""
+                            }`}
+                          />
+                        </Button>
                       </div>
 
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {job.description}
+                      {/* Job Description */}
+                      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                        {job.description || "No description available."}
                       </p>
 
                       {/* Job Meta Information */}
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
-                          <span>{job.location}</span>
+                          <span>{job.location || "Not specified"}</span>
                         </div>
 
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          <span>{job.type}</span>
+                          <span>{job.type || "Not specified"}</span>
                         </div>
 
                         <div className="flex items-center gap-1">
@@ -334,45 +322,40 @@ export function OpportunityBoard() {
 
                         <div className="flex items-center gap-1">
                           <Users className="h-3 w-3" />
-                          <span>{job.applicants} applicants</span>
+                          <span>{job.applicants || 0} applicants</span>
                         </div>
                       </div>
 
-                      {/* Skills and Badges */}
+                      {/* Tags: Priority, Pay Rate, Skills */}
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge
-                          variant={getUrgencyColor(job.urgency)}
+                          variant={getUrgencyColor(job.urgency || "low")}
                           className="text-xs"
                         >
-                          {job.urgency} priority
+                          {job.urgency || "low"} priority
                         </Badge>
 
-                        <span className="font-medium text-primary">
-                          {job.payRange}
-                        </span>
+                        {job.payRange && (
+                          <Badge variant="outline" className="text-xs font-medium text-primary">
+                            {job.payRange}
+                          </Badge>
+                        )}
 
-                        <div className="flex flex-wrap gap-1">
-                          {job.skills.slice(0, 3).map((skill: any) => (
-                            <Badge
-                              key={skill.name}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              <span>{skill.name}</span>
-                              {skill.min_level && (
-                                <span className="ml-1 text-[10px] text-muted-foreground">
-                                  {SKILL_LEVELS[skill.min_level as SkillLevel]}
-                                </span>
-                              )}
-                            </Badge>
-                          ))}
-                        </div>
+                        {job.skills && job.skills.slice(0, 3).map((skill: any) => (
+                          <Badge
+                            key={skill.name}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {skill.name}
+                          </Badge>
+                        ))}
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+                      <div className="flex flex-col sm:flex-row gap-2 pt-2">
                         {user && job.recruiterId && String(job.recruiterId) === String(user.id) ? (
-                          <Button className="w-full" variant="outline" disabled>
+                          <Button className="w-full sm:flex-1" variant="outline" disabled>
                             Your Job Posting
                           </Button>
                         ) : (
@@ -380,14 +363,16 @@ export function OpportunityBoard() {
                             href={`/opportunities/${job.id}`}
                             className="flex-1"
                           >
-                            <Button className="w-full">Apply Now</Button>
+                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                              Apply Now
+                            </Button>
                           </Link>
                         )}
 
-                        <Link href={`/opportunities/${job.id}`}>
+                        <Link href={`/opportunities/${job.id}`} className="sm:w-auto">
                           <Button
                             variant="outline"
-                            className="w-full sm:w-auto bg-transparent"
+                            className="w-full sm:w-auto"
                           >
                             <ExternalLink className="mr-2 h-4 w-4" />
                             View Details
