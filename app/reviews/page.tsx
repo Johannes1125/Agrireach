@@ -116,27 +116,7 @@ export default function ReviewsPage() {
       window.removeEventListener("reviews:updated", onUpdated as any);
   }, [refetch]);
 
-  if (authLoading || reviewsLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <ContentLoader text="Loading reviews..." />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="border-2 border-destructive/20">
-          <CardContent className="p-8 text-center">
-            <p className="text-destructive font-medium">Error loading reviews: {error}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Filter reviews
+  // Filter reviews - MUST be before any early returns
   const filteredReviews = useMemo(() => {
     const searchLower = (searchTerm || "").toLowerCase();
     return normalizedReviews.filter((review: any) => {
@@ -157,7 +137,7 @@ export default function ReviewsPage() {
     });
   }, [normalizedReviews, searchTerm, selectedCategory]);
 
-  // Sort reviews
+  // Sort reviews - MUST be before any early returns
   const sortedReviews = useMemo(() => {
     const sorted = [...filteredReviews];
     switch (sortBy) {
@@ -176,6 +156,27 @@ export default function ReviewsPage() {
         });
     }
   }, [filteredReviews, sortBy]);
+
+  // Early returns AFTER all hooks
+  if (authLoading || reviewsLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <ContentLoader text="Loading reviews..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="border-2 border-destructive/20">
+          <CardContent className="p-8 text-center">
+            <p className="text-destructive font-medium">Error loading reviews: {error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
