@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
     const categories = await Opportunity.aggregate([
       {
         $match: {
-          category: { $ne: null, $exists: true, $ne: "" }
+          category: { $exists: true, $nin: [null, ""] }
         }
       },
       { $group: { _id: "$category", count: { $sum: 1 } } },
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     const experience = await Opportunity.aggregate([
       {
         $match: {
-          experience_level: { $ne: null, $exists: true, $ne: "" }
+          experience_level: { $exists: true, $nin: [null, ""] }
         }
       },
       { $group: { _id: "$experience_level", count: { $sum: 1 } } },
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     const urgency = await Opportunity.aggregate([
       {
         $match: {
-          urgency: { $ne: null, $exists: true, $ne: "" }
+          urgency: { $exists: true, $nin: [null, ""] }
         }
       },
       { $group: { _id: "$urgency", count: { $sum: 1 } } },
