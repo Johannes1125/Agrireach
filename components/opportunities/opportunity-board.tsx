@@ -22,6 +22,7 @@ import {
   Search,
   Filter,
   Flag,
+  Plus,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -73,31 +74,45 @@ export function OpportunityBoard() {
         const response = await fetch(apiUrl);
         const data = await response.json().catch(() => ({}));
         
-        const items: any[] = (data?.data?.items || []).map((j: any) => ({
-          id: String(j._id),
-          title: j.title,
-          company: j.company_name || "",
-          location: j.location,
-          type: j.duration || j.pay_type || "",
-          payRange: ((): string => {
-            const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
-            const hasMax = typeof j.pay_rate_max === "number" && j.pay_rate_max > j.pay_rate
-            if (!hasMin) return ""
-            const payType = j.pay_type || "hourly"
-            const base = hasMax ? `P${j.pay_rate}–P${j.pay_rate_max}` : `P${j.pay_rate}`
-            return `${base}/${payType}`
-          })(),
-          urgency: j.urgency,
-          postedDate: j.created_at,
-          deadline: j.start_date || j.created_at,
-          applicants: j.applications_count || 0,
-          description: j.description,
-          skills: normalizeSkillRequirements(j.required_skills as any),
-          companyLogo: j.company_logo || "/placeholder.svg",
-          companyRating: 0,
-          matchScore: j.matchScore || 0,
-          recruiterId: j.recruiter_id?._id ? String(j.recruiter_id._id) : String(j.recruiter_id || ""),
-        }));
+        const items: any[] = (data?.data?.items || []).map((j: any) => {
+          // Filter out placeholder/test descriptions
+          const description = j.description && 
+            !j.description.toLowerCase().includes('qweqweqwe') &&
+            !j.description.toLowerCase().includes('test') &&
+            !j.description.toLowerCase().includes('placeholder') &&
+            j.description.trim().length > 0
+              ? j.description
+              : null;
+
+          // Get proper job type (work_type, employment_type, or duration)
+          const jobType = j.work_type || j.employment_type || j.duration || j.pay_type || "";
+          
+          return {
+            id: String(j._id),
+            title: j.title,
+            company: j.company_name || "",
+            location: j.location,
+            type: jobType,
+            payRange: ((): string => {
+              const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
+              const hasMax = typeof j.pay_rate_max === "number" && j.pay_rate_max > j.pay_rate
+              if (!hasMin) return ""
+              const payType = j.pay_type || "hourly"
+              const base = hasMax ? `P${j.pay_rate}–P${j.pay_rate_max}` : `P${j.pay_rate}`
+              return `${base}/${payType}`
+            })(),
+            urgency: j.urgency,
+            postedDate: j.created_at,
+            deadline: j.start_date || j.created_at,
+            applicants: j.applications_count || 0,
+            description: description,
+            skills: normalizeSkillRequirements(j.required_skills as any),
+            companyLogo: j.company_logo || "/placeholder.svg",
+            companyRating: 0,
+            matchScore: j.matchScore || 0,
+            recruiterId: j.recruiter_id?._id ? String(j.recruiter_id._id) : String(j.recruiter_id || ""),
+          };
+        });
         setAllJobs(items);
         setHasLoaded(true);
       } catch (error) {
@@ -267,7 +282,18 @@ export function OpportunityBoard() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            {/* Post a Job Button */}
+            <Link href="/opportunities/post">
+              <Button 
+                size="sm" 
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-xs sm:text-sm"
+              >
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Post a Job
+              </Button>
+            </Link>
+
             {/* Mobile Filter Button */}
             <Sheet>
               <SheetTrigger asChild>
@@ -349,11 +375,11 @@ export function OpportunityBoard() {
                               {job.title}
                             </h3>
                           </Link>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs sm:text-sm font-medium text-muted-foreground">
+                          <div className="flex items-center gap-2 flex-wrap min-w-0">
+                            <span className="text-xs sm:text-sm font-medium text-muted-foreground truncate max-w-[200px] sm:max-w-none">
                               {job.company || "Not specified"}
                             </span>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 flex-shrink-0">
                               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                               <span className="text-xs sm:text-sm text-muted-foreground">
                                 {job.companyRating || 0}
@@ -390,30 +416,34 @@ export function OpportunityBoard() {
                       </div>
 
                       {/* Job Description */}
-                      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                        {job.description || "No description available."}
-                      </p>
+                      {job.description && (
+                        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                          {job.description}
+                        </p>
+                      )}
 
                       {/* Job Meta Information */}
                       <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 min-w-0 flex-1 sm:flex-initial">
                           <MapPin className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">{job.location || "Not specified"}</span>
+                          <span className="break-words line-clamp-1">{job.location || "Not specified"}</span>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">{job.type || "Not specified"}</span>
-                        </div>
+                        {job.type && (
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Clock className="h-3 w-3 flex-shrink-0" />
+                            <span className="break-all sm:whitespace-nowrap">{job.type}</span>
+                          </div>
+                        )}
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <Calendar className="h-3 w-3 flex-shrink-0" />
-                          <span>Posted {formatRelativeTime(job.postedDate)}</span>
+                          <span className="whitespace-nowrap">Posted {formatRelativeTime(job.postedDate)}</span>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <Users className="h-3 w-3 flex-shrink-0" />
-                          <span>{job.applicants || 0} applicants</span>
+                          <span className="whitespace-nowrap">{job.applicants || 0} applicants</span>
                         </div>
                       </div>
 
@@ -421,26 +451,30 @@ export function OpportunityBoard() {
                       <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         <Badge
                           variant={getUrgencyColor(job.urgency || "low")}
-                          className="text-xs"
+                          className="text-xs flex-shrink-0"
                         >
                           {job.urgency || "low"} priority
                         </Badge>
 
                         {job.payRange && (
-                          <Badge variant="outline" className="text-xs font-medium text-primary">
+                          <Badge variant="outline" className="text-xs font-medium text-primary flex-shrink-0 break-all sm:break-normal">
                             {job.payRange}
                           </Badge>
                         )}
 
-                        {job.skills && job.skills.slice(0, 3).map((skill: any) => (
-                          <Badge
-                            key={skill.name}
-                            variant="outline"
-                            className="text-xs"
-                          >
-                            {skill.name}
-                          </Badge>
-                        ))}
+                        {job.skills && job.skills.slice(0, 3).map((skill: any) => {
+                          const skillName = skill.name || skill;
+                          return (
+                            <Badge
+                              key={skillName}
+                              variant="outline"
+                              className="text-xs max-w-[140px] sm:max-w-none"
+                              title={skillName}
+                            >
+                              <span className="block truncate">{skillName}</span>
+                            </Badge>
+                          );
+                        })}
                       </div>
 
                       {/* Action Buttons */}

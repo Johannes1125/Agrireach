@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { authFetch } from "@/lib/auth-client"
 import { toast } from "sonner"
 import { 
@@ -13,8 +14,12 @@ import {
   AlertTriangle,
   Package,
   DollarSign,
-  MapPin
+  X,
+  Sprout,
+  TrendingUp
 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 interface ManageProductModalProps {
   product: {
@@ -67,104 +72,180 @@ export function ManageProductModal({ product, open, onClose, onEdit, onDelete }:
   }
 
   const imageUrl = product.images?.[0] || "/placeholder.svg"
+  const isActive = product.status === "active"
 
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">{product.title}</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {product.category}
-                </p>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pb-4 border-b">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 space-y-2">
+                <DialogTitle className="text-2xl sm:text-3xl font-heading font-bold">
+                  {product.title}
+                </DialogTitle>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Badge variant="outline" className="text-sm">
+                    {product.category}
+                  </Badge>
+                  <Badge 
+                    variant={isActive ? "default" : "secondary"}
+                    className={cn(
+                      "text-sm font-medium",
+                      isActive && "bg-green-500 hover:bg-green-600 text-white border-0"
+                    )}
+                  >
+                    {isActive ? "Active" : product.status}
+                  </Badge>
+                </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => onEdit(product._id)}
+                  className="border-2"
                 >
-                  <Edit className="h-4 w-4 mr-1" />
+                  <Edit className="h-4 w-4 mr-1.5" />
                   Edit
                 </Button>
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={handleDeleteProduct}
+                  className="border-2"
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
+                  <Trash2 className="h-4 w-4 mr-1.5" />
                   Delete
                 </Button>
               </div>
-            </DialogTitle>
+            </div>
           </DialogHeader>
 
-          <div className="space-y-6 mt-4">
+          <div className="space-y-6 mt-6">
             {/* Product Image */}
-            <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+            <div className="relative aspect-video rounded-xl overflow-hidden bg-muted border-2 group">
               <img
                 src={imageUrl}
                 alt={product.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
+              {product.organic && (
+                <div className="absolute top-4 left-4">
+                  <Badge className="bg-green-500 hover:bg-green-600 text-white border-0 shadow-lg">
+                    <Sprout className="h-3 w-3 mr-1.5" />
+                    Organic
+                  </Badge>
+                </div>
+              )}
             </div>
 
             {/* Product Details Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-              <div>
-                <p className="text-sm text-muted-foreground">Price</p>
-                <p className="font-semibold flex items-center gap-1">
-                  <DollarSign className="h-4 w-4" />
-                  ₱{product.price} / {product.unit}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Stock</p>
-                <p className="font-semibold flex items-center gap-1">
-                  <Package className="h-4 w-4" />
-                  {product.quantity_available} {product.unit}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <Badge variant={
-                  product.status === "active" ? "default" :
-                  product.status === "pending_approval" ? "secondary" :
-                  "outline"
-                }>
-                  {product.status}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Views</p>
-                <p className="font-semibold flex items-center gap-1">
-                  <Eye className="h-4 w-4" />
-                  {product.views}
-                </p>
-              </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <Card className="border-2">
+                <CardContent className="p-4 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                    <DollarSign className="h-4 w-4" />
+                    <span>Price</span>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-primary">
+                    ₱{product.price?.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">per {product.unit}</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2">
+                <CardContent className="p-4 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                    <Package className="h-4 w-4" />
+                    <span>Stock</span>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-foreground">
+                    {product.quantity_available}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{product.unit}</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2">
+                <CardContent className="p-4 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>Views</span>
+                  </div>
+                  <p className="text-lg sm:text-xl font-bold text-foreground">
+                    {product.views || 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">total views</p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2">
+                <CardContent className="p-4 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+                    <Eye className="h-4 w-4" />
+                    <span>Status</span>
+                  </div>
+                  <Badge 
+                    variant={isActive ? "default" : "secondary"}
+                    className={cn(
+                      "text-xs font-medium mt-1",
+                      isActive && "bg-green-500 hover:bg-green-600 text-white border-0"
+                    )}
+                  >
+                    {isActive ? "Active" : product.status}
+                  </Badge>
+                </CardContent>
+              </Card>
             </div>
 
+            {/* Organic Certification */}
             {product.organic && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                <Badge variant="outline" className="text-green-600 border-green-600">
-                  🌱 Organic
-                </Badge>
-                <p className="text-sm text-muted-foreground">
-                  This product is certified organic
-                </p>
-              </div>
+              <Card className="border-2 border-green-500/20 bg-green-500/5">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-green-500/10">
+                      <Sprout className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
+                          <Sprout className="h-3 w-3 mr-1" />
+                          Organic Certified
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        This product is certified organic and meets organic farming standards.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Actions */}
-            <div className="flex gap-3">
-              <a href={`/marketplace/${product._id}`} target="_blank" rel="noopener noreferrer" className="flex-1">
-                <Button variant="outline" className="w-full">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+              <Link 
+                href={`/marketplace/${product._id}`} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex-1"
+              >
+                <Button variant="outline" className="w-full border-2" size="lg">
                   <Eye className="h-4 w-4 mr-2" />
                   View Product Page
                 </Button>
-              </a>
+              </Link>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => onEdit(product._id)}
+                className="flex-1 border-2"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Product
+              </Button>
             </div>
           </div>
         </DialogContent>
@@ -174,39 +255,58 @@ export function ManageProductModal({ product, open, onClose, onEdit, onDelete }:
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="h-5 w-5" />
-              Delete Product?
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <div className="p-2 rounded-lg bg-destructive/10">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <span>Delete Product?</span>
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete <span className="font-semibold text-foreground">"{product.title}"</span>?
+              Are you sure you want to delete <span className="font-semibold text-foreground">"{product.title}"</span>? This action cannot be undone.
             </p>
-            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <p className="text-sm text-red-800 dark:text-red-200 font-medium">
-                ⚠️ This action cannot be undone!
-              </p>
-              <p className="text-sm text-red-800 dark:text-red-200 mt-1">
-                The product will be permanently removed from the marketplace.
-              </p>
-            </div>
+            <Card className="border-2 border-destructive/20 bg-destructive/5">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-destructive">
+                      Warning: This action is permanent!
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      The product will be permanently removed from the marketplace and cannot be recovered.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          <div className="flex gap-3 mt-6">
+          <div className="flex gap-3 pt-4 border-t">
             <Button
               variant="outline"
               onClick={() => setShowDeleteConfirm(false)}
-              className="flex-1"
+              className="flex-1 border-2"
               disabled={isDeleting}
             >
               Cancel
             </Button>
             <Button
               onClick={confirmDelete}
-              className="flex-1 bg-red-600 hover:bg-red-700"
+              className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
               disabled={isDeleting}
             >
-              {isDeleting ? "Deleting..." : "Delete Product"}
+              {isDeleting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Product
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>
@@ -214,4 +314,3 @@ export function ManageProductModal({ product, open, onClose, onEdit, onDelete }:
     </>
   )
 }
-

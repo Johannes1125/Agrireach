@@ -14,7 +14,7 @@ import { useOrdersData } from "@/hooks/use-orders-data"
 import { useFeaturedProductsData } from "@/hooks/use-featured-products-data"
 import { ManageJobModal } from "@/components/dashboard/manage-job-modal"
 import { ManageProductModal } from "@/components/marketplace/manage-product-modal"
-import { formatDate, formatRelativeTime } from "@/lib/utils"
+import { formatDate, formatRelativeTime, cn } from "@/lib/utils"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { authFetch } from "@/lib/auth-client"
@@ -348,13 +348,17 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
               </Card>
             </section>
 
-            <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-3">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
               {/* Recent Jobs */}
               <section className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading">Recent Job Applications</CardTitle>
-                    <CardDescription>Track your current and pending job applications</CardDescription>
+                <Card className="border-2">
+                  <CardHeader className="pb-4">
+                    <div className="space-y-1">
+                      <CardTitle className="font-heading text-xl sm:text-2xl">Recent Job Applications</CardTitle>
+                      <CardDescription className="text-sm">
+                        Track your current and pending job applications
+                      </CardDescription>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {workerData?.recentActivities && workerData.recentActivities.length > 0 ? (
@@ -362,41 +366,56 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                         const getBadge = (type: string) => {
                           switch (type) {
                             case 'application_accepted':
-                              return { label: 'Accepted', className: 'bg-green-50 text-green-700 border-green-200' }
+                              return { label: 'Accepted', variant: 'default' as const, className: 'bg-green-500 hover:bg-green-600 text-white border-0' }
                             case 'application_rejected':
-                              return { label: 'Rejected', className: 'bg-red-50 text-red-700 border-red-200' }
+                              return { label: 'Rejected', variant: 'destructive' as const, className: '' }
                             case 'application_submitted':
                             default:
-                              return { label: 'Submitted', className: 'bg-amber-50 text-amber-700 border-amber-200' }
+                              return { label: 'Submitted', variant: 'secondary' as const, className: 'bg-amber-500 hover:bg-amber-600 text-white border-0' }
                           }
                         }
                         const badge = getBadge(activity.type)
                         return (
                           <article
                             key={activity.timestamp}
-                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 bg-card hover:bg-muted/50 transition-colors duration-200"
+                            className="group p-5 border-2 rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 bg-card"
                           >
-                            <div className="space-y-1 flex-1">
-                              <h4 className="font-medium text-foreground">{activity.title}</h4>
-                              <p className="text-sm text-muted-foreground">{activity.description}</p>
-                              <span className="text-xs text-muted-foreground">
-                                {formatRelativeTime(activity.timestamp)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className={`${badge.className} dark:bg-opacity-20`}>{badge.label}</Badge>
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                              <div className="flex-1 space-y-2">
+                                <h4 className="font-heading font-semibold text-base sm:text-lg group-hover:text-primary transition-colors">
+                                  {activity.title}
+                                </h4>
+                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                  {activity.description}
+                                </p>
+                                <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                  <Clock className="h-3.5 w-3.5" />
+                                  {formatRelativeTime(activity.timestamp)}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <Badge 
+                                  variant={badge.variant} 
+                                  className={cn("text-xs font-medium", badge.className)}
+                                >
+                                  {badge.label}
+                                </Badge>
+                              </div>
                             </div>
                           </article>
                         )
                       })
                     ) : (
-                      <div className="text-center py-12">
-                        <Briefcase className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                        <p className="text-sm text-muted-foreground mb-4">
-                          No recent job activities. Start applying for jobs to see your activity here.
+                      <div className="text-center py-16 px-4">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
+                          <Briefcase className="h-10 w-10 text-primary" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">No recent activities</h3>
+                        <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
+                          Start applying for jobs to see your activity here. Your application history will appear in this section.
                         </p>
                         <Link href="/opportunities">
-                          <Button variant="outline">
+                          <Button size="lg" className="bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all">
                             <Briefcase className="mr-2 h-4 w-4" />
                             Browse Jobs
                           </Button>
@@ -409,34 +428,39 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
 
               {/* Profile & Skills */}
               <aside className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading">Profile Completion</CardTitle>
-                    <CardDescription>Complete your profile to get more job matches</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Trust Score</span>
-                        <span>{workerData?.stats.trustScore || 0}/100</span>
-                      </div>
-                      <Progress value={workerData?.stats.trustScore || 0} className="h-2" />
+                <Card className="border-2">
+                  <CardHeader className="pb-4">
+                    <div className="space-y-1">
+                      <CardTitle className="font-heading text-lg sm:text-xl">Profile Completion</CardTitle>
+                      <CardDescription className="text-sm">
+                        Complete your profile to get more job matches
+                      </CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="font-medium">Trust Score</span>
+                        <span className="font-bold text-primary">{workerData?.stats.trustScore || 0}/100</span>
+                      </div>
+                      <Progress value={workerData?.stats.trustScore || 0} className="h-3" />
+                    </div>
+                    <div className="flex items-center gap-2 pt-2">
                       {workerData?.stats.verified ? (
-                        <Badge variant="default" className="text-xs">
-                          <CheckCircle className="mr-1 h-3 w-3" />
+                        <Badge variant="default" className="text-xs font-medium bg-green-500 hover:bg-green-600 text-white border-0">
+                          <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
                           Verified
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs font-medium">
                           Not Verified
                         </Badge>
                       )}
                     </div>
                     <Button
                       variant="outline"
-                      className="w-full bg-transparent"
+                      className="w-full border-2 hover:bg-muted"
+                      size="lg"
                       onClick={() => handleQuickAction("complete-profile", activeRole)}
                     >
                       Complete Profile
@@ -444,27 +468,31 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading">Job Statistics</CardTitle>
-                    <CardDescription>Your job application performance</CardDescription>
+                <Card className="border-2">
+                  <CardHeader className="pb-4">
+                    <div className="space-y-1">
+                      <CardTitle className="font-heading text-lg sm:text-xl">Job Statistics</CardTitle>
+                      <CardDescription className="text-sm">
+                        Your job application performance
+                      </CardDescription>
+                    </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-5">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-primary">
+                      <div className="text-center p-4 rounded-lg bg-primary/5 border-2 border-primary/10">
+                        <div className="text-3xl font-bold text-primary mb-1">
                           {workerData?.stats.activeJobs || 0}
                         </div>
-                        <div className="text-xs text-muted-foreground">Active Jobs</div>
+                        <div className="text-xs sm:text-sm font-medium text-muted-foreground">Active Jobs</div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-primary">
+                      <div className="text-center p-4 rounded-lg bg-amber-500/5 border-2 border-amber-500/10">
+                        <div className="text-3xl font-bold text-amber-600 dark:text-amber-400 mb-1">
                           {workerData?.stats.pendingApplications || 0}
                         </div>
-                        <div className="text-xs text-muted-foreground">Pending</div>
+                        <div className="text-xs sm:text-sm font-medium text-muted-foreground">Pending</div>
                       </div>
                     </div>
-                    <Button variant="outline" className="w-full bg-transparent">
+                    <Button variant="outline" className="w-full border-2 hover:bg-muted" size="lg">
                       <Award className="mr-2 h-4 w-4" />
                       View All Applications
                     </Button>
@@ -531,31 +559,46 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
               </Card>
             </section>
 
-            <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-3">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
               {/* Active Job Postings */}
               <section className="lg:col-span-2">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle className="font-heading">Active Job Postings</CardTitle>
-                      <CardDescription>Monitor your current job listings and applications</CardDescription>
+                <Card className="border-2">
+                  <CardHeader className="pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="space-y-1">
+                        <CardTitle className="font-heading text-xl sm:text-2xl">Active Job Postings</CardTitle>
+                        <CardDescription className="text-sm">
+                          Monitor your current job listings and applications
+                        </CardDescription>
+                      </div>
+                      <Link href="/opportunities/post">
+                        <Button 
+                          size="lg" 
+                          className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Post Job
+                        </Button>
+                      </Link>
                     </div>
-                    <Link href="/opportunities/post">
-                      <Button size="sm" className="shadow-md hover:shadow-lg transition-all duration-200">
-                        <Plus className="mr-1 h-4 w-4" />
-                        Post Job
-                      </Button>
-                    </Link>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {recruiterLoading ? (
-                      <div className="text-center py-8 text-muted-foreground">Loading jobs...</div>
-                    ) : recruiterJobs.length === 0 ? (
                       <div className="text-center py-12">
-                        <Briefcase className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                        <p className="text-muted-foreground mb-4">You haven't posted any jobs yet.</p>
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="text-muted-foreground mt-4">Loading jobs...</p>
+                      </div>
+                    ) : recruiterJobs.length === 0 ? (
+                      <div className="text-center py-16 px-4">
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
+                          <Briefcase className="h-10 w-10 text-primary" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">No job postings yet</h3>
+                        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                          Start recruiting by posting your first job opportunity. Connect with skilled workers across Central Luzon!
+                        </p>
                         <Link href="/opportunities/post">
-                          <Button className="shadow-md hover:shadow-lg transition-all duration-200">
+                          <Button size="lg" className="bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all">
                             <Plus className="mr-2 h-4 w-4" />
                             Post Your First Job
                           </Button>
@@ -564,51 +607,61 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     ) : (
                       recruiterJobs.map((job) => {
                         const daysAgo = formatRelativeTime(job.created_at)
+                        const urgencyColor = job.urgency === "high" ? "destructive" : job.urgency === "medium" ? "default" : "secondary"
                         return (
                           <article
                             key={job._id}
-                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 hover:bg-muted/50 transition-colors duration-200"
+                            className="group p-5 border-2 rounded-xl hover:shadow-lg hover:border-primary/50 transition-all duration-300 bg-card"
                           >
-                            <div className="space-y-1 flex-1">
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                                <h4 className="font-medium">{job.title}</h4>
-                                <Badge variant={job.urgency === "high" ? "destructive" : job.urgency === "medium" ? "default" : "secondary"}>
-                                  {job.urgency} priority
-                                </Badge>
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                              <div className="flex-1 space-y-3">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1">
+                                    <h4 className="font-heading font-semibold text-base sm:text-lg mb-2 group-hover:text-primary transition-colors">
+                                      {job.title}
+                                    </h4>
+                                    <div className="flex items-center gap-2 flex-wrap mb-3">
+                                      <Badge variant={urgencyColor} className="text-xs font-medium">
+                                        {job.urgency || "low"} priority
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-1.5">
+                                    <MapPin className="h-4 w-4 flex-shrink-0" />
+                                    <span className="line-clamp-1">{job.location}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <Calendar className="h-4 w-4 flex-shrink-0" />
+                                    <span>Posted {daysAgo}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <Users className="h-4 w-4 flex-shrink-0" />
+                                    <span className="font-medium">{job.applicantCount || 0}</span>
+                                    <span>applicant{job.applicantCount !== 1 ? 's' : ''}</span>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {job.location}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  Posted {daysAgo}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {job.applicantCount} applicant{job.applicantCount !== 1 ? 's' : ''}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Link href={`/opportunities/${job._id}`}>
+                              <div className="flex gap-2 sm:flex-col sm:gap-2 flex-shrink-0">
+                                <Link href={`/opportunities/${job._id}`} className="flex-1 sm:w-full">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full border-2 hover:bg-muted"
+                                  >
+                                    <Eye className="mr-1.5 h-3.5 w-3.5" />
+                                    View
+                                  </Button>
+                                </Link>
                                 <Button
-                                  variant="outline"
                                   size="sm"
-                                  className="flex-1 sm:flex-none bg-transparent"
+                                  className="flex-1 sm:w-full bg-primary hover:bg-primary/90"
+                                  onClick={() => handleManageJob(job)}
                                 >
-                                  <Eye className="mr-1 h-3 w-3" />
-                                  View
+                                  Manage
                                 </Button>
-                              </Link>
-                              <Button
-                                size="sm"
-                                className="flex-1 sm:flex-none"
-                                onClick={() => handleManageJob(job)}
-                              >
-                                Manage
-                              </Button>
+                              </div>
                             </div>
                           </article>
                         )
@@ -620,35 +673,62 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
 
               {/* Recent Applicants */}
               <aside>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="font-heading">Recent Applicants</CardTitle>
-                    <CardDescription>Review new applications</CardDescription>
+                <Card className="border-2">
+                  <CardHeader className="pb-4">
+                    <div className="space-y-1">
+                      <CardTitle className="font-heading text-lg sm:text-xl">Recent Applicants</CardTitle>
+                      <CardDescription className="text-sm">
+                        Review new applications
+                      </CardDescription>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {recruiterLoading ? (
-                      <div className="text-center py-4 text-muted-foreground">Loading...</div>
+                      <div className="text-center py-8">
+                        <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                        <p className="text-muted-foreground mt-3 text-sm">Loading...</p>
+                      </div>
                     ) : recentApplicants.length === 0 ? (
-                      <div className="text-center py-4 text-muted-foreground">No recent applicants</div>
+                      <div className="text-center py-12 px-4">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                          <Users className="h-8 w-8 text-muted-foreground/50" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">No recent applicants</p>
+                        <p className="text-xs text-muted-foreground mt-1">New applications will appear here</p>
+                      </div>
                     ) : (
                       recentApplicants.map((applicant) => {
                         const rating = (applicant.worker.trust_score / 20).toFixed(1)
+                        const statusColor = applicant.status === "accepted" ? "default" : 
+                                          applicant.status === "rejected" ? "destructive" : 
+                                          "secondary"
                         return (
-                          <article key={applicant._id} className="p-3 border rounded-lg space-y-2 hover:bg-muted/50 transition-colors duration-200">
-                            <div className="flex items-center justify-between">
-                              <h5 className="font-medium">{applicant.worker.full_name}</h5>
-                              <div className="flex items-center gap-1 text-sm">
-                                <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                                <span>{rating}</span>
+                          <article 
+                            key={applicant._id} 
+                            className="group p-4 border-2 rounded-lg space-y-3 hover:shadow-md hover:border-primary/50 transition-all duration-300 bg-card"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-semibold text-sm sm:text-base mb-1 group-hover:text-primary transition-colors truncate">
+                                  {applicant.worker.full_name}
+                                </h5>
+                                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-2">
+                                  {applicant.opportunity.title}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1 text-sm flex-shrink-0">
+                                <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
+                                <span className="font-medium">{rating}</span>
                               </div>
                             </div>
-                            <p className="text-sm text-muted-foreground">{applicant.opportunity.title}</p>
-                            <div className="flex items-center justify-between">
-                              <Badge variant={
-                                applicant.status === "accepted" ? "default" : 
-                                applicant.status === "rejected" ? "destructive" : 
-                                "secondary"
-                              }>
+                            <div className="flex items-center justify-between pt-2 border-t">
+                              <Badge 
+                                variant={statusColor}
+                                className={cn(
+                                  "text-xs font-medium",
+                                  applicant.status === "accepted" && "bg-green-500 hover:bg-green-600 text-white border-0"
+                                )}
+                              >
                                 {applicant.status}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
@@ -724,89 +804,124 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
 
             {/* My Products Section */}
             <section>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="font-heading">My Products</CardTitle>
-                    <CardDescription>Manage your product listings</CardDescription>
+              <Card className="border-2">
+                <CardHeader className="pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="space-y-1">
+                      <CardTitle className="font-heading text-xl sm:text-2xl">My Products</CardTitle>
+                      <CardDescription className="text-sm">
+                        Manage your product listings
+                      </CardDescription>
+                    </div>
+                    <Link href="/marketplace/sell">
+                      <Button 
+                        size="lg" 
+                        className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        List Product
+                      </Button>
+                    </Link>
                   </div>
-                  <Link href="/marketplace/sell">
-                    <Button size="sm" className="shadow-md hover:shadow-lg transition-all duration-200">
-                      <Plus className="mr-1 h-4 w-4" />
-                      List Product
-                    </Button>
-                  </Link>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   {buyerLoading ? (
-                    <div className="text-center py-8 text-muted-foreground">Loading products...</div>
-                  ) : buyerProducts.length === 0 ? (
                     <div className="text-center py-12">
-                      <Package className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                      <p className="text-muted-foreground mb-4">You haven't listed any products yet.</p>
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <p className="text-muted-foreground mt-4">Loading products...</p>
+                    </div>
+                  ) : buyerProducts.length === 0 ? (
+                    <div className="text-center py-16 px-4">
+                      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
+                        <Package className="h-10 w-10 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2">No products yet</h3>
+                      <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                        Start selling by listing your first product. Reach buyers across Central Luzon!
+                      </p>
                       <Link href="/marketplace/sell">
-                        <Button className="shadow-md hover:shadow-lg transition-all duration-200">
+                        <Button size="lg" className="bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all">
                           <Plus className="mr-2 h-4 w-4" />
                           List Your First Product
                         </Button>
                       </Link>
                     </div>
                   ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {buyerProducts.map((product) => {
                         const daysAgo = formatRelativeTime(product.created_at)
                         const imageUrl = product.images?.[0] || "/placeholder.svg"
+                        const isActive = product.status === "active"
                         return (
                           <article
                             key={product._id}
-                            className="flex flex-col p-4 border rounded-lg gap-3 hover:shadow-md transition-all duration-200 hover:bg-muted/30"
+                            className="group flex flex-col border-2 rounded-xl overflow-hidden hover:shadow-lg hover:border-primary/50 transition-all duration-300 bg-card"
                           >
-                            <img
-                              src={imageUrl}
-                              alt={product.title}
-                              className="w-full h-32 object-cover rounded-md"
-                            />
-                            <div className="space-y-2 flex-1">
-                              <div className="flex items-start justify-between gap-2">
-                                <h4 className="font-medium line-clamp-1">{product.title}</h4>
-                                <Badge variant={
-                                  product.status === "active" ? "default" :
-                                  product.status === "pending_approval" ? "secondary" :
-                                  "outline"
-                                }>
-                                  {product.status}
+                            {/* Product Image */}
+                            <div className="relative aspect-video overflow-hidden bg-muted">
+                              <img
+                                src={imageUrl}
+                                alt={product.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                              <div className="absolute top-3 right-3">
+                                <Badge 
+                                  variant={isActive ? "default" : product.status === "pending_approval" ? "secondary" : "outline"}
+                                  className={cn(
+                                    "font-medium text-xs",
+                                    isActive && "bg-green-500 hover:bg-green-600 text-white border-0"
+                                  )}
+                                >
+                                  {isActive ? "Active" : product.status}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span className="font-semibold text-primary">₱{product.price}</span>
-                                <span>•</span>
-                                <span>{product.quantity_available} {product.unit}</span>
+                            </div>
+
+                            {/* Product Info */}
+                            <div className="p-4 sm:p-5 flex-1 flex flex-col space-y-3">
+                              <div className="space-y-2">
+                                <h4 className="font-heading font-semibold text-base sm:text-lg line-clamp-2 group-hover:text-primary transition-colors">
+                                  {product.title}
+                                </h4>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-lg sm:text-xl font-bold text-primary">
+                                    ₱{product.price?.toLocaleString()}
+                                  </span>
+                                  <span className="text-muted-foreground">•</span>
+                                  <span className="text-sm text-muted-foreground">
+                                    {product.quantity_available} {product.unit || "piece"}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Eye className="h-3 w-3" />
-                                  {product.views} views
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  {daysAgo}
-                                </span>
+
+                              {/* Stats */}
+                              <div className="flex items-center gap-4 text-xs sm:text-sm text-muted-foreground pt-2 border-t">
+                                <div className="flex items-center gap-1.5">
+                                  <Eye className="h-3.5 w-3.5" />
+                                  <span className="font-medium">{product.views || 0} views</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  <span>{daysAgo}</span>
+                                </div>
                               </div>
                             </div>
-                            <div className="flex gap-2">
+
+                            {/* Action Buttons */}
+                            <div className="px-4 sm:px-5 pb-4 sm:pb-5 flex gap-2">
                               <Link href={`/marketplace/${product._id}`} className="flex-1">
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="w-full bg-transparent"
+                                  className="w-full border-2 hover:bg-muted"
                                 >
-                                  <Eye className="mr-1 h-3 w-3" />
+                                  <Eye className="mr-1.5 h-3.5 w-3.5" />
                                   View
                                 </Button>
                               </Link>
                               <Button
                                 size="sm"
-                                className="flex-1"
+                                className="flex-1 bg-primary hover:bg-primary/90"
                                 onClick={() => handleManageProduct(product)}
                               >
                                 Manage
