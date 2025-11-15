@@ -38,7 +38,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { OpportunityFilters } from "./opportunity-filters";
 import Link from "next/link";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useJobSearch } from "@/contexts/job-search-context";
 import { formatDate, formatRelativeTime } from "@/lib/utils";
 import { normalizeSkillRequirements, SKILL_LEVELS, SkillLevel } from "@/lib/skills";
@@ -296,16 +296,19 @@ export function OpportunityBoard() {
     }
   };
 
+  // Memoize the filter change handler to prevent infinite re-renders
+  const handleFiltersChange = useCallback(({ payRange, selectedFilters }: { payRange: [number, number]; selectedFilters: string[] }) => {
+    setFilterPayRange(payRange);
+    setFilterSelectedFilters(selectedFilters);
+  }, []);
+
   return (
     <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 md:gap-6">
       {/* Desktop Filter Sidebar */}
       <aside className="hidden lg:block w-64 flex-shrink-0">
         <div className="sticky top-4">
           <OpportunityFilters 
-            onFiltersChange={({ payRange, selectedFilters }) => {
-              setFilterPayRange(payRange);
-              setFilterSelectedFilters(selectedFilters);
-            }}
+            onFiltersChange={handleFiltersChange}
           />
         </div>
       </aside>

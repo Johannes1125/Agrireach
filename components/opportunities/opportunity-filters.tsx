@@ -73,10 +73,13 @@ export function OpportunityFilters({ onFiltersChange }: OpportunityFiltersProps)
     });
   }
 
-  // Notify parent when pay range changes
+  // Notify parent when pay range or selected filters change
   useEffect(() => {
-    onFiltersChange?.({ payRange, selectedFilters });
-  }, [payRange, selectedFilters, onFiltersChange]);
+    if (onFiltersChange) {
+      onFiltersChange({ payRange, selectedFilters });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payRange, selectedFilters]);
 
   const clearAllFilters = () => {
     const resetPayRange: [number, number] = [Math.round(filterStats.payRange.avgMinPay), Math.round(filterStats.payRange.avgMaxPay)];
