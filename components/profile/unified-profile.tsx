@@ -376,7 +376,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
                   </div>
                 </div>
 
-                <Button variant="outline" size="sm" className="w-full sm:w-auto border-2 hover:bg-muted">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto border-2 hover:bg-muted/70 dark:hover:bg-card/50">
                   View Details
                 </Button>
               </div>
@@ -397,7 +397,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {Object.entries(profileData.stats).map(([key, stat]) => {
               const IconComponent = stat.icon
               return (
-                <div key={key} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border hover:bg-muted transition-colors">
+                <div key={key} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border hover:bg-muted/70 dark:hover:bg-card/50 transition-colors">
                   <div className="flex items-center gap-3">
                     <IconComponent className="h-5 w-5 text-primary flex-shrink-0" />
                     <span className="text-sm text-muted-foreground">{stat.label}</span>
@@ -423,7 +423,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
                     Find Jobs
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full border-2 hover:bg-muted" size="sm">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50" size="sm">
                   <Award className="mr-2 h-4 w-4" />
                   View Certificates
                 </Button>
@@ -438,7 +438,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
                     Post New Job
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full border-2 hover:bg-muted" size="sm">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50" size="sm">
                   <TrendingUp className="mr-2 h-4 w-4" />
                   View Analytics
                 </Button>
@@ -448,12 +448,12 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {user.role === "buyer" && (
               <>
                 <Link href="/marketplace">
-                  <Button variant="outline" className="w-full border-2 hover:bg-muted mb-3" size="sm">
+                  <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50 mb-3" size="sm">
                     <Package className="mr-2 h-4 w-4" />
                     Browse Products
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full border-2 hover:bg-muted" size="sm">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50" size="sm">
                   <Star className="mr-2 h-4 w-4" />
                   Favorite Suppliers
                 </Button>
@@ -461,7 +461,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             )}
 
             <Link href="/settings">
-              <Button variant="outline" className="w-full border-2 hover:bg-muted" size="sm">
+              <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50" size="sm">
                 Edit Profile
               </Button>
             </Link>
@@ -565,7 +565,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
 
             <div className="pt-4 border-t">
               <Link href="/settings?tab=business">
-                <Button variant="outline" className="w-full border-2 hover:bg-muted">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50">
                   <Settings className="mr-2 h-4 w-4" />
                   Edit Business Profile
                 </Button>

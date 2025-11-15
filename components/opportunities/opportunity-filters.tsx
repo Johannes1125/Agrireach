@@ -22,7 +22,14 @@ interface FilterStats {
   };
 }
 
-export function OpportunityFilters() {
+interface OpportunityFiltersProps {
+  onFiltersChange?: (filters: {
+    payRange: [number, number];
+    selectedFilters: string[];
+  }) => void;
+}
+
+export function OpportunityFilters({ onFiltersChange }: OpportunityFiltersProps) {
   const [payRange, setPayRange] = useState([60, 100])
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
   const [filterStats, setFilterStats] = useState<FilterStats>({
@@ -55,12 +62,23 @@ export function OpportunityFilters() {
   }, [])
 
   const toggleFilter = (filterId: string) => {
-    setSelectedFilters((prev) => (prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [...prev, filterId]))
+    setSelectedFilters((prev) => {
+      const newFilters = prev.includes(filterId) ? prev.filter((id) => id !== filterId) : [...prev, filterId];
+      onFiltersChange?.({ payRange, selectedFilters: newFilters });
+      return newFilters;
+    });
   }
 
+  // Notify parent when pay range changes
+  useEffect(() => {
+    onFiltersChange?.({ payRange, selectedFilters });
+  }, [payRange, selectedFilters, onFiltersChange]);
+
   const clearAllFilters = () => {
+    const resetPayRange: [number, number] = [Math.round(filterStats.payRange.avgMinPay), Math.round(filterStats.payRange.avgMaxPay)];
     setSelectedFilters([])
-    setPayRange([Math.round(filterStats.payRange.avgMinPay), Math.round(filterStats.payRange.avgMaxPay)])
+    setPayRange(resetPayRange)
+    onFiltersChange?.({ payRange: resetPayRange, selectedFilters: [] });
   }
 
   return (

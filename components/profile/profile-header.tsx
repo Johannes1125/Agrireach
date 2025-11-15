@@ -252,7 +252,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full md:w-auto border-2 hover:bg-muted"
+                className="w-full md:w-auto border-2 hover:bg-muted/70 dark:hover:bg-card/50"
                 asChild
               >
                 <Link href="/settings">

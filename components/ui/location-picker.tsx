@@ -272,12 +272,12 @@ export function LocationPicker({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <div className="flex items-center justify-between">
-        <Label htmlFor="location-input">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+        <Label htmlFor="location-input" className="flex-shrink-0">
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {showMap && (
             <Dialog open={mapVisible} onOpenChange={setMapVisible}>
               <DialogTrigger asChild>
@@ -285,9 +285,11 @@ export function LocationPicker({
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="flex-shrink-0"
                 >
                   <Map className="h-4 w-4 mr-2" />
-                  Open Map
+                  <span className="hidden sm:inline">Open Map</span>
+                  <span className="sm:hidden">Map</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl w-[90vw] h-[80vh] p-0">
@@ -355,13 +357,15 @@ export function LocationPicker({
             size="sm"
             onClick={getCurrentLocation}
             disabled={isGeocoding}
+            className="flex-shrink-0"
           >
             {isGeocoding ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <Navigation className="h-4 w-4 mr-2" />
             )}
-            Use Current Location
+            <span className="hidden sm:inline">Use Current Location</span>
+            <span className="sm:hidden">Current</span>
           </Button>
         </div>
       </div>

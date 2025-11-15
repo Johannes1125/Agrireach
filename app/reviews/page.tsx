@@ -136,23 +136,26 @@ export default function ReviewsPage() {
     );
   }
 
-  const searchLower = (searchTerm || "").toLowerCase();
-  const filteredReviews = normalizedReviews.filter((review: any) => {
-    const matchesCategory =
-      selectedCategory === "All" || review.category === selectedCategory;
-    const haystacks = [
-      review.title,
-      review.comment,
-      review.reviewee_id?.full_name,
-      review.reviewer_id?.full_name,
-    ]
-      .filter(Boolean)
-      .map((s: string) => s.toLowerCase());
+  // Filter reviews
+  const filteredReviews = useMemo(() => {
+    const searchLower = (searchTerm || "").toLowerCase();
+    return normalizedReviews.filter((review: any) => {
+      const matchesCategory =
+        selectedCategory === "All" || review.category === selectedCategory;
+      const haystacks = [
+        review.title,
+        review.comment,
+        review.reviewee_id?.full_name,
+        review.reviewer_id?.full_name,
+      ]
+        .filter(Boolean)
+        .map((s: string) => s.toLowerCase());
 
-    const matchesSearch =
-      !searchLower || haystacks.some((h: string) => h.includes(searchLower));
-    return matchesCategory && matchesSearch;
-  });
+      const matchesSearch =
+        !searchLower || haystacks.some((h: string) => h.includes(searchLower));
+      return matchesCategory && matchesSearch;
+    });
+  }, [normalizedReviews, searchTerm, selectedCategory]);
 
   // Sort reviews
   const sortedReviews = useMemo(() => {

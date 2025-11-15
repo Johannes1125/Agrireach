@@ -59,6 +59,8 @@ export function OpportunityBoard() {
   const [reportReason, setReportReason] = useState("");
   const [reportDescription, setReportDescription] = useState("");
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [filterPayRange, setFilterPayRange] = useState<[number, number] | null>(null);
+  const [filterSelectedFilters, setFilterSelectedFilters] = useState<string[]>([]);
   const { searchQuery, location } = useJobSearch();
   const { user } = useAuth();
 
@@ -93,6 +95,11 @@ export function OpportunityBoard() {
             company: j.company_name || "",
             location: j.location,
             type: jobType,
+            category: j.category,
+            experience: j.experience_level,
+            urgency: j.urgency,
+            pay_rate: j.pay_rate || 0,
+            pay_rate_max: j.pay_rate_max || j.pay_rate || 0,
             payRange: ((): string => {
               const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
               const hasMax = typeof j.pay_rate_max === "number" && j.pay_rate_max > j.pay_rate
@@ -101,7 +108,6 @@ export function OpportunityBoard() {
               const base = hasMax ? `P${j.pay_rate}–P${j.pay_rate_max}` : `P${j.pay_rate}`
               return `${base}/${payType}`
             })(),
-            urgency: j.urgency,
             postedDate: j.created_at,
             deadline: j.start_date || j.created_at,
             applicants: j.applications_count || 0,
@@ -124,7 +130,7 @@ export function OpportunityBoard() {
     load();
   }, [hasLoaded]);
 
-  // Filter and sort jobs based on search query, location, and sortBy
+  // Filter and sort jobs based on search query, location, filters, and sortBy
   useEffect(() => {
     let filtered = allJobs;
 
@@ -147,6 +153,36 @@ export function OpportunityBoard() {
       filtered = filtered.filter(
         (job) => job.location && job.location.toLowerCase().includes(loc)
       );
+    }
+
+    // Apply pay range filter
+    if (filterPayRange) {
+      const [minPay, maxPay] = filterPayRange;
+      filtered = filtered.filter((job) => {
+        const jobPay = job.pay_rate || 0;
+        const jobPayMax = job.pay_rate_max || jobPay;
+        // Job matches if its pay range overlaps with the filter range
+        return jobPay <= maxPay && jobPayMax >= minPay;
+      });
+    }
+
+    // Apply selected filters (job type, category, experience, urgency)
+    if (filterSelectedFilters.length > 0) {
+      filtered = filtered.filter((job) => {
+        // Check if job matches any of the selected filters
+        const jobTypeId = (job.type || "").toLowerCase().replace(/\s+/g, '-');
+        const categoryId = (job.category || "").toLowerCase().replace(/\s+/g, '-');
+        const experienceId = (job.experience || "").toLowerCase().replace(/\s+/g, '-');
+        const urgencyId = (job.urgency || "").toLowerCase().replace(/\s+/g, '-');
+        
+        return filterSelectedFilters.some(
+          (filterId) =>
+            filterId === jobTypeId ||
+            filterId === categoryId ||
+            filterId === experienceId ||
+            filterId === urgencyId
+        );
+      });
     }
 
     // Apply sorting - always prioritize matching jobs first
@@ -188,7 +224,7 @@ export function OpportunityBoard() {
 
     setJobs(sortedJobs);
     setTotal(sortedJobs.length);
-  }, [searchQuery, location, allJobs, sortBy]);
+  }, [searchQuery, location, allJobs, sortBy, filterPayRange, filterSelectedFilters]);
 
   const toggleSaveJob = (jobId: string) => {
     setSavedJobs((prev) =>
@@ -265,7 +301,12 @@ export function OpportunityBoard() {
       {/* Desktop Filter Sidebar */}
       <aside className="hidden lg:block w-64 flex-shrink-0">
         <div className="sticky top-4">
-          <OpportunityFilters />
+          <OpportunityFilters 
+            onFiltersChange={({ payRange, selectedFilters }) => {
+              setFilterPayRange(payRange);
+              setFilterSelectedFilters(selectedFilters);
+            }}
+          />
         </div>
       </aside>
 
@@ -305,7 +346,12 @@ export function OpportunityBoard() {
               <SheetContent side="left" className="w-full sm:w-96 overflow-y-auto">
                 <div className="py-4">
                   <h3 className="text-lg font-semibold mb-4">Filters</h3>
-                  <OpportunityFilters />
+                  <OpportunityFilters 
+                    onFiltersChange={({ payRange, selectedFilters }) => {
+                      setFilterPayRange(payRange);
+                      setFilterSelectedFilters(selectedFilters);
+                    }}
+                  />
                 </div>
               </SheetContent>
             </Sheet>

@@ -11,26 +11,73 @@ export async function GET(req: NextRequest) {
     const now = new Date();
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    // Count jobs by type
+    // Count jobs by type - check multiple fields (duration is the primary field used)
     const jobTypes = await Opportunity.aggregate([
-      { $group: { _id: "$job_type", count: { $sum: 1 } } },
+      {
+        $project: {
+          jobType: {
+            $ifNull: [
+              "$duration",
+              {
+                $ifNull: [
+                  "$work_type",
+                  {
+                    $ifNull: [
+                      "$employment_type",
+                      {
+                        $ifNull: ["$job_type", null]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        $match: {
+          jobType: { $ne: null, $exists: true }
+        }
+      },
+      {
+        $group: {
+          _id: "$jobType",
+          count: { $sum: 1 }
+        }
+      },
       { $sort: { count: -1 } }
     ]);
 
-    // Count jobs by category
+    // Count jobs by category - filter out null/undefined values
     const categories = await Opportunity.aggregate([
+      {
+        $match: {
+          category: { $ne: null, $exists: true, $ne: "" }
+        }
+      },
       { $group: { _id: "$category", count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
 
-    // Count jobs by experience level
+    // Count jobs by experience level - filter out null/undefined values
     const experience = await Opportunity.aggregate([
+      {
+        $match: {
+          experience_level: { $ne: null, $exists: true, $ne: "" }
+        }
+      },
       { $group: { _id: "$experience_level", count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
 
-    // Count jobs by urgency
+    // Count jobs by urgency - filter out null/undefined values
     const urgency = await Opportunity.aggregate([
+      {
+        $match: {
+          urgency: { $ne: null, $exists: true, $ne: "" }
+        }
+      },
       { $group: { _id: "$urgency", count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
@@ -48,27 +95,47 @@ export async function GET(req: NextRequest) {
       }
     ]);
 
+    // Format job type labels nicely
+    const formatJobTypeLabel = (type: string | null | undefined): string => {
+      if (!type) return 'Unknown';
+      // Capitalize first letter and handle hyphens
+      return type
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join('-');
+    };
+
     const stats = {
-      jobTypes: jobTypes.map(item => ({
-        id: item._id?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
-        label: item._id || 'Unknown',
-        count: item.count
-      })),
-      categories: categories.map(item => ({
-        id: item._id?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
-        label: item._id || 'Unknown',
-        count: item.count
-      })),
-      experience: experience.map(item => ({
-        id: item._id?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
-        label: item._id || 'Unknown',
-        count: item.count
-      })),
-      urgency: urgency.map(item => ({
-        id: item._id?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
-        label: item._id || 'Unknown',
-        count: item.count
-      })),
+      jobTypes: jobTypes.map(item => {
+        const rawType = item._id || null;
+        const formattedLabel = formatJobTypeLabel(rawType);
+        return {
+          id: rawType?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+          label: formattedLabel,
+          count: item.count
+        };
+      }),
+      categories: categories
+        .filter(item => item._id && item._id.trim() !== '')
+        .map(item => ({
+          id: item._id.toLowerCase().replace(/\s+/g, '-'),
+          label: item._id,
+          count: item.count
+        })),
+      experience: experience
+        .filter(item => item._id && item._id.trim() !== '')
+        .map(item => ({
+          id: item._id.toLowerCase().replace(/\s+/g, '-'),
+          label: item._id,
+          count: item.count
+        })),
+      urgency: urgency
+        .filter(item => item._id && item._id.trim() !== '')
+        .map(item => ({
+          id: item._id.toLowerCase().replace(/\s+/g, '-'),
+          label: item._id,
+          count: item.count
+        })),
       payRange: payStats[0] || { minPay: 60, maxPay: 100, avgMinPay: 70, avgMaxPay: 90 }
     };
 
