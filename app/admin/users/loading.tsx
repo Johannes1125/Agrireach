@@ -1,3 +1,5 @@
+import { ContentLoader } from "@/components/ui/content-loader"
+
 export default function Loading() {
-  return null
+  return <ContentLoader />
 }

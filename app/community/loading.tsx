@@ -1,5 +1,5 @@
-import { PageLoader } from "@/components/ui/page-loader"
+import { ContentLoader } from "@/components/ui/content-loader"
 
 export default function Loading() {
-  return <PageLoader text="Loading community..." variant="dots" size="md" />
+  return <ContentLoader />
 }

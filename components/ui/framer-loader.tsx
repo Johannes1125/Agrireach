@@ -22,7 +22,7 @@ export function SpinnerLoader({ size = 40, color = "currentColor", className = "
       }}
       animate={{ rotate: 360 }}
       transition={{
-        duration: 0.8,
+        duration: 0.5,
         repeat: Infinity,
         ease: "linear",
       }}

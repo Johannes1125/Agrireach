@@ -1,6 +1,6 @@
-import { PageLoader } from "@/components/ui/page-loader"
+import { ContentLoader } from "@/components/ui/content-loader"
 
 export default function Loading() {
-  return <PageLoader text="Please wait..." variant="spinner" size="md" />
+  return <ContentLoader />
 }
 
