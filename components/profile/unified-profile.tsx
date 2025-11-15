@@ -423,7 +423,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
                     Find Jobs
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50" size="sm">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground" size="sm">
                   <Award className="mr-2 h-4 w-4" />
                   View Certificates
                 </Button>
@@ -438,7 +438,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
                     Post New Job
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50" size="sm">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground" size="sm">
                   <TrendingUp className="mr-2 h-4 w-4" />
                   View Analytics
                 </Button>
@@ -448,12 +448,12 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {user.role === "buyer" && (
               <>
                 <Link href="/marketplace">
-                  <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50 mb-3" size="sm">
+                  <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground mb-3" size="sm">
                     <Package className="mr-2 h-4 w-4" />
                     Browse Products
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50" size="sm">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground" size="sm">
                   <Star className="mr-2 h-4 w-4" />
                   Favorite Suppliers
                 </Button>
@@ -461,7 +461,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             )}
 
             <Link href="/settings">
-              <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-card/50" size="sm">
+              <Button variant="outline" className="w-full border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground" size="sm">
                 Edit Profile
               </Button>
             </Link>

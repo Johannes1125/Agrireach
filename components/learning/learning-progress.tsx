@@ -45,27 +45,32 @@ export default function LearningProgress({ userId }: { userId: string }) {
   return (
     <>
       {/* In Progress */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Target className="h-5 w-5 text-primary" />
-            In Progress
+      <Card className="border-2">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Target className="h-5 w-5 text-primary" />
+            </div>
+            <span>In Progress</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {items.length === 0 && !loading && (
-            <p className="text-sm text-muted-foreground">
-              No active courses yet.
-            </p>
+            <div className="text-center py-8">
+              <Target className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">
+                No active courses yet.
+              </p>
+            </div>
           )}
           {(loading
             ? [{ id: "--", title: "Loading...", progress: 0 }]
             : items
           ).map((course) => (
-            <div key={course.id} className="space-y-2">
+            <div key={course.id} className="space-y-2 p-3 rounded-lg bg-muted/50 border border-border hover:bg-muted/70 dark:hover:bg-card/50 transition-colors">
               <Link
                 href={`/learning/course/${course.id}`}
-                className="text-sm font-medium hover:text-primary line-clamp-2"
+                className="text-sm font-medium hover:text-primary line-clamp-2 block"
               >
                 {course.title || course.id}
               </Link>
@@ -78,32 +83,22 @@ export default function LearningProgress({ userId }: { userId: string }) {
         </CardContent>
       </Card>
 
-      {/* Achievements (static for now) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Trophy className="h-5 w-5 text-yellow-600" />
-            Recent Achievements
+      {/* Achievements */}
+      <Card className="border-2">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <div className="p-2 rounded-lg bg-yellow-500/10">
+              <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <span>Achievements</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-xl">
-              🏆
-            </div>
-            <div>
-              <p className="text-sm font-medium">First Course Completed</p>
-              <p className="text-xs text-muted-foreground">Recently</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-xl">
-              🎯
-            </div>
-            <div>
-              <p className="text-sm font-medium">Learning Streak</p>
-              <p className="text-xs text-muted-foreground">Keep it up!</p>
-            </div>
+        <CardContent>
+          <div className="text-center py-8">
+            <Trophy className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">
+              Complete courses to earn achievements
+            </p>
           </div>
         </CardContent>
       </Card>

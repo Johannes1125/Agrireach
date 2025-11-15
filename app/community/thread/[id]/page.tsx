@@ -236,7 +236,7 @@ export default function ThreadPage({
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <Link
             href="/community"

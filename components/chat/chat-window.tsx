@@ -102,29 +102,32 @@ export function ChatWindow() {
 
   return (
     <div className="flex flex-col h-full bg-card">
-      {/* Chat Header */}
-      <div className="p-2 sm:p-3 border-b bg-card">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-            <AvatarImage src={currentConversation.other_user.avatar} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-              {currentConversation.other_user.name.charAt(0).toUpperCase()}
+      {/* Enhanced Chat Header */}
+      <div className="p-3 sm:p-4 border-b border-border bg-muted/30">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-border">
+            <AvatarImage src={currentConversation.other_user.avatar_url || currentConversation.other_user.avatar} />
+            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+              {currentConversation.other_user.name?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-sm sm:text-base text-card-foreground truncate">
+            <h3 className="font-semibold text-base sm:text-lg text-foreground truncate">
               {currentConversation.other_user.name}
             </h3>
             <p className="text-xs text-muted-foreground truncate hidden sm:block">
               {currentConversation.other_user.email}
             </p>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
             <div
-              className={`w-2 h-2 rounded-full ${
+              className={`w-2.5 h-2.5 rounded-full ${
                 state.isConnected ? "bg-green-500" : "bg-red-500"
               }`}
             />
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              {state.isConnected ? "Online" : "Offline"}
+            </span>
           </div>
         </div>
       </div>
@@ -165,15 +168,15 @@ export function ChatWindow() {
                   )}
                   
                   <div
-                    className={`rounded-2xl px-4 py-2 max-w-[75%] sm:max-w-xs lg:max-w-md ${
+                    className={`rounded-2xl px-4 py-2.5 max-w-[75%] sm:max-w-xs lg:max-w-md border-2 ${
                       isOwnMessage
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
+                        ? "bg-primary text-primary-foreground border-primary/30 shadow-sm"
+                        : "bg-muted/70 dark:bg-muted/50 text-foreground border-border"
                     }`}
                   >
                     <p className="text-sm leading-relaxed">{message.content}</p>
                     <p
-                      className={`text-xs mt-1 ${
+                      className={`text-xs mt-1.5 ${
                         isOwnMessage
                           ? "text-primary-foreground/70"
                           : "text-muted-foreground"
@@ -192,9 +195,9 @@ export function ChatWindow() {
         )}
       </ScrollArea>
 
-      {/* Message Input */}
-      <div className="p-2 sm:p-4 border-t border-border/30 bg-card">
-        <div className="flex gap-1 sm:gap-2">
+      {/* Enhanced Message Input */}
+      <div className="p-3 sm:p-4 border-t border-border bg-muted/30">
+        <div className="flex gap-2">
           <div className="flex-1 relative">
             <Input
               value={messageText}
@@ -202,7 +205,7 @@ export function ChatWindow() {
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               disabled={isSending}
-              className="pr-16 sm:pr-20 h-9 sm:h-10 text-sm bg-background border-input"
+              className="pr-16 sm:pr-20 h-10 sm:h-11 text-sm bg-background border-border"
             />
             <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex gap-0.5 sm:gap-1">
               <Button
@@ -225,7 +228,7 @@ export function ChatWindow() {
             onClick={handleSendMessage}
             disabled={!messageText.trim() || isSending}
             size="sm"
-            className="px-2 sm:px-3 h-9 sm:h-10"
+            className="px-3 sm:px-4 h-10 sm:h-11 bg-primary hover:bg-primary/90"
           >
             <Send className="h-4 w-4" />
           </Button>

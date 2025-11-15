@@ -239,7 +239,7 @@ export default function MarketplacePage() {
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}
               >
-                <SelectTrigger className="w-full sm:w-40 bg-white text-zinc-900 border border-white/60 focus:ring-0 focus-visible:ring-0 dark:bg-white/5 dark:text-white">
+                <SelectTrigger className="w-full sm:w-40 bg-card text-foreground border border-border focus:ring-0 focus-visible:ring-0">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -263,7 +263,7 @@ export default function MarketplacePage() {
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full sm:w-40 bg-white text-zinc-900 border border-white/60 focus:ring-0 focus-visible:ring-0 dark:bg-white/5 dark:text-white">
+                <SelectTrigger className="w-full sm:w-40 bg-card text-foreground border border-border focus:ring-0 focus-visible:ring-0">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
