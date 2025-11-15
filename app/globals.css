@@ -53,38 +53,38 @@ html {
 }
 
 .dark {
-  /* Updated dark mode with earthy tones */
-  --background: oklch(0.12 0.02 140); /* Dark forest background */
+  /* Updated dark mode with dark blue tones - lighter and more comfortable */
+  --background: oklch(0.25 0.03 240); /* Dark blue background - much lighter */
   --foreground: oklch(0.95 0.01 80); /* Light wheat text */
-  --card: oklch(0.15 0.02 140); /* Slightly lighter forest */
+  --card: oklch(0.28 0.03 240); /* Slightly lighter dark blue for cards */
   --card-foreground: oklch(0.95 0.01 80); /* Light wheat */
-  --popover: oklch(0.12 0.02 140); /* Dark forest */
+  --popover: oklch(0.28 0.03 240); /* Dark blue */
   --popover-foreground: oklch(0.95 0.01 80); /* Light wheat */
   --primary: oklch(0.65 0.1 120); /* Lighter green in dark mode */
-  --primary-foreground: oklch(0.12 0.02 140); /* Dark forest */
+  --primary-foreground: oklch(0.25 0.03 240); /* Dark blue */
   --secondary: oklch(0.75 0.08 80); /* Wheat tone */
-  --secondary-foreground: oklch(0.12 0.02 140); /* Dark forest */
-  --muted: oklch(0.2 0.02 140); /* Muted forest */
-  --muted-foreground: oklch(0.7 0.02 80); /* Muted wheat */
+  --secondary-foreground: oklch(0.25 0.03 240); /* Dark blue */
+  --muted: oklch(0.32 0.03 240); /* Lighter dark blue for muted areas */
+  --muted-foreground: oklch(0.75 0.02 80); /* Muted wheat */
   --accent: oklch(0.75 0.08 80); /* Wheat accent */
-  --accent-foreground: oklch(0.12 0.02 140); /* Dark forest */
+  --accent-foreground: oklch(0.25 0.03 240); /* Dark blue */
   --destructive: oklch(0.6 0.25 15); /* Lighter red */
   --destructive-foreground: oklch(1 0 0); /* White */
-  --border: oklch(0.25 0.02 140); /* Dark forest border */
-  --input: oklch(0.15 0.02 140); /* Dark forest input */
+  --border: oklch(0.35 0.03 240); /* Lighter dark blue border */
+  --input: oklch(0.28 0.03 240); /* Dark blue input */
   --ring: oklch(0.65 0.1 120 / 0.3); /* Light green focus ring */
   --chart-1: oklch(0.65 0.1 120); /* Light green */
   --chart-2: oklch(0.75 0.08 80); /* Wheat */
   --chart-3: oklch(0.55 0.08 140); /* Medium green */
   --chart-4: oklch(0.85 0.06 60); /* Light wheat */
   --chart-5: oklch(0.45 0.1 160); /* Forest green */
-  --sidebar: oklch(0.15 0.02 140); /* Dark forest sidebar */
+  --sidebar: oklch(0.28 0.03 240); /* Dark blue sidebar */
   --sidebar-foreground: oklch(0.95 0.01 80); /* Light wheat text */
   --sidebar-primary: oklch(0.65 0.1 120); /* Light green primary */
-  --sidebar-primary-foreground: oklch(0.12 0.02 140); /* Dark forest */
+  --sidebar-primary-foreground: oklch(0.25 0.03 240); /* Dark blue */
   --sidebar-accent: oklch(0.75 0.08 80); /* Wheat accent */
-  --sidebar-accent-foreground: oklch(0.12 0.02 140); /* Dark forest */
-  --sidebar-border: oklch(0.25 0.02 140); /* Dark forest border */
+  --sidebar-accent-foreground: oklch(0.25 0.03 240); /* Dark blue */
+  --sidebar-border: oklch(0.35 0.03 240); /* Lighter dark blue border */
   --sidebar-ring: oklch(0.65 0.1 120 / 0.3); /* Light green focus ring */
 }
 
@@ -185,15 +185,15 @@ html {
 
 /* Dark mode scrollbar styles */
 .dark .scrollbar-thin::-webkit-scrollbar-track {
-  background: oklch(0.2 0.02 140) !important;
+  background: oklch(0.32 0.03 240) !important;
 }
 
 .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: oklch(0.4 0.02 140) !important;
+  background: oklch(0.45 0.03 240) !important;
 }
 
 .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.5 0.04 140) !important;
+  background: oklch(0.5 0.03 240) !important;
 }
 
 /* Accessibility: Focus visible styles */
