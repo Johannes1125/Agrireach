@@ -30,7 +30,7 @@ interface OpportunityFiltersProps {
 }
 
 export function OpportunityFilters({ onFiltersChange }: OpportunityFiltersProps) {
-  const [payRange, setPayRange] = useState([60, 100])
+  const [payRange, setPayRange] = useState<[number, number]>([60, 100])
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
   const [filterStats, setFilterStats] = useState<FilterStats>({
     jobTypes: [],
@@ -49,7 +49,11 @@ export function OpportunityFilters({ onFiltersChange }: OpportunityFiltersProps)
           const data = await response.json();
           setFilterStats(data.data);
           // Set initial pay range based on actual data
-          setPayRange([Math.round(data.data.payRange.avgMinPay), Math.round(data.data.payRange.avgMaxPay)]);
+          const initialPayRange: [number, number] = [
+            Math.round(data.data.payRange.avgMinPay), 
+            Math.round(data.data.payRange.avgMaxPay)
+          ];
+          setPayRange(initialPayRange);
         }
       } catch (error) {
         console.error("Failed to fetch filter statistics:", error);
