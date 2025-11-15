@@ -39,7 +39,6 @@ import Link from "next/link";
 import { useFeaturedProductsData } from "@/hooks/use-featured-products-data";
 import { useCommunityData } from "@/hooks/use-community-data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { InlineLoader } from "@/components/ui/page-loader";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 interface Opportunity {
@@ -161,14 +160,6 @@ export default function HomePage() {
 
     fetchData();
   }, [communityStats]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <InlineLoader text="Loading..." variant="spinner" size="lg" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background" style={{ scrollBehavior: 'smooth' }}>

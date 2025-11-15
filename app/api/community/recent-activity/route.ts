@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Thread, ThreadPost } from "@/server/models/Thread";
+import { User } from "@/server/models/User";
 import { jsonOk, jsonError, requireMethod } from "@/server/utils/api";
 
 export async function GET(req: NextRequest) {

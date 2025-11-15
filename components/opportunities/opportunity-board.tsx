@@ -39,7 +39,6 @@ import { OpportunityFilters } from "./opportunity-filters";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { useJobSearch } from "@/contexts/job-search-context";
-import { InlineLoader } from "@/components/ui/page-loader";
 import { formatDate, formatRelativeTime } from "@/lib/utils";
 import { normalizeSkillRequirements, SKILL_LEVELS, SkillLevel } from "@/lib/skills";
 import { useAuth } from "@/hooks/use-auth";
@@ -246,14 +245,6 @@ export function OpportunityBoard() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[600px]">
-        <InlineLoader text="Loading opportunities..." variant="spinner" size="lg" />
-      </div>
-    );
-  }
-
   return (
     <div className="flex gap-4 lg:gap-6">
       {/* Desktop Filter Sidebar */}
@@ -311,7 +302,11 @@ export function OpportunityBoard() {
         {/* Job Listings */}
         <section aria-label="Job Listings">
           <div className="space-y-3 sm:space-y-4 max-h-[900px] overflow-y-auto pr-1 sm:pr-2">
-        {jobs.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading opportunities...</p>
+          </div>
+        ) : jobs.length === 0 ? (
           <div className="text-center py-12">
             <Search className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
             <h3 className="mt-4 text-lg font-medium">No matching jobs found</h3>

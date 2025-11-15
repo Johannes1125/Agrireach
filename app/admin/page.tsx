@@ -81,7 +81,7 @@ function AdminDashboardContent() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-card border-b">
         <div className="container mx-auto px-4 py-6 lg:px-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -89,7 +89,7 @@ function AdminDashboardContent() {
               <p className="text-muted-foreground mt-1">Platform management and moderation</p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-green-600 border-green-600">
+              <Badge variant="outline" className="text-green-600 dark:text-green-400 border-green-600 dark:border-green-400">
                 <Shield className="h-3 w-3 mr-1" />
                 System Healthy
               </Badge>
@@ -102,65 +102,65 @@ function AdminDashboardContent() {
         <div className="space-y-6">
           {/* Enhanced Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 hover:shadow-xl transition-all duration-300">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 hover:shadow-xl transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-blue-600">Total Users</p>
-                    <p className="text-3xl font-bold text-blue-900">{(stats?.totalUsers || 0).toLocaleString()}</p>
-                    <p className="text-xs text-blue-500">+{stats?.newUsersToday || 0} new today</p>
+                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Users</p>
+                    <p className="text-3xl font-bold text-blue-900 dark:text-blue-300">{(stats?.totalUsers || 0).toLocaleString()}</p>
+                    <p className="text-xs text-blue-500 dark:text-blue-400">+{stats?.newUsersToday || 0} new today</p>
                   </div>
-                  <div className="p-3 bg-blue-500/10 rounded-xl">
-                    <Users className="h-8 w-8 text-blue-600" />
+                  <div className="p-3 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl">
+                    <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50 hover:shadow-xl transition-all duration-300">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 hover:shadow-xl transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-green-600">Active Users</p>
-                    <p className="text-3xl font-bold text-green-900">{(stats?.activeUsers || 0).toLocaleString()}</p>
-                    <p className="text-xs text-green-500">
+                    <p className="text-sm font-medium text-green-600 dark:text-green-400">Active Users</p>
+                    <p className="text-3xl font-bold text-green-900 dark:text-green-300">{(stats?.activeUsers || 0).toLocaleString()}</p>
+                    <p className="text-xs text-green-500 dark:text-green-400">
                       {stats && stats.totalUsers ? Math.round((stats.activeUsers / stats.totalUsers) * 100) : 0}% of total
                     </p>
                   </div>
-                  <div className="p-3 bg-green-500/10 rounded-xl">
-                    <TrendingUp className="h-8 w-8 text-green-600" />
+                  <div className="p-3 bg-green-500/10 dark:bg-green-500/20 rounded-xl">
+                    <TrendingUp className="h-8 w-8 text-green-600 dark:text-green-400" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50 hover:shadow-xl transition-all duration-300">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 hover:shadow-xl transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-purple-600">Total Listings</p>
-                    <p className="text-3xl font-bold text-purple-900">{(stats?.totalListings || 0).toLocaleString()}</p>
-                    <p className="text-xs text-purple-500">Marketplace + Jobs</p>
+                    <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Total Listings</p>
+                    <p className="text-3xl font-bold text-purple-900 dark:text-purple-300">{(stats?.totalListings || 0).toLocaleString()}</p>
+                    <p className="text-xs text-purple-500 dark:text-purple-400">Marketplace + Jobs</p>
                   </div>
-                  <div className="p-3 bg-purple-500/10 rounded-xl">
-                    <Package className="h-8 w-8 text-purple-600" />
+                  <div className="p-3 bg-purple-500/10 dark:bg-purple-500/20 rounded-xl">
+                    <Package className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-emerald-100/50 hover:shadow-xl transition-all duration-300">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 hover:shadow-xl transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-emerald-600">Platform Health</p>
-                    <p className="text-3xl font-bold text-emerald-900">{stats?.platformHealth || 0}%</p>
+                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Platform Health</p>
+                    <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-300">{stats?.platformHealth || 0}%</p>
                     <div className="mt-2">
-                      <Progress value={stats?.platformHealth || 0} className="h-2 bg-emerald-100" />
+                      <Progress value={stats?.platformHealth || 0} className="h-2 bg-emerald-100 dark:bg-emerald-900/50" />
                     </div>
                   </div>
-                  <div className="p-3 bg-emerald-500/10 rounded-xl">
-                    <Shield className="h-8 w-8 text-emerald-600" />
+                  <div className="p-3 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-xl">
+                    <Shield className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
                   </div>
                 </div>
               </CardContent>

@@ -86,7 +86,7 @@ const statusColors: Record<string, BadgeVariant> = {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-card border-b">
         <div className="container mx-auto px-4 py-4">
           <Link href="/admin" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -284,8 +284,8 @@ const statusColors: Record<string, BadgeVariant> = {
                             <DialogHeader className="pb-6">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <DialogTitle className="text-2xl font-bold text-gray-900">Report Details</DialogTitle>
-                                  <p className="text-sm text-gray-500 mt-1">Review and manage this report</p>
+                                  <DialogTitle className="text-2xl font-bold text-foreground">Report Details</DialogTitle>
+                                  <p className="text-sm text-muted-foreground mt-1">Review and manage this report</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Badge 
@@ -306,26 +306,26 @@ const statusColors: Record<string, BadgeVariant> = {
                             {selectedReport && (
                               <div className="space-y-6">
                                 {/* Reporter Information */}
-                                <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50">
+                                <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
                                   <CardContent className="p-6">
                                     <div className="flex items-center gap-4">
-                                      <Avatar className="h-16 w-16 ring-4 ring-white shadow-lg">
+                                      <Avatar className="h-16 w-16 ring-4 ring-background shadow-lg">
                                         <AvatarImage src={selectedReport.reporter?.avatar_url || "/placeholder.svg"} />
                                         <AvatarFallback className="text-lg font-semibold bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
                                           {(selectedReport.reporter?.full_name || 'U')[0]}
                                         </AvatarFallback>
                                       </Avatar>
                                       <div className="flex-1">
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                        <h3 className="text-lg font-semibold text-foreground mb-1">
                                           {selectedReport.reporter?.full_name || 'Unknown User'}
                                         </h3>
-                                        <p className="text-sm text-gray-600 mb-2">{selectedReport.reporter?.email || 'No email provided'}</p>
+                                        <p className="text-sm text-muted-foreground mb-2">{selectedReport.reporter?.email || 'No email provided'}</p>
                                         <div className="flex items-center gap-2">
-                                          <Badge variant="outline" className="px-3 py-1 text-xs font-medium bg-white/80">
+                                          <Badge variant="outline" className="px-3 py-1 text-xs font-medium bg-card/80">
                                             {selectedReport.reporter?.role || 'user'}
                                           </Badge>
-                                          <span className="text-xs text-gray-500">•</span>
-                                          <span className="text-xs text-gray-500">Reporter</span>
+                                          <span className="text-xs text-muted-foreground">•</span>
+                                          <span className="text-xs text-muted-foreground">Reporter</span>
                                         </div>
                                       </div>
                                     </div>
@@ -337,8 +337,8 @@ const statusColors: Record<string, BadgeVariant> = {
                                   <Card className="border-0 shadow-sm">
                                     <CardContent className="p-4">
                                       <div className="flex items-center gap-2 mb-2">
-                                        <Flag className="h-4 w-4 text-blue-600" />
-                                        <h4 className="font-semibold text-gray-900">Type</h4>
+                                        <Flag className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                        <h4 className="font-semibold text-foreground">Type</h4>
                                       </div>
                                       <Badge variant="outline" className="px-3 py-1 text-sm font-medium">
                                         {selectedReport.type || 'Unknown'}
@@ -349,8 +349,8 @@ const statusColors: Record<string, BadgeVariant> = {
                                   <Card className="border-0 shadow-sm">
                                     <CardContent className="p-4">
                                       <div className="flex items-center gap-2 mb-2">
-                                        <AlertTriangle className="h-4 w-4 text-orange-600" />
-                                        <h4 className="font-semibold text-gray-900">Priority</h4>
+                                        <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                                        <h4 className="font-semibold text-foreground">Priority</h4>
                                       </div>
                                       <Badge 
                                         variant={(priorityColors[selectedReport.priority as keyof typeof priorityColors] || 'secondary') as BadgeVariant}
@@ -364,10 +364,10 @@ const statusColors: Record<string, BadgeVariant> = {
                                   <Card className="border-0 shadow-sm">
                                     <CardContent className="p-4">
                                       <div className="flex items-center gap-2 mb-2">
-                                        <CheckCircle className="h-4 w-4 text-green-600" />
-                                        <h4 className="font-semibold text-gray-900">Created</h4>
+                                        <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                        <h4 className="font-semibold text-foreground">Created</h4>
                                       </div>
-                                      <p className="text-sm text-gray-600 font-medium">{selectedReport.createdAt}</p>
+                                      <p className="text-sm text-muted-foreground font-medium">{selectedReport.createdAt}</p>
                                     </CardContent>
                                   </Card>
                                 </div>
@@ -375,12 +375,12 @@ const statusColors: Record<string, BadgeVariant> = {
                                 {/* Reason */}
                                 <Card className="border-0 shadow-sm">
                                   <CardContent className="p-4">
-                                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                                      <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
                                       Reason
                                     </h4>
-                                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                                      <p className="text-sm text-red-800 font-medium">{selectedReport.reason || 'No reason provided'}</p>
+                                    <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                                      <p className="text-sm text-red-800 dark:text-red-200 font-medium">{selectedReport.reason || 'No reason provided'}</p>
                                     </div>
                                   </CardContent>
                                 </Card>
@@ -388,12 +388,12 @@ const statusColors: Record<string, BadgeVariant> = {
                                 {/* Description */}
                                 <Card className="border-0 shadow-sm">
                                   <CardContent className="p-4">
-                                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                      <Eye className="h-4 w-4 text-gray-600" />
+                                    <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                                      <Eye className="h-4 w-4 text-muted-foreground" />
                                       Description
                                     </h4>
-                                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                      <p className="text-sm text-gray-700 leading-relaxed">
+                                    <div className="bg-muted border border-border rounded-lg p-4">
+                                      <p className="text-sm text-foreground leading-relaxed">
                                         {selectedReport.description || 'No description provided'}
                                       </p>
                                     </div>
@@ -404,12 +404,12 @@ const statusColors: Record<string, BadgeVariant> = {
                                 {selectedReport.content_id && (
                                   <Card className="border-0 shadow-sm">
                                     <CardContent className="p-4">
-                                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                        <span className="text-gray-600">#</span>
+                                      <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                                        <span className="text-muted-foreground">#</span>
                                         Content ID
                                       </h4>
-                                      <div className="bg-gray-100 border border-gray-200 rounded-lg p-3">
-                                        <code className="text-xs text-gray-600 font-mono break-all">
+                                      <div className="bg-muted border border-border rounded-lg p-3">
+                                        <code className="text-xs text-muted-foreground font-mono break-all">
                                           {selectedReport.content_id}
                                         </code>
                                       </div>
@@ -419,14 +419,14 @@ const statusColors: Record<string, BadgeVariant> = {
 
                                 {/* Admin Notes */}
                                 {selectedReport.admin_notes && (
-                                  <Card className="border-0 shadow-sm bg-gradient-to-r from-yellow-50 to-amber-50">
+                                  <Card className="border-0 shadow-sm bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30">
                                     <CardContent className="p-4">
-                                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                        <span className="text-amber-600">📝</span>
+                                      <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                                        <span className="text-amber-600 dark:text-amber-400">📝</span>
                                         Admin Notes
                                       </h4>
-                                      <div className="bg-white/80 border border-amber-200 rounded-lg p-4">
-                                        <p className="text-sm text-gray-700 leading-relaxed">
+                                      <div className="bg-card/80 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                                        <p className="text-sm text-foreground leading-relaxed">
                                           {selectedReport.admin_notes}
                                         </p>
                                       </div>
@@ -436,23 +436,23 @@ const statusColors: Record<string, BadgeVariant> = {
 
                                 {/* Action Section */}
                                 {selectedReport.status === "pending" && (
-                                  <Card className="border-0 shadow-sm bg-gradient-to-r from-gray-50 to-slate-50">
+                                  <Card className="border-0 shadow-sm bg-gradient-to-r from-muted/50 to-muted/30">
                                     <CardContent className="p-6">
-                                      <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                        <span className="text-blue-600">⚡</span>
+                                      <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                                        <span className="text-primary">⚡</span>
                                         Resolution Actions
                                       </h4>
                                       
                                       <div className="space-y-4">
                                         <div>
-                                          <label htmlFor="resolution-notes" className="block text-sm font-medium text-gray-700 mb-2">
+                                          <label htmlFor="resolution-notes" className="block text-sm font-medium text-foreground mb-2">
                                             Resolution Notes
                                           </label>
                                           <Textarea 
                                             id="resolution-notes" 
                                             placeholder="Add your resolution notes here..." 
                                             rows={3}
-                                            className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                            className="border-border focus:border-primary focus:ring-primary"
                                           />
                                         </div>
 
@@ -473,7 +473,7 @@ const statusColors: Record<string, BadgeVariant> = {
                                               const notes = (document.getElementById('resolution-notes') as HTMLTextAreaElement)?.value
                                               handleReportAction(selectedReport._id || selectedReport.id, "dismiss", notes)
                                             }}
-                                            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium py-3 px-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
+                                            className="flex-1 border-border text-foreground hover:bg-muted hover:border-border font-medium py-3 px-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-200"
                                           >
                                             <X className="h-5 w-5 mr-2" />
                                             Dismiss (Keep Content)
