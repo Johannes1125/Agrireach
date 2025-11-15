@@ -268,14 +268,16 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
       <header className="flex flex-col gap-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="font-heading text-3xl font-bold">Welcome back, {user.name ? user.name.split(" ")[0] : "User"}!</h1>
-            <p className="text-muted-foreground">{config.subtitle}</p>
+            <h1 className="font-heading text-3xl md:text-4xl font-bold text-foreground">
+              Welcome back, {user.name ? user.name.split(" ")[0] : "User"}!
+            </h1>
+            <p className="text-muted-foreground mt-2">{config.subtitle}</p>
           </div>
           <div className="flex items-center gap-3">
             {/* Removed Bell Notification Button */}
             <Button
               size="lg"
-              className="w-fit"
+              className="w-fit shadow-lg hover:shadow-xl transition-all duration-200"
               onClick={() => handleQuickAction(config.primaryAction.toLowerCase().replace(" ", "-"), activeRole)}
             >
               <PrimaryIcon className="mr-2 h-5 w-5" />
@@ -305,47 +307,55 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
           <TabsContent value="worker" className="space-y-6 mt-6">
             {/* Stats Grid */}
             <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-blue-600 dark:text-blue-400">Active Jobs</CardTitle>
+                  <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg">
+                    <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.worker?.acceptedJobs || 0}</div>
-                  <p className="text-xs text-muted-foreground">Currently working</p>
+                  <div className="text-3xl font-bold text-blue-900 dark:text-blue-300">{stats?.worker?.acceptedJobs || 0}</div>
+                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">Currently working</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Completed Jobs</CardTitle>
-                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-green-600 dark:text-green-400">Completed Jobs</CardTitle>
+                  <div className="p-2 bg-green-500/10 dark:bg-green-500/20 rounded-lg">
+                    <Briefcase className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.worker?.activeApplications || 0}</div>
-                  <p className="text-xs text-muted-foreground">Total applications</p>
+                  <div className="text-3xl font-bold text-green-900 dark:text-green-300">{stats?.worker?.activeApplications || 0}</div>
+                  <p className="text-xs text-green-500 dark:text-green-400 mt-1">Total applications</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-purple-600 dark:text-purple-400">Trust Score</CardTitle>
+                  <div className="p-2 bg-purple-500/10 dark:bg-purple-500/20 rounded-lg">
+                    <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.user?.trust_score || 0}</div>
-                  <p className="text-xs text-muted-foreground">Trust score</p>
+                  <div className="text-3xl font-bold text-purple-900 dark:text-purple-300">{stats?.user?.trust_score || 0}</div>
+                  <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">Your reputation</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Rating</CardTitle>
-                  <Star className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-amber-600 dark:text-amber-400">Rating</CardTitle>
+                  <div className="p-2 bg-amber-500/10 dark:bg-amber-500/20 rounded-lg">
+                    <Star className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.reviewsReceived || 0}</div>
-                  <p className="text-xs text-muted-foreground">Reviews received</p>
+                  <div className="text-3xl font-bold text-amber-900 dark:text-amber-300">{stats?.reviewsReceived || 0}</div>
+                  <p className="text-xs text-amber-500 dark:text-amber-400 mt-1">Reviews received</p>
                 </CardContent>
               </Card>
             </section>
@@ -376,25 +386,34 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                         return (
                           <article
                             key={activity.timestamp}
-                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 bg-card"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 bg-card hover:bg-muted/50 transition-colors duration-200"
                           >
                             <div className="space-y-1 flex-1">
-                              <h4 className="font-medium">{activity.title}</h4>
+                              <h4 className="font-medium text-foreground">{activity.title}</h4>
                               <p className="text-sm text-muted-foreground">{activity.description}</p>
                               <span className="text-xs text-muted-foreground">
                                 {formatRelativeTime(activity.timestamp)}
                               </span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className={badge.className}>{badge.label}</Badge>
+                              <Badge variant="secondary" className={`${badge.className} dark:bg-opacity-20`}>{badge.label}</Badge>
                             </div>
                           </article>
                         )
                       })
                     ) : (
-                      <p className="text-sm text-muted-foreground text-center py-8">
-                        No recent job activities. Start applying for jobs to see your activity here.
-                      </p>
+                      <div className="text-center py-12">
+                        <Briefcase className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                        <p className="text-sm text-muted-foreground mb-4">
+                          No recent job activities. Start applying for jobs to see your activity here.
+                        </p>
+                        <Link href="/opportunities">
+                          <Button variant="outline">
+                            <Briefcase className="mr-2 h-4 w-4" />
+                            Browse Jobs
+                          </Button>
+                        </Link>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -471,47 +490,55 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
           <TabsContent value="recruiter" className="space-y-6 mt-6">
             {/* Stats Grid */}
             <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
-                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-blue-600 dark:text-blue-400">Active Jobs</CardTitle>
+                  <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg">
+                    <Briefcase className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.recruiter?.activeJobs || 0}</div>
-                  <p className="text-xs text-muted-foreground">Currently posted</p>
+                  <div className="text-3xl font-bold text-blue-900 dark:text-blue-300">{stats?.recruiter?.activeJobs || 0}</div>
+                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">Currently posted</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Applicants</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-green-600 dark:text-green-400">Total Applicants</CardTitle>
+                  <div className="p-2 bg-green-500/10 dark:bg-green-500/20 rounded-lg">
+                    <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.recruiter?.totalApplications || 0}</div>
-                  <p className="text-xs text-muted-foreground">All applications</p>
+                  <div className="text-3xl font-bold text-green-900 dark:text-green-300">{stats?.recruiter?.totalApplications || 0}</div>
+                  <p className="text-xs text-green-500 dark:text-green-400 mt-1">All applications</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Hired Workers</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Hired Workers</CardTitle>
+                  <div className="p-2 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-lg">
+                    <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{(stats?.recruiter as any)?.hiredWorkers || 0}</div>
-                  <p className="text-xs text-muted-foreground">Accepted applications</p>
+                  <div className="text-3xl font-bold text-emerald-900 dark:text-emerald-300">{(stats?.recruiter as any)?.hiredWorkers || 0}</div>
+                  <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-1">Accepted applications</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Response Rate</CardTitle>
-                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-purple-600 dark:text-purple-400">Response Rate</CardTitle>
+                  <div className="p-2 bg-purple-500/10 dark:bg-purple-500/20 rounded-lg">
+                    <MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.reviewsReceived || 0}</div>
-                  <p className="text-xs text-muted-foreground">Reviews received</p>
+                  <div className="text-3xl font-bold text-purple-900 dark:text-purple-300">{stats?.reviewsReceived || 0}</div>
+                  <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">Reviews received</p>
                 </CardContent>
               </Card>
             </section>
@@ -526,7 +553,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                       <CardDescription>Monitor your current job listings and applications</CardDescription>
                     </div>
                     <Link href="/opportunities/post">
-                      <Button size="sm">
+                      <Button size="sm" className="shadow-md hover:shadow-lg transition-all duration-200">
                         <Plus className="mr-1 h-4 w-4" />
                         Post Job
                       </Button>
@@ -536,10 +563,11 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     {recruiterLoading ? (
                       <div className="text-center py-8 text-muted-foreground">Loading jobs...</div>
                     ) : recruiterJobs.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p className="mb-4">You haven't posted any jobs yet.</p>
+                      <div className="text-center py-12">
+                        <Briefcase className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                        <p className="text-muted-foreground mb-4">You haven't posted any jobs yet.</p>
                         <Link href="/opportunities/post">
-                          <Button>
+                          <Button className="shadow-md hover:shadow-lg transition-all duration-200">
                             <Plus className="mr-2 h-4 w-4" />
                             Post Your First Job
                           </Button>
@@ -551,7 +579,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                         return (
                           <article
                             key={job._id}
-                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 hover:bg-muted/50 transition-colors duration-200"
                           >
                             <div className="space-y-1 flex-1">
                               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -618,7 +646,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                       recentApplicants.map((applicant) => {
                         const rating = (applicant.worker.trust_score / 20).toFixed(1)
                         return (
-                          <article key={applicant._id} className="p-3 border rounded-lg space-y-2">
+                          <article key={applicant._id} className="p-3 border rounded-lg space-y-2 hover:bg-muted/50 transition-colors duration-200">
                             <div className="flex items-center justify-between">
                               <h5 className="font-medium">{applicant.worker.full_name}</h5>
                               <div className="flex items-center gap-1 text-sm">
@@ -653,47 +681,55 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
           <TabsContent value="buyer" className="space-y-6 mt-6">
             {/* Stats Grid */}
             <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
-                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-blue-600 dark:text-blue-400">Active Orders</CardTitle>
+                  <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg">
+                    <ShoppingCart className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.buyer?.pendingOrders || 0}</div>
-                  <p className="text-xs text-muted-foreground">Currently processing</p>
+                  <div className="text-3xl font-bold text-blue-900 dark:text-blue-300">{stats?.buyer?.pendingOrders || 0}</div>
+                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">Currently processing</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Purchases</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-green-600 dark:text-green-400">Total Purchases</CardTitle>
+                  <div className="p-2 bg-green-500/10 dark:bg-green-500/20 rounded-lg">
+                    <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.buyer?.totalOrders || 0}</div>
-                  <p className="text-xs text-muted-foreground">All time orders</p>
+                  <div className="text-3xl font-bold text-green-900 dark:text-green-300">{stats?.buyer?.totalOrders || 0}</div>
+                  <p className="text-xs text-green-500 dark:text-green-400 mt-1">All time orders</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">My Products</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-purple-600 dark:text-purple-400">My Products</CardTitle>
+                  <div className="p-2 bg-purple-500/10 dark:bg-purple-500/20 rounded-lg">
+                    <Package className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats?.seller?.activeProducts || 0}</div>
-                  <p className="text-xs text-muted-foreground">Active listings</p>
+                  <div className="text-3xl font-bold text-purple-900 dark:text-purple-300">{stats?.seller?.activeProducts || 0}</div>
+                  <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">Active listings</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Total Earnings</CardTitle>
+                  <div className="p-2 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-lg">
+                    <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">₱{(stats?.seller?.totalEarnings || 0).toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">From sales</p>
+                  <div className="text-3xl font-bold text-emerald-900 dark:text-emerald-300">₱{(stats?.seller?.totalEarnings || 0).toLocaleString()}</div>
+                  <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-1">From sales</p>
                 </CardContent>
               </Card>
             </section>
@@ -707,7 +743,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     <CardDescription>Manage your product listings</CardDescription>
                   </div>
                   <Link href="/marketplace/sell">
-                    <Button size="sm">
+                    <Button size="sm" className="shadow-md hover:shadow-lg transition-all duration-200">
                       <Plus className="mr-1 h-4 w-4" />
                       List Product
                     </Button>
@@ -717,10 +753,11 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   {buyerLoading ? (
                     <div className="text-center py-8 text-muted-foreground">Loading products...</div>
                   ) : buyerProducts.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p className="mb-4">You haven't listed any products yet.</p>
+                    <div className="text-center py-12">
+                      <Package className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-4">You haven't listed any products yet.</p>
                       <Link href="/marketplace/sell">
-                        <Button>
+                        <Button className="shadow-md hover:shadow-lg transition-all duration-200">
                           <Plus className="mr-2 h-4 w-4" />
                           List Your First Product
                         </Button>
@@ -734,7 +771,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                         return (
                           <article
                             key={product._id}
-                            className="flex flex-col p-4 border rounded-lg gap-3"
+                            className="flex flex-col p-4 border rounded-lg gap-3 hover:shadow-md transition-all duration-200 hover:bg-muted/30"
                           >
                             <img
                               src={imageUrl}
@@ -810,10 +847,11 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     {buyerOrdersLoading ? (
                       <div className="text-center py-8 text-muted-foreground">Loading orders...</div>
                     ) : buyerOrders.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p className="mb-4">No recent orders found.</p>
+                      <div className="text-center py-12">
+                        <ShoppingCart className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                        <p className="text-muted-foreground mb-4">No recent orders found.</p>
                         <Link href="/marketplace">
-                          <Button>
+                          <Button className="shadow-md hover:shadow-lg transition-all duration-200">
                             <ShoppingCart className="mr-2 h-4 w-4" />
                             Browse Products
                           </Button>
@@ -826,7 +864,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                         return (
                           <article
                             key={order._id}
-                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 hover:bg-muted/50 transition-colors duration-200"
                           >
                             <div className="space-y-1 flex-1">
                               <div className="flex items-start gap-3">
@@ -889,10 +927,11 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     {sellerOrdersLoading ? (
                       <div className="text-center py-8 text-muted-foreground">Loading sales...</div>
                     ) : sellerOrders.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p className="mb-4">No recent sales found.</p>
+                      <div className="text-center py-12">
+                        <Truck className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                        <p className="text-muted-foreground mb-4">No recent sales found.</p>
                         <Link href="/marketplace">
-                          <Button>
+                          <Button className="shadow-md hover:shadow-lg transition-all duration-200">
                             <Plus className="mr-2 h-4 w-4" />
                             List Products
                           </Button>
@@ -905,7 +944,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                         return (
                           <article
                             key={order._id}
-                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4"
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 hover:bg-muted/50 transition-colors duration-200"
                           >
                             <div className="space-y-1 flex-1">
                               <div className="flex items-start gap-3">
@@ -969,10 +1008,11 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                     {featuredProductsLoading ? (
                       <div className="text-center py-8 text-muted-foreground">Loading products...</div>
                     ) : featuredProducts.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <p className="mb-4">No featured products found.</p>
+                      <div className="text-center py-12">
+                        <Package className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                        <p className="text-muted-foreground mb-4">No featured products found.</p>
                         <Link href="/marketplace">
-                          <Button>
+                          <Button className="shadow-md hover:shadow-lg transition-all duration-200">
                             <ShoppingCart className="mr-2 h-4 w-4" />
                             Browse All Products
                           </Button>
@@ -984,7 +1024,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                         const imageUrl = product.images?.[0] || "/placeholder.svg"
                         const daysAgo = formatRelativeTime(product.created_at)
                         return (
-                          <article key={product._id} className="p-4 border rounded-lg space-y-3 hover:bg-muted/50 transition-colors">
+                          <article key={product._id} className="p-4 border rounded-lg space-y-3 hover:bg-muted/50 hover:shadow-md transition-all duration-200">
                             <div className="flex gap-3">
                               <img
                                 src={imageUrl}
