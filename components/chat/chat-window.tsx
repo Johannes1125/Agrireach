@@ -1,16 +1,19 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useChat } from "@/contexts/chat-context";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Paperclip, Image as ImageIcon } from "lucide-react";
+import { Send, Paperclip, Image as ImageIcon, ArrowLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-export function ChatWindow() {
+interface ChatWindowProps {
+  onBackToConversations?: () => void;
+}
+
+export function ChatWindow({ onBackToConversations }: ChatWindowProps = {} as ChatWindowProps) {
   const { state, sendMessage, loadMessages } = useChat();
   const { user } = useAuth();
   const [messageText, setMessageText] = useState("");
@@ -20,6 +23,19 @@ export function ChatWindow() {
   const loadedConversationIdRef = useRef<string | null>(null);
 
   const currentConversation = state.currentConversation;
+
+  // Deduplicate messages by ID before rendering
+  const uniqueMessages = useMemo(() => {
+    const seenIds = new Set<string>()
+    return state.messages.filter((message) => {
+      const msgId = message.id?.toString() || (message as any)._id?.toString() || ''
+      if (!msgId || seenIds.has(msgId)) {
+        return false
+      }
+      seenIds.add(msgId)
+      return true
+    })
+  }, [state.messages])
 
   // Load messages when conversation changes
   useEffect(() => {
@@ -105,7 +121,18 @@ export function ChatWindow() {
       {/* Enhanced Chat Header */}
       <div className="p-3 sm:p-4 border-b border-border bg-muted/30">
         <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-border">
+          {/* Mobile: Back button */}
+          {onBackToConversations && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBackToConversations}
+              className="md:hidden flex-shrink-0"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          )}
+          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-border flex-shrink-0">
             <AvatarImage src={currentConversation.other_user.avatar_url || currentConversation.other_user.avatar} />
             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
               {currentConversation.other_user.name?.charAt(0).toUpperCase() || 'U'}
@@ -119,7 +146,7 @@ export function ChatWindow() {
               {currentConversation.other_user.email}
             </p>
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2 flex-shrink-0">
             <div
               className={`w-2.5 h-2.5 rounded-full ${
                 state.isConnected ? "bg-green-500" : "bg-red-500"
@@ -133,14 +160,18 @@ export function ChatWindow() {
       </div>
 
       {/* Messages */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
-        {state.messages.length === 0 && !state.loading ? (
-          <div className="text-center text-sm text-muted-foreground mt-6">
-            <p>No messages yet. Start the conversation!</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {state.messages.map((message, i) => {
+      <div className="flex-1 overflow-hidden min-h-0">
+        <div 
+          ref={scrollAreaRef}
+          className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin p-4"
+        >
+          {state.messages.length === 0 && !state.loading ? (
+            <div className="text-center text-sm text-muted-foreground mt-6">
+              <p>No messages yet. Start the conversation!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {uniqueMessages.map((message, i) => {
               const messageData = message as any;
               // Handle both string IDs and ObjectId comparisons
               const rawSenderId = messageData?.sender_id;
@@ -151,9 +182,12 @@ export function ChatWindow() {
               const currentUserId = user?.id?.toString() || user?.id
               const isOwnMessage = messageSenderId === currentUserId
               
+              // Use message ID as key (messages are now deduplicated)
+              const messageId = message.id?.toString() || message._id?.toString() || `temp-${i}-${message.created_at || Date.now()}`
+              
               return (
                 <div
-                  key={message.id ?? `msg-${i}`}
+                  key={messageId}
                   className={`flex items-end gap-3 ${
                     isOwnMessage ? "justify-end" : "justify-start"
                   }`}
@@ -190,10 +224,11 @@ export function ChatWindow() {
                 </div>
               );
             })}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </ScrollArea>
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Enhanced Message Input */}
       <div className="p-3 sm:p-4 border-t border-border bg-muted/30">

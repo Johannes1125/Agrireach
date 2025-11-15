@@ -73,6 +73,15 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'SET_MESSAGES':
       return { ...state, messages: action.payload }
     case 'ADD_MESSAGE':
+      // Prevent duplicate messages by checking if message with same ID already exists
+      const messageExists = state.messages.some(msg => {
+        const msgId = msg.id?.toString() || (msg as any)._id?.toString()
+        const newMsgId = action.payload.id?.toString() || (action.payload as any)._id?.toString()
+        return msgId === newMsgId
+      })
+      if (messageExists) {
+        return state
+      }
       return { ...state, messages: [...state.messages, action.payload] }
     case 'REPLACE_MESSAGE':
       return {
@@ -208,13 +217,57 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       
       // Replace temp message with real message from server
       dispatch({ type: 'REPLACE_MESSAGE', payload: { oldId: tempMessage.id, newMessage: realMessage } })
+      
+      // If this is a new conversation (temp conversation), add it to conversations list
+      if (state.currentConversation?.id?.startsWith('temp-')) {
+        // Check if conversation already exists in the list
+        const existingConv = state.conversations.find(
+          conv => conv.other_user.id === recipientId
+        )
+        
+        if (!existingConv) {
+          // Create new conversation object from the message response
+          const newConversation: ChatConversation = {
+            id: result.data.conversation_id || `conv-${recipientId}`,
+            other_user: state.currentConversation.other_user,
+            last_message: realMessage,
+            last_message_at: realMessage.created_at,
+            created_at: new Date().toISOString(),
+          }
+          
+          // Add to conversations list
+          dispatch({ type: 'SET_CONVERSATIONS', payload: [newConversation, ...state.conversations] })
+          
+          // Update current conversation with real ID
+          dispatch({ type: 'SET_CURRENT_CONVERSATION', payload: newConversation })
+        } else {
+          // Update existing conversation
+          const updatedConversation = {
+            ...existingConv,
+            last_message: realMessage,
+            last_message_at: realMessage.created_at,
+          }
+          dispatch({ type: 'UPDATE_CONVERSATION', payload: updatedConversation })
+          dispatch({ type: 'SET_CURRENT_CONVERSATION', payload: updatedConversation })
+        }
+      } else {
+        // Update existing conversation's last message
+        if (state.currentConversation) {
+          const updatedConversation = {
+            ...state.currentConversation,
+            last_message: realMessage,
+            last_message_at: realMessage.created_at,
+          }
+          dispatch({ type: 'UPDATE_CONVERSATION', payload: updatedConversation })
+        }
+      }
     } catch (error) {
       console.error('Send message error:', error)
       // Remove failed message
       dispatch({ type: 'REMOVE_MESSAGE', payload: tempMessage.id })
       dispatch({ type: 'SET_ERROR', payload: 'Failed to send message' })
     }
-  }, [user])
+  }, [user, state.currentConversation, state.conversations])
 
   const loadConversations = useCallback(async () => {
     if (!user) return

@@ -13,7 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { NotificationCenter } from "@/components/notifications/notification-center"
-import { Settings, User, LogOut } from "lucide-react"
+import { WeatherWidget } from "@/components/weather/weather-widget"
+import { Settings, User, LogOut, Moon, Sun } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/hooks/use-auth"
 import { usePathname, useRouter } from "next/navigation"
@@ -36,10 +37,65 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [me, setMe] = useState<SimpleHeaderProps["user"] | undefined>(undefined)
+  const [darkMode, setDarkMode] = useState(false)
 
   // Check if we're on auth pages or landing page early to avoid unnecessary API calls
   const isAuthPage = pathname?.startsWith('/auth') || pathname?.startsWith('/admin/login')
   const isLandingPage = pathname === '/'
+
+  // Initialize dark mode state and listen for theme changes
+  useEffect(() => {
+    const checkDarkMode = () => {
+      const isDark = document.documentElement.classList.contains('dark') || 
+                     localStorage.getItem('theme') === 'dark'
+      setDarkMode(isDark)
+    }
+
+    // Check initial state
+    checkDarkMode()
+
+    // Listen for theme changes from other sources (e.g., settings page)
+    const handleThemeChange = () => {
+      checkDarkMode()
+    }
+
+    document.addEventListener('themeChange', handleThemeChange)
+    
+    // Also listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleSystemThemeChange = () => {
+      if (localStorage.getItem('theme') === null || localStorage.getItem('theme') === 'system') {
+        checkDarkMode()
+      }
+    }
+    mediaQuery.addEventListener('change', handleSystemThemeChange)
+
+    return () => {
+      document.removeEventListener('themeChange', handleThemeChange)
+      mediaQuery.removeEventListener('change', handleSystemThemeChange)
+    }
+  }, [])
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode
+    setDarkMode(newDarkMode)
+
+    if (newDarkMode) {
+      document.documentElement.classList.add("dark")
+      localStorage.setItem("theme", "dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+      localStorage.setItem("theme", "light")
+    }
+
+    // Dispatch the custom event for any other listeners
+    const themeChangeEvent = new CustomEvent("themeChange", {
+      detail: { theme: newDarkMode ? "dark" : "light" },
+      bubbles: true,
+    })
+    document.dispatchEvent(themeChangeEvent)
+  }
 
   useEffect(() => {
     // Skip auth check if on landing page or auth pages to avoid unnecessary API calls
@@ -117,7 +173,25 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
       <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="w-full flex h-16 items-center justify-end pr-4 lg:pr-6">
           <div className="flex items-center gap-2 md:gap-4">
+            <WeatherWidget />
+            
             <NotificationCenter />
+            
+            {/* Dark Mode Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleDarkMode}
+              className="h-9 w-9 hover:bg-muted/50 transition-colors"
+              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {darkMode ? (
+                <Sun className="h-5 w-5 text-foreground" />
+              ) : (
+                <Moon className="h-5 w-5 text-foreground" />
+              )}
+            </Button>
+
             <Link href="/auth/login">
               <Button variant="outline" className="bg-transparent">Sign In</Button>
             </Link>
@@ -132,7 +206,24 @@ export function SimpleHeader({ user }: SimpleHeaderProps) {
       <div className="w-full flex h-16 items-center justify-end pr-4 lg:pr-6">
         {/* User Actions - Right Side Only */}
         <div className="flex items-center gap-2 md:gap-4">
+          <WeatherWidget />
+          
           <NotificationCenter />
+
+          {/* Dark Mode Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleDarkMode}
+            className="h-9 w-9 hover:bg-muted/50 transition-colors"
+            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {darkMode ? (
+              <Sun className="h-5 w-5 text-foreground" />
+            ) : (
+              <Moon className="h-5 w-5 text-foreground" />
+            )}
+          </Button>
 
           {/* User Menu */}
           <DropdownMenu>

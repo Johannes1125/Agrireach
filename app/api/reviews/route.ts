@@ -116,7 +116,16 @@ export async function POST(req: NextRequest) {
       return jsonError("Title, comment, and category are required", 400);
     }
 
-    const revieweeObjectId = toObjectIdOrFallback(reviewee_id);
+    if (!reviewee_id || typeof reviewee_id !== 'string') {
+      return jsonError("Invalid reviewee_id", 400);
+    }
+
+    // Validate ObjectId format
+    if (!Types.ObjectId.isValid(reviewee_id)) {
+      return jsonError("Invalid reviewee_id format", 400);
+    }
+
+    const revieweeObjectId = new Types.ObjectId(reviewee_id);
 
     if (
       decoded?.sub &&
@@ -124,6 +133,17 @@ export async function POST(req: NextRequest) {
       revieweeObjectId.equals(new Types.ObjectId(decoded.sub))
     ) {
       return jsonError("Cannot review yourself", 400);
+    }
+
+    // Check if user has already reviewed this reviewee
+    const existingReview = await Review.findOne({
+      reviewer_id: new Types.ObjectId(decoded.sub),
+      reviewee_id: revieweeObjectId,
+      status: "active"
+    });
+
+    if (existingReview) {
+      return jsonError("You have already reviewed this company", 400);
     }
 
     const doc = await Review.create({

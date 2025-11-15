@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect, use as useParams } from "react"
-import { ArrowLeft, Star, MapPin, User, ShoppingCart, Heart, Share2, MessageCircle } from "lucide-react"
+import { ArrowLeft, Star, MapPin, User, ShoppingCart, Heart, Share2, MessageCircle, MessageSquare, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { authFetch } from "@/lib/auth-client"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -51,12 +52,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const { id } = useParams(params)
   const [product, setProduct] = useState<Product | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [averageRating, setAverageRating] = useState(0)
+  const [totalReviews, setTotalReviews] = useState(0)
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [addingToCart, setAddingToCart] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
   const [cartItemCount, setCartItemCount] = useState(0)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState("")
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
+  const [showReviewForm, setShowReviewForm] = useState(false)
 
   // Fetch cart count
   const fetchCartCount = async () => {
@@ -90,11 +98,21 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         // Fetch reviews for this product's seller
         const sellerId = prod?.seller_id?._id || prod?.seller_id
         if (sellerId) {
-          const reviewsRes = await authFetch(`/api/reviews?reviewee_id=${sellerId}&limit=10`)
-          if (reviewsRes.ok) {
-            const reviewsData = await reviewsRes.json()
-            const arr = reviewsData?.data?.reviews || reviewsData?.reviews || []
-            setReviews(Array.isArray(arr) ? arr : [])
+          setReviewsLoading(true)
+          try {
+            const reviewsRes = await authFetch(`/api/users/${sellerId}/reviews?limit=10`)
+            if (reviewsRes.ok) {
+              const reviewsData = await reviewsRes.json()
+              const data = reviewsData?.data || reviewsData
+              const arr = data?.reviews || []
+              setReviews(Array.isArray(arr) ? arr : [])
+              setAverageRating(data?.stats?.averageRating || 0)
+              setTotalReviews(data?.stats?.totalReviews || arr.length)
+            }
+          } catch (error) {
+            console.error("Failed to fetch reviews:", error)
+          } finally {
+            setReviewsLoading(false)
           }
         } else {
           setReviews([])
@@ -110,6 +128,66 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     fetchProduct()
     fetchCartCount() // Fetch cart count on page load
   }, [id, router])
+
+  const handleSubmitReview = async () => {
+    if (!product || reviewRating === 0) {
+      toast.error("Please select a rating")
+      return
+    }
+
+    if (!reviewComment.trim()) {
+      toast.error("Please write a review comment")
+      return
+    }
+
+    const sellerId = product?.seller_id?._id || product?.seller_id
+    if (!sellerId) {
+      toast.error("Seller information not available")
+      return
+    }
+
+    try {
+      setIsSubmittingReview(true)
+      const res = await authFetch("/api/reviews", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reviewee_id: sellerId,
+          rating: reviewRating,
+          comment: reviewComment,
+          title: "Seller Review",
+          category: "seller",
+        }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || "Failed to submit review")
+      }
+
+      toast.success("Review submitted successfully!")
+      setReviewRating(0)
+      setReviewComment("")
+      setShowReviewForm(false)
+
+      // Refresh reviews
+      const reviewsRes = await authFetch(`/api/users/${sellerId}/reviews?limit=10`)
+      if (reviewsRes.ok) {
+        const reviewsData = await reviewsRes.json()
+        const data = reviewsData?.data || reviewsData
+        const arr = data?.reviews || []
+        setReviews(Array.isArray(arr) ? arr : [])
+        setAverageRating(data?.stats?.averageRating || 0)
+        setTotalReviews(data?.stats?.totalReviews || arr.length)
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to submit review")
+    } finally {
+      setIsSubmittingReview(false)
+    }
+  }
 
   const handleAddToCart = async () => {
     if (!product) return
@@ -191,15 +269,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     <div className="min-h-screen bg-background">
       <PageTransition>
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/marketplace" className="inline-flex items-center text-muted-foreground hover:text-foreground">
+            <Link href="/marketplace" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Marketplace
             </Link>
             <Link href="/marketplace">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground">
                 <ShoppingCart className="h-4 w-4 mr-2" />
                 Cart ({cartItemCount})
               </Button>
@@ -416,44 +494,192 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </CardContent>
           </Card>
 
-          {/* Reviews */}
-          <Card>
+          {/* Write Review Card - Form Only */}
+          <Card className="bg-card border-2">
             <CardHeader>
-              <CardTitle>Seller Reviews</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                <span>Write a Review</span>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Share your experience with {product?.seller_id?.full_name || 'this seller'}
+              </p>
             </CardHeader>
             <CardContent className="space-y-4">
-              {reviews.length > 0 ? (
-                reviews.slice(0, 3).map((review) => (
-                  <div key={review._id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm">{review.reviewer_id.full_name}</span>
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (
+              {!showReviewForm ? (
+                <Button 
+                  onClick={() => setShowReviewForm(true)}
+                  className="w-full bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Write a Review
+                </Button>
+              ) : (
+                <div className="p-4 rounded-lg border-2 border-border bg-card space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-base">Write Your Review</h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setShowReviewForm(false)
+                        setReviewRating(0)
+                        setReviewComment("")
+                      }}
+                      className="h-8 w-8 p-0"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Rating</label>
+                    <div className="flex items-center justify-center gap-2">
+                      {[1, 2, 3, 4, 5].map((rating) => (
+                        <button
+                          key={rating}
+                          type="button"
+                          onClick={() => setReviewRating(rating)}
+                          className="focus:outline-none transition-transform hover:scale-110"
+                        >
                           <Star
-                            key={i}
-                            className={`h-3 w-3 ${
-                              i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                            className={`h-6 w-6 ${
+                              rating <= reviewRating
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-muted-foreground/30"
                             }`}
                           />
-                        ))}
+                        </button>
+                      ))}
+                      {reviewRating > 0 && (
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {reviewRating} {reviewRating === 1 ? 'star' : 'stars'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="review-comment-sidebar" className="text-sm font-medium text-foreground mb-2 block">
+                      Your Review
+                    </label>
+                    <Textarea
+                      id="review-comment-sidebar"
+                      placeholder="Share your experience with this seller..."
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      rows={4}
+                      className="bg-background border-border resize-none"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={handleSubmitReview}
+                      disabled={isSubmittingReview || reviewRating === 0 || !reviewComment.trim()}
+                      className="flex-1 bg-primary hover:bg-primary/90"
+                    >
+                      {isSubmittingReview ? "Submitting..." : "Submit Review"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowReviewForm(false)
+                        setReviewRating(0)
+                        setReviewComment("")
+                      }}
+                      className="border-2 hover:bg-muted/70 dark:hover:bg-muted/50"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Full-Width Reviews Section - Display Only */}
+        <div className="mt-8">
+          <Card className="border-2">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl">
+                <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                <span>Customer Reviews</span>
+                {totalReviews > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {totalReviews} {totalReviews === 1 ? 'review' : 'reviews'}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {reviewsLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+                  <p className="text-sm text-muted-foreground">Loading reviews...</p>
+                </div>
+              ) : reviews.length > 0 ? (
+                <div className="space-y-6">
+                  {reviews.map((review) => (
+                    <div key={review._id} className="p-4 rounded-lg border-2 border-border bg-card hover:shadow-md transition-shadow">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-12 w-12 border-2 border-border flex-shrink-0">
+                          <AvatarImage src={review.reviewer_id?.avatar_url} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {review.reviewer_id?.full_name?.[0] || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4 mb-2">
+                            <div>
+                              <p className="font-semibold text-base text-foreground">
+                                {review.reviewer_id?.full_name || 'Anonymous'}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {new Date(review.created_at).toLocaleDateString('en-US', { 
+                                  year: 'numeric', 
+                                  month: 'long', 
+                                  day: 'numeric' 
+                                })}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < review.rating 
+                                      ? "fill-yellow-400 text-yellow-400" 
+                                      : "text-muted-foreground/30"
+                                  }`}
+                                />
+                              ))}
+                              <span className="ml-2 text-sm font-medium text-foreground">{review.rating}.0</span>
+                            </div>
+                          </div>
+                          {review.comment && (
+                            <p className="text-sm text-foreground leading-relaxed mt-2">{review.comment}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    {review.comment && (
-                      <p className="text-sm text-muted-foreground">{review.comment}</p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(review.created_at).toLocaleDateString()}
-                    </p>
-                    {review._id !== reviews[reviews.length - 1]._id && <Separator />}
-                  </div>
-                ))
+                  ))}
+                  {totalReviews > reviews.length && (
+                    <div className="text-center pt-4">
+                      <Link href={`/reviews?reviewee_id=${product?.seller_id?._id || product?.seller_id || ''}`}>
+                        <Button variant="outline" className="border-2 hover:bg-muted/70 dark:hover:bg-muted/50">
+                          View All {totalReviews} Reviews
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No reviews yet for this seller.</p>
-              )}
-              {reviews.length > 3 && (
-                <Button variant="outline" className="w-full mt-4 bg-transparent">
-                  View All Reviews ({reviews.length})
-                </Button>
+                <div className="text-center py-12">
+                  <Star className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-base font-medium text-foreground mb-2">No reviews yet</p>
+                  <p className="text-sm text-muted-foreground">
+                    Be the first to share your experience with this seller!
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>

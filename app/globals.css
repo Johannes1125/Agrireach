@@ -162,19 +162,26 @@ html {
   }
 
   /* Custom scrollbar for dashboard sections */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.75 0.03 80) oklch(0.94 0.015 80);
+  }
+
   .scrollbar-thin::-webkit-scrollbar {
-    width: 6px !important;
+    width: 8px !important;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
     background: oklch(0.94 0.015 80) !important;
-    border-radius: 3px !important;
+    border-radius: 4px !important;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: oklch(0.75 0.03 80) !important;
-    border-radius: 3px !important;
+    border-radius: 4px !important;
     transition: background 0.2s ease !important;
+    border: 1px solid transparent;
+    background-clip: padding-box;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
@@ -184,16 +191,41 @@ html {
 }
 
 /* Dark mode scrollbar styles */
+.dark .scrollbar-thin {
+  scrollbar-color: oklch(0.45 0.03 240) oklch(0.32 0.03 240);
+}
+
 .dark .scrollbar-thin::-webkit-scrollbar-track {
   background: oklch(0.32 0.03 240) !important;
 }
 
 .dark .scrollbar-thin::-webkit-scrollbar-thumb {
   background: oklch(0.45 0.03 240) !important;
+  border: 1px solid transparent;
+  background-clip: padding-box;
 }
 
 .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: oklch(0.5 0.03 240) !important;
+}
+
+/* Radix UI ScrollArea - Always show scrollbar on desktop */
+@media (min-width: 768px) {
+  [data-slot="scroll-area-scrollbar"] {
+    opacity: 1 !important;
+  }
+  
+  [data-slot="scroll-area-scrollbar"][data-state="hidden"] {
+    opacity: 1 !important;
+  }
+  
+  [data-slot="scroll-area-thumb"] {
+    opacity: 0.6 !important;
+  }
+  
+  [data-slot="scroll-area-scrollbar"]:hover [data-slot="scroll-area-thumb"] {
+    opacity: 1 !important;
+  }
 }
 
 /* Accessibility: Focus visible styles */

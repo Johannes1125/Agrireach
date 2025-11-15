@@ -1,12 +1,15 @@
 import { JobDetails } from "@/components/opportunities/job-details";
 import { JobApplication } from "@/components/opportunities/job-application";
 import { SimilarJobs } from "@/components/opportunities/similar-jobs";
+import { WriteReviewCard } from "@/components/opportunities/write-review-card";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Opportunity } from "@/server/models/Job";
 import { UserProfile } from "@/server/models/UserProfile";
+import { Review } from "@/server/models/Review";
 import { normalizeSkillRequirements, normalizeSkills } from "@/lib/skills";
+import mongoose from "mongoose";
 
 interface JobPageProps {
   params: Promise<{ id: string }>;
@@ -36,6 +39,40 @@ async function fetchJob(id: string) {
     .catch(() => null);
 
   const normalizedCompanySkills = normalizeSkills(companyProfile?.skills as any);
+
+  // Fetch review statistics for the company/poster
+  let averageRating = 0;
+  let totalReviews = 0;
+  if (recruiter?._id) {
+    try {
+      const recruiterId = typeof recruiter._id === 'string' 
+        ? new mongoose.Types.ObjectId(recruiter._id)
+        : recruiter._id;
+      
+      const reviewStats = await Review.aggregate([
+        {
+          $match: {
+            reviewee_id: recruiterId,
+            status: "active"
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            averageRating: { $avg: "$rating" },
+            totalReviews: { $sum: 1 }
+          }
+        }
+      ]);
+
+      if (reviewStats.length > 0) {
+        averageRating = Math.round((reviewStats[0].averageRating || 0) * 10) / 10;
+        totalReviews = reviewStats[0].totalReviews || 0;
+      }
+    } catch (error) {
+      console.error("Error fetching review stats:", error);
+    }
+  }
 
   const postedDate = new Date(j.created_at || Date.now()).toISOString();
   const deadlineDate = j.start_date ? new Date(j.start_date).toISOString() : postedDate;
@@ -89,6 +126,10 @@ async function fetchJob(id: string) {
       skills: normalizedCompanySkills,
       business_hours: companyProfile?.business_hours || "",
     },
+    reviewStats: {
+      averageRating,
+      totalReviews,
+    },
   };
 }
 
@@ -119,6 +160,10 @@ export default async function JobPage({ params }: JobPageProps) {
           {/* Sidebar */}
           <div className="space-y-6">
             <JobApplication job={job} />
+            <WriteReviewCard 
+              companyName={job.company}
+              posterId={job.poster?.id}
+            />
             <SimilarJobs currentJobId={job.id} />
           </div>
         </div>

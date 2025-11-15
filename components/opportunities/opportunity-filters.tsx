@@ -196,34 +196,6 @@ export function OpportunityFilters({ onFiltersChange }: OpportunityFiltersProps)
         </CardContent>
       </Card>
 
-      {/* Experience Level */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Experience Level</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {loading ? (
-            <div className="text-sm text-muted-foreground">Loading...</div>
-          ) : (
-            filterStats.experience.map((exp) => (
-              <div key={exp.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id={exp.id}
-                    checked={selectedFilters.includes(exp.id)}
-                    onCheckedChange={() => toggleFilter(exp.id)}
-                  />
-                  <Label htmlFor={exp.id} className="text-sm font-normal cursor-pointer">
-                    {exp.label}
-                  </Label>
-                </div>
-                <span className="text-xs text-muted-foreground">({exp.count})</span>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
-
       {/* Urgency */}
       <Card>
         <CardHeader>

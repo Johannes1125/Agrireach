@@ -5,7 +5,6 @@ import { useChat } from '@/contexts/chat-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Search, MessageCircle, Users } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -60,8 +59,9 @@ export function ChatList({ onSelectConversation }: ChatListProps = {}) {
       </div>
 
       {/* Conversations List */}
-      <ScrollArea className="flex-1">
-        <div className="p-2">
+      <div className="flex-1 overflow-hidden min-h-0">
+        <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin">
+          <div className="p-2">
           {state.loading && (
             <div className="text-center py-8 text-sm text-muted-foreground">
               Loading conversations...
@@ -118,8 +118,9 @@ export function ChatList({ onSelectConversation }: ChatListProps = {}) {
               </button>
             )
           })}
+          </div>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }

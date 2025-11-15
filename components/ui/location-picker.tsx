@@ -285,7 +285,7 @@ export function LocationPicker({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground"
                 >
                   <Map className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">Open Map</span>
@@ -357,7 +357,7 @@ export function LocationPicker({
             size="sm"
             onClick={getCurrentLocation}
             disabled={isGeocoding}
-            className="flex-shrink-0"
+            className="flex-shrink-0 border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground"
           >
             {isGeocoding ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

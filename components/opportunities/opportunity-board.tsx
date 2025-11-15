@@ -24,7 +24,7 @@ import {
   Flag,
   Plus,
 } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
@@ -90,36 +90,92 @@ export function OpportunityBoard() {
           const jobType = j.work_type || j.employment_type || j.duration || j.pay_type || "";
           
           return {
-            id: String(j._id),
-            title: j.title,
-            company: j.company_name || "",
-            location: j.location,
+          id: String(j._id),
+          title: j.title,
+          company: j.company_name || "",
+          location: j.location,
             type: jobType,
             category: j.category,
             experience: j.experience_level,
             urgency: j.urgency,
             pay_rate: j.pay_rate || 0,
             pay_rate_max: j.pay_rate_max || j.pay_rate || 0,
-            payRange: ((): string => {
-              const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
-              const hasMax = typeof j.pay_rate_max === "number" && j.pay_rate_max > j.pay_rate
-              if (!hasMin) return ""
-              const payType = j.pay_type || "hourly"
-              const base = hasMax ? `P${j.pay_rate}–P${j.pay_rate_max}` : `P${j.pay_rate}`
-              return `${base}/${payType}`
-            })(),
-            postedDate: j.created_at,
-            deadline: j.start_date || j.created_at,
-            applicants: j.applications_count || 0,
+          payRange: ((): string => {
+            const hasMin = typeof j.pay_rate === "number" && j.pay_rate > 0
+            const hasMax = typeof j.pay_rate_max === "number" && j.pay_rate_max > j.pay_rate
+            if (!hasMin) return ""
+            const payType = j.pay_type || "hourly"
+            const base = hasMax ? `P${j.pay_rate}–P${j.pay_rate_max}` : `P${j.pay_rate}`
+            return `${base}/${payType}`
+          })(),
+          postedDate: j.created_at,
+          deadline: j.start_date || j.created_at,
+          applicants: j.applications_count || 0,
             description: description,
-            skills: normalizeSkillRequirements(j.required_skills as any),
-            companyLogo: j.company_logo || "/placeholder.svg",
-            companyRating: 0,
-            matchScore: j.matchScore || 0,
-            recruiterId: j.recruiter_id?._id ? String(j.recruiter_id._id) : String(j.recruiter_id || ""),
+          skills: normalizeSkillRequirements(j.required_skills as any),
+          companyLogo: j.company_logo || "/placeholder.svg",
+          companyRating: 0,
+          matchScore: j.matchScore || 0,
+          recruiterId: j.recruiter_id?._id 
+            ? (typeof j.recruiter_id._id === 'string' ? j.recruiter_id._id : String(j.recruiter_id._id))
+            : (j.recruiter_id ? (typeof j.recruiter_id === 'string' ? j.recruiter_id : String(j.recruiter_id)) : ""),
           };
         });
-        setAllJobs(items);
+
+        // Fetch review stats for all unique recruiters
+        const uniqueRecruiterIds = [...new Set(items.map(job => job.recruiterId).filter(id => id))];
+        const reviewStatsMap = new Map<string, { averageRating: number; totalReviews: number }>();
+        
+        // Fetch review stats in parallel for all recruiters
+        await Promise.all(
+          uniqueRecruiterIds.map(async (recruiterId) => {
+            try {
+              const reviewsRes = await fetch(`/api/users/${recruiterId}/reviews?limit=1`);
+              if (reviewsRes.ok) {
+                const reviewsData = await reviewsRes.json();
+                // jsonOk wraps response in { success: true, data: { stats: ... } }
+                const stats = reviewsData?.data?.stats;
+                if (stats) {
+                  const rating = stats.averageRating || 0;
+                  const total = stats.totalReviews || 0;
+                  if (rating > 0 || total > 0) {
+                    reviewStatsMap.set(recruiterId, {
+                      averageRating: Math.round(rating * 10) / 10,
+                      totalReviews: total,
+                    });
+                    console.log(`Fetched review stats for ${recruiterId}:`, { averageRating: rating, totalReviews: total });
+                  }
+                } else {
+                  console.log(`No review stats for ${recruiterId}:`, reviewsData);
+                }
+              } else {
+                const errorText = await reviewsRes.text().catch(() => '');
+                console.warn(`Failed to fetch reviews for ${recruiterId}:`, reviewsRes.status, errorText);
+              }
+            } catch (error) {
+              console.error(`Error fetching review stats for recruiter ${recruiterId}:`, error);
+            }
+          })
+        );
+        
+        console.log('Review stats map:', Array.from(reviewStatsMap.entries()));
+
+        // Update jobs with review ratings
+        const itemsWithRatings = items.map(job => {
+          const stats = reviewStatsMap.get(job.recruiterId);
+          const rating = stats?.averageRating || 0;
+          const total = stats?.totalReviews || 0;
+          if (rating > 0 || total > 0) {
+            console.log(`Job ${job.id} (recruiter ${job.recruiterId}): rating=${rating}, total=${total}`);
+          }
+          return {
+            ...job,
+            companyRating: rating,
+            totalReviews: total,
+          };
+        });
+
+        setAllJobs(itemsWithRatings);
         setHasLoaded(true);
       } catch (error) {
         console.error("Failed to load opportunities:", error);
@@ -347,6 +403,7 @@ export function OpportunityBoard() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-full sm:w-96 overflow-y-auto">
+                <SheetTitle className="sr-only">Job Filters</SheetTitle>
                 <div className="py-4">
                   <h3 className="text-lg font-semibold mb-4">Filters</h3>
                   <OpportunityFilters 
@@ -428,12 +485,26 @@ export function OpportunityBoard() {
                             <span className="text-xs sm:text-sm font-medium text-muted-foreground truncate max-w-[200px] sm:max-w-none">
                               {job.company || "Not specified"}
                             </span>
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              <span className="text-xs sm:text-sm text-muted-foreground">
-                                {job.companyRating || 0}
-                              </span>
-                            </div>
+                            {job.companyRating > 0 ? (
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                <span className="text-xs sm:text-sm text-muted-foreground">
+                                  {job.companyRating.toFixed(1)}
+                                </span>
+                                {job.totalReviews > 0 && (
+                                  <span className="text-xs text-muted-foreground/70">
+                                    ({job.totalReviews})
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <Star className="h-3 w-3 text-muted-foreground/30" />
+                                <span className="text-xs sm:text-sm text-muted-foreground/70">
+                                  0
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -468,7 +539,7 @@ export function OpportunityBoard() {
                       {job.description && (
                         <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2">
                           {job.description}
-                        </p>
+                      </p>
                       )}
 
                       {/* Job Meta Information */}
@@ -482,7 +553,7 @@ export function OpportunityBoard() {
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <Clock className="h-3 w-3 flex-shrink-0" />
                             <span className="break-all sm:whitespace-nowrap">{job.type}</span>
-                          </div>
+                        </div>
                         )}
 
                         <div className="flex items-center gap-1 flex-shrink-0">
@@ -514,14 +585,14 @@ export function OpportunityBoard() {
                         {job.skills && job.skills.slice(0, 3).map((skill: any) => {
                           const skillName = skill.name || skill;
                           return (
-                            <Badge
+                          <Badge
                               key={skillName}
-                              variant="outline"
+                            variant="outline"
                               className="text-xs max-w-[140px] sm:max-w-none"
                               title={skillName}
-                            >
+                          >
                               <span className="block truncate">{skillName}</span>
-                            </Badge>
+                          </Badge>
                           );
                         })}
                       </div>

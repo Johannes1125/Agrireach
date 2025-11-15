@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Send, Bot } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -393,8 +392,10 @@ export function ChatbotWindow() {
 
   return (
     <div className="flex flex-col h-full bg-card overflow-hidden">
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="p-4 space-y-4">
+      <div className="flex-1 overflow-hidden min-h-0">
+        <div 
+          className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin p-4"
+        >
           {messages.map((message) => {
             // Only show loading indicator if message is empty and we're still loading
             const showLoading = !message.content && isLoading && message.role === 'assistant'
@@ -451,9 +452,9 @@ export function ChatbotWindow() {
               </div>
             )
           })}
-          <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} />
         </div>
-      </ScrollArea>
+      </div>
 
       <form onSubmit={handleSubmit} className="p-4 border-t bg-card">
         <div className="flex gap-2">

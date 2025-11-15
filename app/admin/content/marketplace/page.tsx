@@ -40,57 +40,65 @@ export default function MarketplaceContentPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-8">
-      <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight">Marketplace Content</h1>
-          <p className="text-muted-foreground mt-1">Manage products, listings, and marketplace content</p>
-        </div>
-        <Button className="self-start md:self-auto">Add Product</Button>
-      </header>
-
       {/* Stats Grid */}
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="text-2xl font-bold">{(stats?.total || 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">All marketplace listings</p>
+      <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-blue-200 dark:text-blue-300">Total Products</p>
+                <p className="text-3xl font-bold text-blue-100 dark:text-blue-200">{(stats?.total || 0).toLocaleString()}</p>
+                <p className="text-xs text-blue-200/80 dark:text-blue-300/80">All marketplace listings</p>
+              </div>
+              <div className="p-3 bg-blue-500/30 dark:bg-blue-500/20 rounded-lg border border-blue-400/30 dark:border-blue-400/20 shadow-lg flex-shrink-0">
+                <Package className="h-8 w-8 text-blue-200 dark:text-blue-300" />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-            <CardTitle className="text-sm font-medium">Active Products</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="text-2xl font-bold">{(stats?.active || 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Currently available</p>
+        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-green-600 to-green-700 dark:from-green-700 dark:to-green-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-green-200 dark:text-green-300">Active Products</p>
+                <p className="text-3xl font-bold text-green-100 dark:text-green-200">{(stats?.active || 0).toLocaleString()}</p>
+                <p className="text-xs text-green-200/80 dark:text-green-300/80">Currently available</p>
+              </div>
+              <div className="p-3 bg-green-500/30 dark:bg-green-500/20 rounded-lg border border-green-400/30 dark:border-green-400/20 shadow-lg flex-shrink-0">
+                <CheckCircle className="h-8 w-8 text-green-200 dark:text-green-300" />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-            <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="text-2xl font-bold">{stats?.pending || 0}</div>
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
+        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-amber-600 to-amber-700 dark:from-amber-700 dark:to-amber-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-amber-200 dark:text-amber-300">Pending Review</p>
+                <p className="text-3xl font-bold text-amber-100 dark:text-amber-200">{stats?.pending || 0}</p>
+                <p className="text-xs text-amber-200/80 dark:text-amber-300/80">Awaiting approval</p>
+              </div>
+              <div className="p-3 bg-amber-500/30 dark:bg-amber-500/20 rounded-lg border border-amber-400/30 dark:border-amber-400/20 shadow-lg flex-shrink-0">
+                <TrendingUp className="h-8 w-8 text-amber-200 dark:text-amber-300" />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-            <CardTitle className="text-sm font-medium">Flagged Products</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="text-2xl font-bold">{stats?.flagged || 0}</div>
-            <p className="text-xs text-muted-foreground">Need attention</p>
+        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-red-600 to-red-700 dark:from-red-700 dark:to-red-800">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-red-200 dark:text-red-300">Flagged Products</p>
+                <p className="text-3xl font-bold text-red-100 dark:text-red-200">{stats?.flagged || 0}</p>
+                <p className="text-xs text-red-200/80 dark:text-red-300/80">Need attention</p>
+              </div>
+              <div className="p-3 bg-red-500/30 dark:bg-red-500/20 rounded-lg border border-red-400/30 dark:border-red-400/20 shadow-lg flex-shrink-0">
+                <AlertTriangle className="h-8 w-8 text-red-200 dark:text-red-300" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </section>

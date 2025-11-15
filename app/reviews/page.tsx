@@ -284,18 +284,18 @@ export default function ReviewsPage() {
                   sortedReviews.map((review) => (
                     <Card
                       key={review._id}
-                      className="group border-2 hover:shadow-lg hover:border-primary/50 transition-all duration-300"
+                      className="group border-2 hover:shadow-xl hover:border-primary/50 transition-all duration-300 bg-card"
                     >
-                      <CardContent className="p-5 sm:p-6">
-                        <div className="flex items-start gap-4">
-                          <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-border group-hover:border-primary/50 transition-colors flex-shrink-0">
+                      <CardContent className="p-6 sm:p-8">
+                        <div className="flex items-start gap-5">
+                          <Avatar className="h-14 w-14 sm:h-16 sm:w-16 border-2 border-primary/20 group-hover:border-primary/40 transition-all duration-300 flex-shrink-0 shadow-md">
                             <AvatarImage
                               src={
                                 review.reviewer_id.avatar_url ||
                                 "/placeholder.svg"
                               }
                             />
-                            <AvatarFallback className="text-sm font-medium">
+                            <AvatarFallback className="text-base font-semibold bg-primary/10 text-primary">
                               {review.reviewer_id.full_name
                                 ? review.reviewer_id.full_name
                                     .split(" ")
@@ -306,78 +306,87 @@ export default function ReviewsPage() {
                             </AvatarFallback>
                           </Avatar>
 
-                          <div className="flex-1 min-w-0 space-y-3">
+                          <div className="flex-1 min-w-0 space-y-4">
+                            {/* Header Section */}
                             <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap mb-2">
-                                  <h3 className="font-heading font-semibold text-base sm:text-lg">
+                              <div className="flex-1 min-w-0 space-y-2">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <h3 className="font-heading font-bold text-lg sm:text-xl text-foreground">
                                     {review.reviewer_id.full_name}
                                   </h3>
                                   {review.verified_purchase && (
                                     <Badge
                                       variant="secondary"
-                                      className="text-xs font-medium bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
+                                      className="text-xs font-semibold bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/30 px-2 py-0.5"
                                     >
                                       <Shield className="h-3 w-3 mr-1" />
                                       Verified
                                     </Badge>
                                   )}
                                 </div>
-                                <p className="text-xs sm:text-sm text-muted-foreground">
+                                <p className="text-sm text-muted-foreground">
                                   Review for{" "}
-                                  <span className="font-medium text-foreground">
+                                  <span className="font-semibold text-foreground">
                                     {review.reviewee_id?.full_name ?? "Unknown"}
                                   </span>
                                 </p>
+                                {review.category && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs font-semibold bg-primary/5 border-primary/20 text-primary mt-1"
+                                  >
+                                    {review.category}
+                                  </Badge>
+                                )}
                               </div>
-                              <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                                <div className="flex items-center gap-1">
+                              <div className="flex flex-col items-end gap-3 flex-shrink-0">
+                                <div className="flex items-center gap-1 bg-yellow-500/10 px-2 py-1 rounded-lg border border-yellow-500/20">
                                   {[...Array(5)].map((_, i) => (
                                     <Star
                                       key={i}
                                       className={cn(
-                                        "h-4 w-4 sm:h-5 sm:w-5 transition-colors",
+                                        "h-5 w-5 sm:h-6 sm:w-6 transition-all duration-200",
                                         i < (review.rating || 0)
-                                          ? "fill-yellow-400 text-yellow-400"
-                                          : "text-muted-foreground/30"
+                                          ? "fill-yellow-400 text-yellow-400 drop-shadow-sm"
+                                          : "text-muted-foreground/20"
                                       )}
                                     />
                                   ))}
                                 </div>
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
+                                <span className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
+                                  <Clock className="h-3.5 w-3.5" />
                                   {review.created_at ? formatRelativeTime(review.created_at) : "Recently"}
                                 </span>
                               </div>
                             </div>
 
-                            {review.title && (
-                              <h4 className="font-heading font-semibold text-base group-hover:text-primary transition-colors">
-                                {review.title}
-                              </h4>
-                            )}
-                            {review.comment && (
-                              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                                {review.comment}
-                              </p>
-                            )}
+                            {/* Review Content */}
+                            <div className="space-y-3 pt-2">
+                              {review.title && (
+                                <h4 className="font-heading font-semibold text-base sm:text-lg text-foreground group-hover:text-primary transition-colors">
+                                  {review.title}
+                                </h4>
+                              )}
+                              {review.comment && (
+                                <p className="text-sm sm:text-base text-foreground/90 leading-relaxed">
+                                  {review.comment}
+                                </p>
+                              )}
+                            </div>
 
-                            <div className="flex items-center justify-between pt-3 border-t">
-                              <div className="flex items-center gap-3 flex-wrap">
-                                {review.category && (
-                                  <Badge variant="outline" className="text-xs font-medium">
-                                    {review.category}
-                                  </Badge>
-                                )}
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  className="h-8 text-xs sm:text-sm text-muted-foreground hover:text-foreground"
-                                >
-                                  <ThumbsUp className="h-3.5 w-3.5 mr-1.5" />
-                                  Helpful ({review.helpful_count || 0})
-                                </Button>
-                              </div>
+                            {/* Footer Actions */}
+                            <div className="flex items-center justify-between pt-4 border-t border-border">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-9 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-200 rounded-lg px-3"
+                              >
+                                <ThumbsUp className="h-4 w-4 mr-2" />
+                                <span className="font-medium">Helpful</span>
+                                <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded">
+                                  {review.helpful_count || 0}
+                                </span>
+                              </Button>
                             </div>
                           </div>
                         </div>

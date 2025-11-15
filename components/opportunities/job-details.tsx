@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { MapPin, Clock, DollarSign, Users, Building, Phone, Globe, Calendar as CalendarIcon } from "lucide-react"
+import { MapPin, Clock, DollarSign, Users, Building, Phone, Globe, Calendar as CalendarIcon, Star } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { SkillRequirement, SKILL_LEVELS, Skill, SKILL_LEVEL_COLORS } from "@/lib/skills"
@@ -36,6 +36,10 @@ interface Job {
     services?: string[]
     skills?: Skill[]
     business_hours?: string
+  }
+  reviewStats?: {
+    averageRating: number
+    totalReviews: number
   }
 }
 
@@ -75,8 +79,25 @@ export function JobDetails({ job }: JobDetailsProps) {
             <div className="flex-1">
               <h1 className="font-heading text-3xl font-bold mb-2">{job.title}</h1>
 
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-3 mb-3">
                 <span className="font-medium text-lg">{job.company}</span>
+                {job.reviewStats && job.reviewStats.totalReviews > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <span className="text-sm font-medium text-foreground">
+                      {job.reviewStats.averageRating.toFixed(1)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({job.reviewStats.totalReviews} {job.reviewStats.totalReviews === 1 ? 'review' : 'reviews'})
+                    </span>
+                  </div>
+                )}
+                {job.reviewStats && job.reviewStats.totalReviews === 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Star className="h-4 w-4 text-muted-foreground/30" />
+                    <span className="text-xs text-muted-foreground">No reviews yet</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-wrap items-center gap-4 text-muted-foreground mb-4">

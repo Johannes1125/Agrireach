@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChatProvider, useChat } from '@/contexts/chat-context'
 import { ChatList } from './chat-list'
@@ -22,6 +22,13 @@ function ChatWidgetContent({ onClose }: ChatWidgetContentProps) {
   const [isMinimized, setIsMinimized] = useState(false)
   const [showChatWindow, setShowChatWindow] = useState(false)
 
+  // Show chat window when a conversation is selected
+  useEffect(() => {
+    if (state.currentConversation) {
+      setShowChatWindow(true)
+    }
+  }, [state.currentConversation])
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -29,10 +36,13 @@ function ChatWidgetContent({ onClose }: ChatWidgetContentProps) {
         opacity: 1, 
         y: 0, 
         scale: 1,
-        height: isMinimized ? 64 : 600,
+      }}
+      style={{
+        height: isMinimized ? 64 : undefined,
+        maxHeight: isMinimized ? undefined : '600px',
       }}
       transition={{ type: "spring", damping: 25, stiffness: 300 }}
-      className="fixed bottom-4 right-4 z-50 w-96 bg-card border rounded-lg shadow-2xl flex flex-col overflow-hidden"
+      className="fixed bottom-0 right-0 md:bottom-4 md:right-4 z-50 w-full h-full md:w-96 md:h-[600px] bg-card border md:rounded-lg shadow-2xl flex flex-col overflow-hidden"
     >
       {/* Header - only show when not in chat window */}
       {!showChatWindow && (
@@ -132,7 +142,9 @@ function ChatWidgetContent({ onClose }: ChatWidgetContentProps) {
                 </div>
               </div>
             ) : (
-              <ChatbotWindow />
+              <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
+                <ChatbotWindow />
+              </div>
             )}
           </motion.div>
         )}

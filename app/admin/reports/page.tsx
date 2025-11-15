@@ -85,73 +85,61 @@ const statusColors: Record<string, BadgeVariant> = {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/admin" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Admin Dashboard
-          </Link>
-
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground font-sans">User Reports</h1>
-              <p className="text-muted-foreground">Review and handle user-reported content</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="destructive">{reports.filter((r: any) => r.status === "pending").length} pending</Badge>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4 py-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Reports</p>
-                  <p className="text-2xl font-bold">{reports.length}</p>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-blue-200 dark:text-blue-300">Total Reports</p>
+                  <p className="text-3xl font-bold text-blue-100 dark:text-blue-200">{reports.length}</p>
                 </div>
-                <Flag className="h-8 w-8 text-blue-500" />
+                <div className="p-3 bg-blue-500/30 dark:bg-blue-500/20 rounded-lg border border-blue-400/30 dark:border-blue-400/20 shadow-lg flex-shrink-0">
+                  <Flag className="h-8 w-8 text-blue-200 dark:text-blue-300" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-amber-600 to-amber-700 dark:from-amber-700 dark:to-amber-800">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold">{reports.filter((r: any) => r.status === "pending").length}</p>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-amber-200 dark:text-amber-300">Pending</p>
+                  <p className="text-3xl font-bold text-amber-100 dark:text-amber-200">{reports.filter((r: any) => r.status === "pending").length}</p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-yellow-500" />
+                <div className="p-3 bg-amber-500/30 dark:bg-amber-500/20 rounded-lg border border-amber-400/30 dark:border-amber-400/20 shadow-lg flex-shrink-0">
+                  <AlertTriangle className="h-8 w-8 text-amber-200 dark:text-amber-300" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-green-600 to-green-700 dark:from-green-700 dark:to-green-800">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Resolved</p>
-                  <p className="text-2xl font-bold">{reports.filter((r: any) => r.status === "resolved").length}</p>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-green-200 dark:text-green-300">Resolved</p>
+                  <p className="text-3xl font-bold text-green-100 dark:text-green-200">{reports.filter((r: any) => r.status === "resolved").length}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <div className="p-3 bg-green-500/30 dark:bg-green-500/20 rounded-lg border border-green-400/30 dark:border-green-400/20 shadow-lg flex-shrink-0">
+                  <CheckCircle className="h-8 w-8 text-green-200 dark:text-green-300" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-red-600 to-red-700 dark:from-red-700 dark:to-red-800">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">High Priority</p>
-                  <p className="text-2xl font-bold">{reports.filter((r: any) => r.priority === "high").length}</p>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-red-200 dark:text-red-300">High Priority</p>
+                  <p className="text-3xl font-bold text-red-100 dark:text-red-200">{reports.filter((r: any) => r.priority === "high").length}</p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-red-500" />
+                <div className="p-3 bg-red-500/30 dark:bg-red-500/20 rounded-lg border border-red-400/30 dark:border-red-400/20 shadow-lg flex-shrink-0">
+                  <AlertTriangle className="h-8 w-8 text-red-200 dark:text-red-300" />
+                </div>
               </div>
             </CardContent>
           </Card>

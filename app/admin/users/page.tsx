@@ -65,82 +65,64 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/admin" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Admin Dashboard
-          </Link>
-
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground font-sans">User Management</h1>
-              <p className="text-muted-foreground">Manage user accounts, roles, and permissions</p>
-            </div>
-            <Button>Export Users</Button>
-          </div>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4 py-6">
         {/* Enhanced Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 hover:shadow-xl transition-all duration-300">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Users</p>
-                  <p className="text-3xl font-bold text-blue-900 dark:text-blue-300">{statsLoading ? "..." : (userStats?.totalUsers || 0).toLocaleString()}</p>
-                  <p className="text-xs text-blue-500 dark:text-blue-400">All registered users</p>
+                  <p className="text-sm font-medium text-blue-200 dark:text-blue-300">Total Users</p>
+                  <p className="text-3xl font-bold text-blue-100 dark:text-blue-200">{statsLoading ? "..." : (userStats?.totalUsers || 0).toLocaleString()}</p>
+                  <p className="text-xs text-blue-200/80 dark:text-blue-300/80">All registered users</p>
                 </div>
-                <div className="p-3 bg-blue-500/10 dark:bg-blue-500/20 rounded-xl">
-                  <Shield className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                <div className="p-3 bg-blue-500/30 dark:bg-blue-500/20 rounded-lg border border-blue-400/30 dark:border-blue-400/20 shadow-lg flex-shrink-0">
+                  <Shield className="h-8 w-8 text-blue-200 dark:text-blue-300" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 hover:shadow-xl transition-all duration-300">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-green-600 to-green-700 dark:from-green-700 dark:to-green-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-green-600 dark:text-green-400">Active Users</p>
-                  <p className="text-3xl font-bold text-green-900 dark:text-green-300">{statsLoading ? "..." : (userStats?.activeUsers || 0).toLocaleString()}</p>
-                  <p className="text-xs text-green-500 dark:text-green-400">Currently active</p>
+                  <p className="text-sm font-medium text-green-200 dark:text-green-300">Active Users</p>
+                  <p className="text-3xl font-bold text-green-100 dark:text-green-200">{statsLoading ? "..." : (userStats?.activeUsers || 0).toLocaleString()}</p>
+                  <p className="text-xs text-green-200/80 dark:text-green-300/80">Currently active</p>
                 </div>
-                <div className="p-3 bg-green-500/10 dark:bg-green-500/20 rounded-xl">
-                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                <div className="p-3 bg-green-500/30 dark:bg-green-500/20 rounded-lg border border-green-400/30 dark:border-green-400/20 shadow-lg flex-shrink-0">
+                  <CheckCircle className="h-8 w-8 text-green-200 dark:text-green-300" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/30 dark:to-red-900/20 hover:shadow-xl transition-all duration-300">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-red-600 to-red-700 dark:from-red-700 dark:to-red-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-red-600 dark:text-red-400">Suspended</p>
-                  <p className="text-3xl font-bold text-red-900 dark:text-red-300">{statsLoading ? "..." : (userStats?.suspendedUsers || 0).toLocaleString()}</p>
-                  <p className="text-xs text-red-500 dark:text-red-400">Account suspended</p>
+                  <p className="text-sm font-medium text-red-200 dark:text-red-300">Suspended</p>
+                  <p className="text-3xl font-bold text-red-100 dark:text-red-200">{statsLoading ? "..." : (userStats?.suspendedUsers || 0).toLocaleString()}</p>
+                  <p className="text-xs text-red-200/80 dark:text-red-300/80">Account suspended</p>
                 </div>
-                <div className="p-3 bg-red-500/10 dark:bg-red-500/20 rounded-xl">
-                  <Ban className="h-8 w-8 text-red-600 dark:text-red-400" />
+                <div className="p-3 bg-red-500/30 dark:bg-red-500/20 rounded-lg border border-red-400/30 dark:border-red-400/20 shadow-lg flex-shrink-0">
+                  <Ban className="h-8 w-8 text-red-200 dark:text-red-300" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 hover:shadow-xl transition-all duration-300">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-amber-600 to-amber-700 dark:from-amber-700 dark:to-amber-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Pending Review</p>
-                  <p className="text-3xl font-bold text-amber-900 dark:text-amber-300">{statsLoading ? "..." : (userStats?.pendingReviewUsers || 0).toLocaleString()}</p>
-                  <p className="text-xs text-amber-500 dark:text-amber-400">Awaiting verification</p>
+                  <p className="text-sm font-medium text-amber-200 dark:text-amber-300">Pending Review</p>
+                  <p className="text-3xl font-bold text-amber-100 dark:text-amber-200">{statsLoading ? "..." : (userStats?.pendingReviewUsers || 0).toLocaleString()}</p>
+                  <p className="text-xs text-amber-200/80 dark:text-amber-300/80">Awaiting verification</p>
                 </div>
-                <div className="p-3 bg-amber-500/10 dark:bg-amber-500/20 rounded-xl">
-                  <AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                <div className="p-3 bg-amber-500/30 dark:bg-amber-500/20 rounded-lg border border-amber-400/30 dark:border-amber-400/20 shadow-lg flex-shrink-0">
+                  <AlertTriangle className="h-8 w-8 text-amber-200 dark:text-amber-300" />
                 </div>
               </div>
             </CardContent>
@@ -220,26 +202,25 @@ export default function AdminUsersPage() {
                     <TableHead className="px-6 py-4 font-semibold text-foreground uppercase tracking-wider text-xs min-w-[140px]">Verification</TableHead>
                     <TableHead className="px-6 py-4 font-semibold text-foreground uppercase tracking-wider text-xs min-w-[120px]">Trust Score</TableHead>
                     <TableHead className="px-6 py-4 font-semibold text-foreground uppercase tracking-wider text-xs min-w-[140px]">Last Active</TableHead>
-                    <TableHead className="px-6 py-4 font-semibold text-foreground uppercase tracking-wider text-xs min-w-[100px]">Reports</TableHead>
                     <TableHead className="px-6 py-4 font-semibold text-foreground uppercase tracking-wider text-xs min-w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       Loading users...
                     </TableCell>
                   </TableRow>
                 ) : error ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-red-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-red-500">
                       Error: {error}
                     </TableCell>
                   </TableRow>
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       No users found
                     </TableCell>
                   </TableRow>
@@ -357,11 +338,6 @@ export default function AdminUsersPage() {
                     <TableCell className="px-6 py-4 min-w-[140px] text-sm text-muted-foreground">
                       {user.last_login ? new Date(user.last_login).toLocaleString() : "Never"}
                     </TableCell>
-                      <TableCell className="px-6 py-4 min-w-[100px]">
-                        <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
-                          -
-                        </Badge>
-                      </TableCell>
                       <TableCell className="px-3 sm:px-6 py-4">
                         <div className="flex flex-row flex-wrap items-center gap-2">
                           <Button

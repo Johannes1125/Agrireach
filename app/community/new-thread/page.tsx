@@ -256,12 +256,11 @@ function NewThreadPageContent() {
       <SlideTransition>
         <div className="min-h-screen bg-background">
           {/* Header */}
-          <div className="sticky top-0 z-40 border-b bg-white/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-zinc-900/60">
-            {" "}
+          <div className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
             <div className="container mx-auto px-4 py-4">
               <Link
                 href="/community"
-                className="inline-flex items-center text-muted-foreground hover:text-foreground"
+                className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Community
@@ -271,19 +270,19 @@ function NewThreadPageContent() {
 
           <div className="container mx-auto px-4 py-6 max-w-4xl">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground font-sans mb-2">
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground font-sans mb-2">
                 Start a New Discussion
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm sm:text-base">
                 Share your knowledge, ask questions, or start a conversation
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Information */}
-              <Card>
+              <Card className="border-2">
                 <CardHeader>
-                  <CardTitle>Thread Details</CardTitle>
+                  <CardTitle className="text-foreground">Thread Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -294,7 +293,7 @@ function NewThreadPageContent() {
                         handleInputChange("category", value)
                       }
                     >
-                      <SelectTrigger className="bg-white text-zinc-900 border border-zinc-200 focus:ring-0 dark:bg-white/5 dark:text-white dark:border-white">
+                      <SelectTrigger className="bg-card text-foreground border border-border focus:ring-0">
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -355,9 +354,9 @@ function NewThreadPageContent() {
               </Card>
 
               {/* Tags */}
-              <Card>
+              <Card className="border-2">
                 <CardHeader>
-                  <CardTitle>Tags</CardTitle>
+                  <CardTitle className="text-foreground">Tags</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -383,6 +382,7 @@ function NewThreadPageContent() {
                         }}
                         variant="outline"
                         disabled={formData.tags.length >= 5}
+                        className="border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground"
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -425,7 +425,7 @@ function NewThreadPageContent() {
                             formData.tags.includes(tag) ||
                             formData.tags.length >= 5
                           }
-                          className="text-xs"
+                          className="text-xs border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground"
                         >
                           {tag}
                         </Button>
@@ -436,9 +436,9 @@ function NewThreadPageContent() {
               </Card>
 
               {/* Images */}
-              <Card>
+              <Card className="border-2">
                 <CardHeader>
-                  <CardTitle>Images (Optional)</CardTitle>
+                  <CardTitle className="text-foreground">Images (Optional)</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Add up to 3 images to support your discussion
                   </p>
@@ -469,9 +469,9 @@ function NewThreadPageContent() {
               </Card>
 
               {/* Guidelines */}
-              <Card>
+              <Card className="border-2">
                 <CardHeader>
-                  <CardTitle>Community Guidelines</CardTitle>
+                  <CardTitle className="text-foreground">Community Guidelines</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="text-sm text-muted-foreground space-y-1">
@@ -496,7 +496,7 @@ function NewThreadPageContent() {
               {/* Submit */}
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
                 disabled={isSubmitting}
                 onClick={() => console.log("Submit button clicked!")}
               >

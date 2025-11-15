@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireMethod, jsonOk } from "@/server/utils/api";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Review } from "@/server/models/Review";
+import mongoose from "mongoose";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["GET"]);
@@ -10,6 +11,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   await connectToDatabase();
 
+  // Convert string ID to ObjectId for proper MongoDB querying (same as detail page)
+  const revieweeId = mongoose.Types.ObjectId.isValid(id) 
+    ? new mongoose.Types.ObjectId(id)
+    : id;
+
   const { searchParams } = new URL(req.url);
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
@@ -17,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const [reviews, total, stats] = await Promise.all([
     Review.find({ 
-      reviewee_id: id,
+      reviewee_id: revieweeId,
       status: "active"
     })
     .populate('reviewer_id', 'full_name avatar_url')
@@ -26,11 +32,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .limit(limit)
     .lean(),
     Review.countDocuments({ 
-      reviewee_id: id,
+      reviewee_id: revieweeId,
       status: "active"
     }),
     Review.aggregate([
-      { $match: { reviewee_id: id, status: "active" } },
+      { $match: { reviewee_id: revieweeId, status: "active" } },
       {
         $group: {
           _id: null,

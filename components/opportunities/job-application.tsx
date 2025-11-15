@@ -1,15 +1,16 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Textarea } from "@/components/ui/textarea"
+import { Separator } from "@/components/ui/separator"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Heart, Share2, Flag, Send, CheckCircle, AlertCircle, AlertTriangle } from "lucide-react"
+import { Heart, Share2, Flag, Send, CheckCircle, AlertCircle, AlertTriangle, Star, Clock, ThumbsUp, Shield, MessageSquare } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -27,6 +28,7 @@ import {
   SKILL_LEVELS,
   SKILL_LEVEL_COLORS,
 } from "@/lib/skills"
+import { cn } from "@/lib/utils"
 
 interface Job {
   id: string
@@ -85,6 +87,7 @@ export function JobApplication({ job }: JobApplicationProps) {
 
     checkApplication()
   }, [user, job.id])
+
 
   useEffect(() => {
     if (workerSkills.length === 0) {
@@ -253,7 +256,7 @@ export function JobApplication({ job }: JobApplicationProps) {
 
   if (isApplied) {
     return (
-      <Card>
+      <Card className="border-2">
         <CardContent className="p-6 text-center">
           <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
           <h3 className="font-heading text-lg font-semibold mb-2">Job Applied</h3>

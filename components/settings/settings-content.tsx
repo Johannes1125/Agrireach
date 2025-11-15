@@ -51,6 +51,17 @@ import {
   CheckCircle,
   X,
   Clock3,
+  Mail,
+  Smartphone,
+  MessageSquare,
+  Megaphone,
+  Building2,
+  ImageIcon,
+  MapPin,
+  Star,
+  Globe,
+  RefreshCw,
+  Lock,
 } from "lucide-react";
 
 interface SettingsUser {
@@ -943,27 +954,45 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
       {/* Notification Settings */}
       <TabsContent value="notifications" className="space-y-3 sm:space-y-4 md:space-y-6">
-        <Card>
-          <CardHeader className="p-3 sm:p-4 md:p-6">
-            <CardTitle className="font-heading text-base sm:text-lg">
-              Notification Preferences
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Choose how you want to be notified about important updates
-            </CardDescription>
+        <Card className="border-2">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Bell className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="font-heading text-lg sm:text-xl text-foreground">
+                  Notification Preferences
+                </CardTitle>
+                <CardDescription className="text-sm mt-1">
+                  Choose how you want to be notified about important updates
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
-            <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-medium">Communication Channels</h4>
+          <CardContent className="space-y-6 p-4 sm:p-6 pt-0">
+            {/* Communication Channels */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-1.5 rounded bg-muted/50">
+                  <Smartphone className="h-4 w-4 text-primary" />
+                </div>
+                <h4 className="font-semibold text-base sm:text-lg text-foreground">Communication Channels</h4>
+              </div>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="email-notifications">
-                      Email Notifications
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive notifications via email
-                    </p>
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-blue-500/10 flex-shrink-0">
+                      <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="email-notifications" className="text-base font-medium text-foreground cursor-pointer">
+                        Email Notifications
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Receive notifications via email
+                      </p>
+                    </div>
                   </div>
                   <Switch
                     id="email-notifications"
@@ -980,17 +1009,23 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         },
                       })
                     }
+                    className="flex-shrink-0"
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="push-notifications">
-                      Push Notifications
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive browser push notifications
-                    </p>
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-green-500/10 flex-shrink-0">
+                      <Bell className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="push-notifications" className="text-base font-medium text-foreground cursor-pointer">
+                        Push Notifications
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Receive browser push notifications
+                      </p>
+                    </div>
                   </div>
                   <Switch
                     id="push-notifications"
@@ -1007,15 +1042,21 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         },
                       })
                     }
+                    className="flex-shrink-0"
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="sms-notifications">SMS Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive text message alerts
-                    </p>
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0">
+                      <Smartphone className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="sms-notifications" className="text-base font-medium text-foreground cursor-pointer">SMS Notifications</Label>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Receive text message alerts
+                      </p>
+                    </div>
                   </div>
                   <Switch
                     id="sms-notifications"
@@ -1032,20 +1073,32 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         },
                       })
                     }
+                    className="flex-shrink-0"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-medium">Content Preferences</h4>
+            {/* Content Preferences */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-1.5 rounded bg-muted/50">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                </div>
+                <h4 className="font-semibold text-base sm:text-lg text-foreground">Content Preferences</h4>
+              </div>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="job-alerts">Job Alerts</Label>
-                    <p className="text-sm text-muted-foreground">
-                      New job opportunities matching your profile
-                    </p>
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-yellow-500/10 flex-shrink-0">
+                      <Briefcase className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="job-alerts" className="text-base font-medium text-foreground cursor-pointer">Job Alerts</Label>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        New job opportunities matching your profile
+                      </p>
+                    </div>
                   </div>
                   <Switch
                     id="job-alerts"
@@ -1062,15 +1115,21 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         },
                       })
                     }
+                    className="flex-shrink-0"
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="message-alerts">Message Alerts</Label>
-                    <p className="text-sm text-muted-foreground">
-                      New messages and communications
-                    </p>
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-indigo-500/10 flex-shrink-0">
+                      <MessageSquare className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="message-alerts" className="text-base font-medium text-foreground cursor-pointer">Message Alerts</Label>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        New messages and communications
+                      </p>
+                    </div>
                   </div>
                   <Switch
                     id="message-alerts"
@@ -1087,15 +1146,21 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         },
                       })
                     }
+                    className="flex-shrink-0"
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="marketing-emails">Marketing Emails</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Product updates and promotional content
-                    </p>
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-pink-500/10 flex-shrink-0">
+                      <Megaphone className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="marketing-emails" className="text-base font-medium text-foreground cursor-pointer">Marketing Emails</Label>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Product updates and promotional content
+                      </p>
+                    </div>
                   </div>
                   <Switch
                     id="marketing-emails"
@@ -1112,35 +1177,52 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         },
                       })
                     }
+                    className="flex-shrink-0"
                   />
                 </div>
               </div>
             </div>
 
-            <Button
-              onClick={() => handleSave("notification")}
-              className="w-full sm:w-fit"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              Save Preferences
-            </Button>
+            <div className="pt-4 border-t border-border">
+              <Button
+                onClick={() => handleSave("notification")}
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save Preferences
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </TabsContent>
 
       {/* Privacy Settings */}
       <TabsContent value="privacy" className="space-y-3 sm:space-y-4 md:space-y-6">
-        <Card>
-          <CardHeader className="p-3 sm:p-4 md:p-6">
-            <CardTitle className="font-heading text-base sm:text-lg">Privacy Settings</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Control who can see your information and how it's used
-            </CardDescription>
+        <Card className="border-2">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Shield className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="font-heading text-lg sm:text-xl text-foreground">Privacy Settings</CardTitle>
+                <CardDescription className="text-sm mt-1">
+                  Control who can see your information and how it's used
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
-            <div className="space-y-3 sm:space-y-4">
+          <CardContent className="space-y-6 p-4 sm:p-6 pt-0">
+            {/* Profile Visibility */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-1.5 rounded bg-muted/50">
+                  <Users className="h-4 w-4 text-primary" />
+                </div>
+                <h4 className="font-semibold text-base sm:text-lg text-foreground">Profile Visibility</h4>
+              </div>
               <div className="space-y-2">
-                <Label htmlFor="profile-visibility">Profile Visibility</Label>
+                <Label htmlFor="profile-visibility" className="text-sm font-medium">Who can view your profile?</Label>
                 <Select
                   value={formData.preferences.privacy.profileVisibility}
                   onValueChange={(value) =>
@@ -1159,7 +1241,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1175,14 +1257,30 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
+            {/* Privacy Options */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-1.5 rounded bg-muted/50">
+                  <Shield className="h-4 w-4 text-primary" />
+                </div>
+                <h4 className="font-semibold text-base sm:text-lg text-foreground">Privacy Options</h4>
+              </div>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="show-location">Show Location</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Display your location on your profile
-                    </p>
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-blue-500/10 flex-shrink-0">
+                      <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="show-location" className="text-base font-medium text-foreground cursor-pointer">
+                        Show Location
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Display your location on your profile
+                      </p>
+                    </div>
                   </div>
                   <Switch
                     id="show-location"
@@ -1199,17 +1297,23 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         },
                       })
                     }
+                    className="flex-shrink-0"
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="show-contact">
-                      Show Contact Information
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Allow others to see your contact details
-                    </p>
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-green-500/10 flex-shrink-0">
+                      <Mail className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="show-contact" className="text-base font-medium text-foreground cursor-pointer">
+                        Show Contact Information
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Allow others to see your contact details
+                      </p>
+                    </div>
                   </div>
                   <Switch
                     id="show-contact"
@@ -1226,15 +1330,21 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         },
                       })
                     }
+                    className="flex-shrink-0"
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label htmlFor="show-rating">Show Rating</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Display your rating and reviews publicly
-                    </p>
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-yellow-500/10 flex-shrink-0">
+                      <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Label htmlFor="show-rating" className="text-base font-medium text-foreground cursor-pointer">Show Rating</Label>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Display your rating and reviews publicly
+                      </p>
+                    </div>
                   </div>
                   <Switch
                     id="show-rating"
@@ -1251,58 +1361,111 @@ export function SettingsContent({ user }: SettingsContentProps) {
                         },
                       })
                     }
+                    className="flex-shrink-0"
                   />
                 </div>
               </div>
             </div>
 
-            <Button onClick={() => handleSave("privacy")} className="w-full sm:w-fit">
-              <Save className="mr-2 h-4 w-4" />
-              Save Privacy Settings
-            </Button>
+            <div className="pt-4 border-t border-border">
+              <Button 
+                onClick={() => handleSave("privacy")} 
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save Privacy Settings
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </TabsContent>
 
       {/* Billing Settings */}
       <TabsContent value="billing" className="space-y-3 sm:space-y-4 md:space-y-6">
-        <Card>
-          <CardHeader className="p-3 sm:p-4 md:p-6">
-            <CardTitle className="font-heading text-base sm:text-lg">
-              Billing & Subscription
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Manage your payment methods and subscription
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <h4 className="font-medium mb-2">Current Plan: Free</h4>
-              <p className="text-sm text-muted-foreground mb-4">
-                You're currently on the free plan with basic features. Upgrade
-                to unlock premium features.
-              </p>
-              <Button>Upgrade to Premium</Button>
+        <Card className="border-2">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <CreditCard className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="font-heading text-lg sm:text-xl text-foreground">
+                  Billing & Subscription
+                </CardTitle>
+                <CardDescription className="text-sm mt-1">
+                  Manage your payment methods and subscription
+                </CardDescription>
+              </div>
             </div>
-
-            <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-medium">Payment Methods</h4>
-              <div className="p-4 border rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  No payment methods added yet.
-                </p>
-                <Button variant="outline" className="mt-2 bg-transparent">
-                  Add Payment Method
+          </CardHeader>
+          <CardContent className="space-y-6 p-4 sm:p-6 pt-0">
+            {/* Current Plan */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-1.5 rounded bg-muted/50">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                </div>
+                <h4 className="font-semibold text-base sm:text-lg text-foreground">Current Plan</h4>
+              </div>
+              <div className="p-5 rounded-lg border-2 border-border bg-card">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h5 className="text-lg font-semibold text-foreground">Free Plan</h5>
+                      <Badge variant="secondary" className="ml-2">Active</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      You're currently on the free plan with basic features. Upgrade to unlock premium features.
+                    </p>
+                  </div>
+                </div>
+                <Button className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Upgrade to Premium
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-3 sm:space-y-4">
-              <h4 className="font-medium">Billing History</h4>
-              <div className="p-4 border rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  No billing history available.
-                </p>
+            {/* Payment Methods */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-1.5 rounded bg-muted/50">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                </div>
+                <h4 className="font-semibold text-base sm:text-lg text-foreground">Payment Methods</h4>
+              </div>
+              <div className="p-5 rounded-lg border-2 border-border bg-card">
+                <div className="text-center py-6">
+                  <CreditCard className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground mb-4">
+                    No payment methods added yet.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Payment Method
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Billing History */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-1.5 rounded bg-muted/50">
+                  <Clock3 className="h-4 w-4 text-primary" />
+                </div>
+                <h4 className="font-semibold text-base sm:text-lg text-foreground">Billing History</h4>
+              </div>
+              <div className="p-5 rounded-lg border-2 border-border bg-card">
+                <div className="text-center py-6">
+                  <Clock3 className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    No billing history available.
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -1311,17 +1474,24 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
       {/* Business Settings */}
       <TabsContent value="business" className="space-y-3 sm:space-y-4 md:space-y-6">
-        <Card>
-          <CardHeader className="p-3 sm:p-4 md:p-6">
-            <CardTitle className="font-heading text-base sm:text-lg">Business Information</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Manage your business profile and company details
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <Card className="border-2">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
               <div>
-                <Label htmlFor="company-name">Company Name</Label>
+                <CardTitle className="font-heading text-lg sm:text-xl text-foreground">Business Information</CardTitle>
+                <CardDescription className="text-sm mt-1">
+                  Manage your business profile and company details
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5 p-4 sm:p-6 pt-0">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="company-name" className="text-sm font-medium">Company Name</Label>
                 <Input
                   id="company-name"
                   placeholder="Enter your company name"
@@ -1332,10 +1502,11 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       business: { ...formData.business, name: e.target.value },
                     })
                   }
+                  className="bg-background border-border"
                 />
               </div>
-              <div>
-                <Label htmlFor="industry">Industry</Label>
+              <div className="space-y-2">
+                <Label htmlFor="industry" className="text-sm font-medium">Industry</Label>
                 <Select
                   value={formData.business?.industry || profile?.industry || ""}
                   onValueChange={(value) =>
@@ -1345,7 +1516,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     })
                   }
                 >
-                  <SelectTrigger className="border-white dark:border-white">
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1373,8 +1544,8 @@ export function SettingsContent({ user }: SettingsContentProps) {
             </div>
 
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="business-type">Business Type</Label>
+              <div className="space-y-2">
+                <Label htmlFor="business-type" className="text-sm font-medium">Business Type</Label>
                 <Select
                   value={
                     formData.business?.type || profile?.business_type || ""
@@ -1386,7 +1557,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue placeholder="Select business type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1400,8 +1571,8 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="company-size">Company Size</Label>
+              <div className="space-y-2">
+                <Label htmlFor="company-size" className="text-sm font-medium">Company Size</Label>
                 <Select
                   value={formData.business?.size || profile?.company_size || ""}
                   onValueChange={(value) =>
@@ -1411,7 +1582,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     })
                   }
                 >
-                  <SelectTrigger className="border-white dark:border-white">
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue placeholder="Select company size" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1423,8 +1594,8 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="years-in-business">Years in Business</Label>
+              <div className="space-y-2">
+                <Label htmlFor="years-in-business" className="text-sm font-medium">Years in Business</Label>
                 <Input
                   id="years-in-business"
                   type="number"
@@ -1447,10 +1618,11 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       },
                     })
                   }
+                  className="bg-background border-border"
                 />
               </div>
-              <div>
-                <Label htmlFor="services-offered">Services Offered</Label>
+              <div className="space-y-2">
+                <Label htmlFor="services-offered" className="text-sm font-medium">Services Offered</Label>
                 <Input
                   id="services-offered"
                   placeholder="Comma-separated services"
@@ -1471,12 +1643,13 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       },
                     })
                   }
+                  className="bg-background border-border"
                 />
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="business-description">Business Description</Label>
+            <div className="space-y-2">
+              <Label htmlFor="business-description" className="text-sm font-medium">Business Description</Label>
               <Textarea
                 id="business-description"
                 placeholder="Describe your business, services, and what makes you unique..."
@@ -1495,11 +1668,12 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   })
                 }
                 rows={4}
+                className="bg-background border-border resize-none"
               />
             </div>
 
-            <div>
-              <Label htmlFor="website">Website</Label>
+            <div className="space-y-2">
+              <Label htmlFor="website" className="text-sm font-medium">Website</Label>
               <Input
                 id="website"
                 type="url"
@@ -1511,10 +1685,11 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     business: { ...formData.business, website: e.target.value },
                   })
                 }
+                className="bg-background border-border"
               />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <LocationPicker
                 value={businessLocation}
                 onChange={(location) => {
@@ -1533,8 +1708,8 @@ export function SettingsContent({ user }: SettingsContentProps) {
             </div>
 
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="business-registration">
+              <div className="space-y-2">
+                <Label htmlFor="business-registration" className="text-sm font-medium">
                   Business Registration Number
                 </Label>
                 <Input
@@ -1554,10 +1729,11 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       },
                     })
                   }
+                  className="bg-background border-border"
                 />
               </div>
-              <div>
-                <Label htmlFor="business-hours">Business Hours</Label>
+              <div className="space-y-2">
+                <Label htmlFor="business-hours" className="text-sm font-medium">Business Hours</Label>
                 <Input
                   id="business-hours"
                   placeholder="e.g., Mon-Fri 8AM-5PM"
@@ -1570,23 +1746,36 @@ export function SettingsContent({ user }: SettingsContentProps) {
                       business: { ...formData.business, hours: e.target.value },
                     })
                   }
+                  className="bg-background border-border"
                 />
               </div>
             </div>
 
-            <Button onClick={() => handleSave("business")} className="w-full sm:w-fit">
-              <Save className="mr-2 h-4 w-4" />
-              Save Business Information
-            </Button>
+            <div className="pt-4 border-t border-border">
+              <Button 
+                onClick={() => handleSave("business")} 
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save Business Information
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="p-3 sm:p-4 md:p-6">
-            <CardTitle className="font-heading text-base sm:text-lg">Business Logo</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Upload your company logo for professional branding
-            </CardDescription>
+        <Card className="border-2">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <ImageIcon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="font-heading text-lg sm:text-xl text-foreground">Business Logo</CardTitle>
+                <CardDescription className="text-sm mt-1">
+                  Upload your company logo for professional branding
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0">
             <ImageUpload
@@ -1625,141 +1814,202 @@ export function SettingsContent({ user }: SettingsContentProps) {
       {/* Account Settings */}
       <TabsContent value="account" className="space-y-3 sm:space-y-4 md:space-y-6">
         {/* Appearance/Dark Mode card */}
-        <Card>
-          <CardHeader className="p-3 sm:p-4 md:p-6">
-            <CardTitle className="font-heading flex items-center gap-2 text-base sm:text-lg">
-              <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
-              Appearance
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Customize how AgriReach looks on your device
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="dark-mode">Dark Mode</Label>
-                <p className="text-sm text-muted-foreground">
-                  Switch to a darker color scheme
-                </p>
+        <Card className="border-2">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Moon className="h-5 w-5 text-primary" />
               </div>
-              <Switch
-                id="dark-mode"
-                checked={darkMode}
-                onCheckedChange={(checked) => {
-                  setDarkMode(checked);
+              <div>
+                <CardTitle className="font-heading text-lg sm:text-xl text-foreground">
+                  Appearance
+                </CardTitle>
+                <CardDescription className="text-sm mt-1">
+                  Customize how AgriReach looks on your device
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 p-4 sm:p-6 pt-0">
+            {/* Dark Mode */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-1.5 rounded bg-muted/50">
+                  <Moon className="h-4 w-4 text-primary" />
+                </div>
+                <h4 className="font-semibold text-base sm:text-lg text-foreground">Theme</h4>
+              </div>
+              <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0">
+                    <Moon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Label htmlFor="dark-mode" className="text-base font-medium text-foreground cursor-pointer">
+                      Dark Mode
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Switch to a darker color scheme
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="dark-mode"
+                  checked={darkMode}
+                  onCheckedChange={(checked) => {
+                    setDarkMode(checked);
 
-                  // Apply the theme change directly
-                  if (checked) {
-                    document.documentElement.classList.add("dark");
-                    localStorage.setItem("theme", "dark");
-                  } else {
-                    document.documentElement.classList.remove("dark");
-                    localStorage.setItem("theme", "light");
-                  }
+                    // Apply the theme change directly
+                    if (checked) {
+                      document.documentElement.classList.add("dark");
+                      localStorage.setItem("theme", "dark");
+                    } else {
+                      document.documentElement.classList.remove("dark");
+                      localStorage.setItem("theme", "light");
+                    }
 
-                  // Dispatch the custom event for any other listeners
-                  const themeChangeEvent = new CustomEvent("themeChange", {
-                    detail: { theme: checked ? "dark" : "light" },
-                    bubbles: true,
-                  });
-                  document.dispatchEvent(themeChangeEvent);
+                    // Dispatch the custom event for any other listeners
+                    const themeChangeEvent = new CustomEvent("themeChange", {
+                      detail: { theme: checked ? "dark" : "light" },
+                      bubbles: true,
+                    });
+                    document.dispatchEvent(themeChangeEvent);
 
-                  notifications.showSuccess(
-                    "Appearance Updated",
-                    `Dark mode ${checked ? "enabled" : "disabled"}`
-                  );
-                }}
-              />
+                    notifications.showSuccess(
+                      "Appearance Updated",
+                      `Dark mode ${checked ? "enabled" : "disabled"}`
+                    );
+                  }}
+                  className="flex-shrink-0"
+                />
+              </div>
             </div>
 
             {/* Language selector */}
-            <Separator className="my-3" />
-            <div className="space-y-3">
-              <h4 className="font-medium">Language</h4>
-              <div className="space-y-2">
-                <Label htmlFor="language-select">Choose language</Label>
-                <select
-                  id="language-select"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm"
-                  value={lang}
-                  onChange={(e) => setLang(e.target.value as any)}
-                  aria-label="Language"
-                >
-                  <option value="auto">Auto (device)</option>
-                  <option value="en">English</option>
-                  <option value="es">Spanish</option>
-                  <option value="fr">French</option>
-                  <option value="pt">Portuguese</option>
-                  <option value="zh">Mandarin Chinese</option>
-                  <option value="ja">Japanese</option>
-                  <option value="ko">Korean</option>
-                  <option value="ru">Russian</option>
-                  <option value="ar">Arabic</option>
-                  <option value="hi">Hindi</option>
-                  <option value="bn">Bengali</option>
-                  <option value="id">Indonesian</option>
-                  <option value="vi">Vietnamese</option>
-                  <option value="tl">Filipino</option>
-                  <option value="de">German</option>
-                  <option value="it">Italian</option>
-                  <option value="tr">Turkish</option>
-                  <option value="sw">Swahili</option>
-                </select>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-1.5 rounded bg-muted/50">
+                  <Globe className="h-4 w-4 text-primary" />
+                </div>
+                <h4 className="font-semibold text-base sm:text-lg text-foreground">Language</h4>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Current: <strong>{currentLanguageLabel}</strong>
-              </p>
-              <div className="mt-2 flex items-center justify-between gap-3">
-                <span className="text-sm">Manual translation</span>
-                <Button
-                  variant="default"
-                  size="sm"
-                  disabled={isTranslating}
-                  onClick={async () => {
-                    notifications.showInfo(
-                      "Translating",
-                      `Translating page to ${currentLanguageLabel}...`
-                    );
-                    try {
-                      await translateNow();
-                      notifications.showSuccess(
-                        "Translation complete",
-                        `Content translated to ${currentLanguageLabel}`
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="language-select" className="text-sm font-medium">Choose language</Label>
+                  <select
+                    id="language-select"
+                    className="w-full rounded-md border-2 border-border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    value={lang}
+                    onChange={(e) => setLang(e.target.value as any)}
+                    aria-label="Language"
+                  >
+                    <option value="auto">Auto (device)</option>
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="pt">Portuguese</option>
+                    <option value="zh">Mandarin Chinese</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="ru">Russian</option>
+                    <option value="ar">Arabic</option>
+                    <option value="hi">Hindi</option>
+                    <option value="bn">Bengali</option>
+                    <option value="id">Indonesian</option>
+                    <option value="vi">Vietnamese</option>
+                    <option value="tl">Filipino</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="tr">Turkish</option>
+                    <option value="sw">Swahili</option>
+                  </select>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                  <p className="text-xs text-muted-foreground">
+                    Current: <strong className="text-foreground">{currentLanguageLabel}</strong>
+                  </p>
+                </div>
+                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-lg bg-blue-500/10 flex-shrink-0">
+                      <RefreshCw className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Label className="text-base font-medium text-foreground">
+                        Manual translation
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        Translate the current page manually
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    disabled={isTranslating}
+                    onClick={async () => {
+                      notifications.showInfo(
+                        "Translating",
+                        `Translating page to ${currentLanguageLabel}...`
                       );
-                    } catch (e: any) {
-                      notifications.showError(
-                        "Translation failed",
-                        e?.message || "Unable to translate content"
-                      );
-                    }
-                  }}
-                >
-                  {isTranslating ? "Translating..." : "Translate"}
-                </Button>
+                      try {
+                        await translateNow();
+                        notifications.showSuccess(
+                          "Translation complete",
+                          `Content translated to ${currentLanguageLabel}`
+                        );
+                      } catch (e: any) {
+                        notifications.showError(
+                          "Translation failed",
+                          e?.message || "Unable to translate content"
+                        );
+                      }
+                    }}
+                    className="flex-shrink-0 bg-primary hover:bg-primary/90"
+                  >
+                    {isTranslating ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Translating...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Translate
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
             {/* end language selector */}
-
-            {/* ...existing code (remaining CardContent) ... */}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="p-3 sm:p-4 md:p-6">
-            <CardTitle className="font-heading text-base sm:text-lg">Account Security</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Manage your account security and data preferences
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
-            <div className="space-y-3 sm:space-y-4">
-              <div className="flex items-center justify-between">
-                {/* Two-Factor Authentication removed */}
+        <Card className="border-2">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Lock className="h-5 w-5 text-primary" />
               </div>
-
+              <div>
+                <CardTitle className="font-heading text-lg sm:text-xl text-foreground">Account Security</CardTitle>
+                <CardDescription className="text-sm mt-1">
+                  Manage your account security and data preferences
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6 p-4 sm:p-6 pt-0">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="p-1.5 rounded bg-muted/50">
+                  <Clock3 className="h-4 w-4 text-primary" />
+                </div>
+                <h4 className="font-semibold text-base sm:text-lg text-foreground">Session Settings</h4>
+              </div>
               <div className="space-y-2">
-                <Label htmlFor="session-timeout">
+                <Label htmlFor="session-timeout" className="text-sm font-medium">
                   Session Timeout (minutes)
                 </Label>
                 <Select
@@ -1777,7 +2027,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1788,34 +2038,60 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     <SelectItem value="480">8 hours</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Your session will automatically expire after the selected time of inactivity.
+                </p>
               </div>
             </div>
 
-            <Button onClick={() => handleSave("account")} className="w-full sm:w-fit">
-              <Save className="mr-2 h-4 w-4" />
-              Save Security Settings
-            </Button>
+            <div className="pt-4 border-t border-border">
+              <Button 
+                onClick={() => handleSave("account")} 
+                className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save Security Settings
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-destructive/50">
-          <CardHeader className="p-3 sm:p-4 md:p-6">
-            <CardTitle className="font-heading text-destructive text-base sm:text-lg">
-              Danger Zone
-            </CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Irreversible actions that affect your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
-            <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg">
-              <div>
-                <h4 className="font-medium">Delete Account</h4>
-                <p className="text-sm text-muted-foreground">
-                  Permanently delete your account and all associated data
-                </p>
+        <Card className="border-2 border-destructive/50">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-destructive/10">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
-              <Button variant="destructive">Delete Account</Button>
+              <div>
+                <CardTitle className="font-heading text-lg sm:text-xl text-destructive">
+                  Danger Zone
+                </CardTitle>
+                <CardDescription className="text-sm mt-1">
+                  Irreversible actions that affect your account
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+            <div className="flex items-center justify-between p-5 rounded-lg border-2 border-destructive/30 bg-destructive/5 hover:bg-destructive/10 transition-colors">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="p-2 rounded-lg bg-destructive/20 flex-shrink-0">
+                  <Trash2 className="h-5 w-5 text-destructive" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-semibold text-base text-foreground mb-1">Delete Account</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Permanently delete your account and all associated data. This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <Button 
+                variant="destructive" 
+                className="flex-shrink-0 shadow-md hover:shadow-lg transition-all"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Account
+              </Button>
             </div>
           </CardContent>
         </Card>
