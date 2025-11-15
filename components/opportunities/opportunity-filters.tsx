@@ -123,7 +123,7 @@ export function OpportunityFilters({ onFiltersChange }: OpportunityFiltersProps)
           <div className="px-2">
             <Slider 
               value={payRange} 
-              onValueChange={setPayRange} 
+              onValueChange={(value) => setPayRange([value[0], value[1]] as [number, number])} 
               max={Math.max(100, filterStats.payRange.maxPay)} 
               min={Math.min(60, filterStats.payRange.minPay)} 
               step={1} 
