@@ -164,77 +164,80 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
   const profileData = getProfileData()
 
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
       {/* Main Content */}
       <div className="lg:col-span-2 space-y-6">
         {/* About Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">About</CardTitle>
-            <CardDescription>Profile information and background</CardDescription>
+        <Card className="border-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="font-heading text-xl sm:text-2xl">About</CardTitle>
+            <CardDescription className="text-sm">Profile information and background</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground leading-relaxed">{user.bio}</p>
+          <CardContent className="space-y-5">
+            <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">{user.bio}</p>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
                 <span className="text-sm">{user.location}</span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
                 <span className="text-sm">Joined {new Date(user.joinDate).toLocaleDateString()}</span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">{user.email}</span>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                <Mail className="h-4 w-4 text-primary flex-shrink-0" />
+                <span className="text-sm truncate">{user.email}</span>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Badge variant={user.verified ? "secondary" : "outline"}>
-                  {user.verified ? "Verified" : "Unverified"}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                <Badge 
+                  variant={user.verified ? "default" : "outline"}
+                  className={user.verified ? "bg-green-500 hover:bg-green-600 text-white border-0" : ""}
+                >
+                  {user.verified ? "✓ Verified" : "Unverified"}
                 </Badge>
               </div>
             </div>
 
             {/* Company/Business Info for Recruiters and Buyers */}
             {user.role === "recruiter" && profileData.companyInfo && (
-              <div className="pt-4 border-t">
-                <h4 className="font-medium mb-3">Company Information</h4>
+              <div className="pt-5 border-t">
+                <h4 className="font-semibold mb-4 text-base">Company Information</h4>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                    <Building className="h-4 w-4 text-primary flex-shrink-0" />
                     <span className="text-sm">{profile?.company_name || profileData.companyInfo.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                    <Users className="h-4 w-4 text-primary flex-shrink-0" />
                     <span className="text-sm">{profile?.company_size || profileData.companyInfo.size}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profile?.website || profileData.companyInfo.website}</span>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border md:col-span-2">
+                    <Globe className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-sm truncate">{profile?.website || profileData.companyInfo.website}</span>
                   </div>
                 </div>
               </div>
             )}
 
             {user.role === "buyer" && hasBusiness && (
-              <div className="pt-4 border-t">
-                <h4 className="font-medium mb-3">Business Information</h4>
+              <div className="pt-5 border-t">
+                <h4 className="font-semibold mb-4 text-base">Business Information</h4>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <div className="flex items-center gap-2">
-                    <Building className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                    <Building className="h-4 w-4 text-primary flex-shrink-0" />
                     <span className="text-sm">{profile?.company_name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Package className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                    <Package className="h-4 w-4 text-primary flex-shrink-0" />
                     <span className="text-sm">{profile?.business_type}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{profile?.website}</span>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border md:col-span-2">
+                    <Globe className="h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="text-sm truncate">{profile?.website}</span>
                   </div>
                 </div>
               </div>
@@ -273,10 +276,10 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
           const categories = Object.keys(groupedSkills) as SkillCategory[];
           
           return (
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">Skills & Expertise</CardTitle>
-                <CardDescription>
+            <Card className="border-2">
+              <CardHeader className="pb-4">
+                <CardTitle className="font-heading text-xl sm:text-2xl">Skills & Expertise</CardTitle>
+                <CardDescription className="text-sm">
                   Your skills organized by category. Jobs matching your skills will be prioritized.
                 </CardDescription>
               </CardHeader>
@@ -312,12 +315,12 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
         })()}
 
         {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">
+        <Card className="border-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="font-heading text-xl sm:text-2xl">
               Recent {user.role === "worker" ? "Work" : user.role === "recruiter" ? "Job Postings" : "Orders"}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               {user.role === "worker"
                 ? "Latest job applications and completed work"
                 : user.role === "recruiter"
@@ -326,45 +329,59 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {profileData.recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="space-y-1">
-                  <h4 className="font-medium">{activity.title}</h4>
+            {profileData.recentActivity.length === 0 ? (
+              <div className="text-center py-12 px-4">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                  <Package className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <p className="text-sm text-muted-foreground">No recent activity to display</p>
+              </div>
+            ) : (
+              profileData.recentActivity.map((activity, index) => (
+              <div key={index} className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-5 border-2 rounded-lg hover:shadow-md hover:border-primary/50 transition-all">
+                <div className="flex-1 space-y-2">
+                  <h4 className="font-heading font-semibold text-base group-hover:text-primary transition-colors">{activity.title}</h4>
                   <p className="text-sm text-muted-foreground">{activity.company}</p>
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
+                  <div className="flex items-center gap-4 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" />
                       {activity.location}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5" />
                       {activity.date}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Badge variant={activity.status === "active" ? "default" : "secondary"}>{activity.status}</Badge>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge 
+                      variant={activity.status === "active" ? "default" : "secondary"}
+                      className={activity.status === "active" ? "bg-green-500 hover:bg-green-600 text-white border-0" : ""}
+                    >
+                      {activity.status}
+                    </Badge>
                     {"rating" in activity && activity.rating ? (
-                      <div className="flex items-center gap-1 text-sm">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        <span>{activity.rating}</span>
+                      <div className="flex items-center gap-1 text-sm px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/20">
+                        <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                        <span className="font-medium">{activity.rating}</span>
                       </div>
                     ) : null}
                     {"applicants" in activity && activity.applicants ? (
                       <span className="text-sm text-muted-foreground">{activity.applicants} applicants</span>
                     ) : null}
                     {"amount" in activity && activity.amount ? (
-                      <span className="text-sm font-medium text-primary">{activity.amount}</span>
+                      <span className="text-sm font-bold text-primary">{activity.amount}</span>
                     ) : null}
                   </div>
                 </div>
 
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto border-2 hover:bg-muted">
                   View Details
                 </Button>
               </div>
-            ))}
+            ))
+            )}
           </CardContent>
         </Card>
       </div>
@@ -372,20 +389,20 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
       {/* Sidebar */}
       <div className="space-y-6">
         {/* Statistics */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Statistics</CardTitle>
+        <Card className="border-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="font-heading text-lg sm:text-xl">Statistics</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {Object.entries(profileData.stats).map(([key, stat]) => {
               const IconComponent = stat.icon
               return (
-                <div key={key} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <IconComponent className="h-4 w-4 text-muted-foreground" />
+                <div key={key} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border hover:bg-muted transition-colors">
+                  <div className="flex items-center gap-3">
+                    <IconComponent className="h-5 w-5 text-primary flex-shrink-0" />
                     <span className="text-sm text-muted-foreground">{stat.label}</span>
                   </div>
-                  <span className="font-medium">{stat.value}</span>
+                  <span className="font-bold text-base">{stat.value}</span>
                 </div>
               )
             })}
@@ -393,20 +410,20 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
         </Card>
 
         {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Quick Actions</CardTitle>
+        <Card className="border-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="font-heading text-lg sm:text-xl">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {user.role === "worker" && (
               <>
                 <Link href="/opportunities">
-                  <Button className="w-full" size="sm">
+                  <Button className="w-full bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all" size="sm">
                     <Briefcase className="mr-2 h-4 w-4" />
                     Find Jobs
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full bg-transparent" size="sm">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted" size="sm">
                   <Award className="mr-2 h-4 w-4" />
                   View Certificates
                 </Button>
@@ -416,12 +433,12 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {user.role === "recruiter" && (
               <>
                 <Link href="/opportunities/create">
-                  <Button className="w-full" size="sm">
+                  <Button className="w-full bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all" size="sm">
                     <Users className="mr-2 h-4 w-4" />
                     Post New Job
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full bg-transparent" size="sm">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted" size="sm">
                   <TrendingUp className="mr-2 h-4 w-4" />
                   View Analytics
                 </Button>
@@ -431,12 +448,12 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             {user.role === "buyer" && (
               <>
                 <Link href="/marketplace">
-                  <Button variant="outline" className="w-full bg-transparent mb-3" size="sm">
-                    <Package className="mr-2 h-4 w-4 " />
+                  <Button variant="outline" className="w-full border-2 hover:bg-muted mb-3" size="sm">
+                    <Package className="mr-2 h-4 w-4" />
                     Browse Products
                   </Button>
                 </Link>
-                <Button variant="outline" className="w-full bg-transparent" size="sm">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted" size="sm">
                   <Star className="mr-2 h-4 w-4" />
                   Favorite Suppliers
                 </Button>
@@ -444,7 +461,7 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
             )}
 
             <Link href="/settings">
-              <Button variant="outline" className="w-full bg-transparent" size="sm">
+              <Button variant="outline" className="w-full border-2 hover:bg-muted" size="sm">
                 Edit Profile
               </Button>
             </Link>
@@ -452,24 +469,24 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
         </Card>
 
         {/* Contact Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Contact</CardTitle>
+        <Card className="border-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="font-heading text-lg sm:text-xl">Contact</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{user.email}</span>
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+              <Mail className="h-4 w-4 text-primary flex-shrink-0" />
+              <span className="text-sm truncate">{user.email}</span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+              <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
               <span className="text-sm">{user.location}</span>
             </div>
 
             {user.verified && (
-              <div className="pt-2 border-t">
-                <Badge variant="secondary" className="w-full justify-center">
+              <div className="pt-3 border-t">
+                <Badge className="w-full justify-center bg-green-500 hover:bg-green-600 text-white border-0 py-2">
                   ✓ Verified Profile
                 </Badge>
               </div>
@@ -479,72 +496,76 @@ export function UnifiedProfile({ user }: UnifiedProfileProps) {
 
         {/* Business Profile Section */}
         {hasBusiness && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Business Profile</CardTitle>
-            <CardDescription>Showcase your business and services</CardDescription>
+        <Card className="border-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="font-heading text-lg sm:text-xl">Business Profile</CardTitle>
+            <CardDescription className="text-sm">Showcase your business and services</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label className="text-sm font-medium">Company Name</Label>
-                <p className="text-sm text-muted-foreground mt-1">{profile?.company_name}</p>
+          <CardContent className="space-y-5">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase">Company Name</Label>
+                <p className="text-sm font-medium mt-1">{profile?.company_name || "N/A"}</p>
               </div>
-              <div>
-                <Label className="text-sm font-medium">Industry</Label>
-                <p className="text-sm text-muted-foreground mt-1">{profile?.industry}</p>
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase">Industry</Label>
+                <p className="text-sm font-medium mt-1">{profile?.industry || "N/A"}</p>
               </div>
-              <div>
-                <Label className="text-sm font-medium">Business Type</Label>
-                <p className="text-sm text-muted-foreground mt-1">{profile?.business_type}</p>
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase">Business Type</Label>
+                <p className="text-sm font-medium mt-1">{profile?.business_type || "N/A"}</p>
               </div>
-              <div>
-                <Label className="text-sm font-medium">Years in Business</Label>
-                <p className="text-sm text-muted-foreground mt-1">{typeof profile?.years_in_business === 'number' ? profile?.years_in_business : ''}</p>
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase">Years in Business</Label>
+                <p className="text-sm font-medium mt-1">{typeof profile?.years_in_business === 'number' ? profile?.years_in_business : 'N/A'}</p>
               </div>
               {profile?.business_address && (
-                <div className="md:col-span-2">
-                  <Label className="text-sm font-medium">Business Address</Label>
-                  <p className="text-sm text-muted-foreground mt-1">{profile.business_address}</p>
+                <div className="md:col-span-2 p-3 rounded-lg bg-muted/50 border border-border">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase">Business Address</Label>
+                  <p className="text-sm font-medium mt-1">{profile.business_address}</p>
                 </div>
               )}
               {profile?.business_hours && (
-                <div>
-                  <Label className="text-sm font-medium">Business Hours</Label>
-                  <p className="text-sm text-muted-foreground mt-1">{profile.business_hours}</p>
+                <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase">Business Hours</Label>
+                  <p className="text-sm font-medium mt-1">{profile.business_hours}</p>
                 </div>
               )}
               {profile?.business_registration && (
-                <div>
-                  <Label className="text-sm font-medium">Registration Number</Label>
-                  <p className="text-sm text-muted-foreground mt-1">{profile.business_registration}</p>
+                <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase">Registration Number</Label>
+                  <p className="text-sm font-medium mt-1">{profile.business_registration}</p>
                 </div>
               )}
             </div>
 
-            <div>
-              <Label className="text-sm font-medium">Business Description</Label>
-              {profile?.business_description && (
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+            <div className="p-4 rounded-lg bg-muted/50 border border-border">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase">Business Description</Label>
+              {profile?.business_description ? (
+                <p className="text-sm text-foreground mt-2 leading-relaxed">
                   {profile.business_description}
                 </p>
+              ) : (
+                <p className="text-sm text-muted-foreground mt-2 italic">No description provided</p>
               )}
             </div>
 
-            <div>
-              <Label className="text-sm font-medium">Services Offered</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {Array.isArray(profile?.services_offered) && profile!.services_offered.length > 0 && (
+            <div className="p-4 rounded-lg bg-muted/50 border border-border">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase mb-2 block">Services Offered</Label>
+              <div className="flex flex-wrap gap-2">
+                {Array.isArray(profile?.services_offered) && profile!.services_offered.length > 0 ? (
                   profile!.services_offered.map((svc, idx) => (
-                    <Badge key={idx} variant="outline">{svc}</Badge>
+                    <Badge key={idx} variant="outline" className="text-xs">{svc}</Badge>
                   ))
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No services listed</p>
                 )}
               </div>
             </div>
 
             <div className="pt-4 border-t">
               <Link href="/settings?tab=business">
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full border-2 hover:bg-muted">
                   <Settings className="mr-2 h-4 w-4" />
                   Edit Business Profile
                 </Button>

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Star, Search, TrendingUp, Award, Shield } from "lucide-react";
+import { Star, Search, TrendingUp, Award, Shield, Plus, Clock, ThumbsUp, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -19,10 +19,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { useReviewsData } from "@/hooks/use-reviews-data";
 import { useTopRatedData } from "@/hooks/use-top-rated-data";
 import { useReviewStatistics } from "@/hooks/use-review-statistics";
-import { InlineLoader } from "@/components/ui/page-loader";
+import { ContentLoader } from "@/components/ui/content-loader";
 import { PageTransition } from "@/components/ui/page-transition";
 import { CardSkeleton } from "@/components/ui/skeleton-loader";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { formatRelativeTime } from "@/lib/utils";
 
 const categories = [
   "All",
@@ -116,14 +118,22 @@ export default function ReviewsPage() {
 
   if (authLoading || reviewsLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <InlineLoader text="Loading reviews..." variant="spinner" size="lg" />
+      <div className="min-h-screen bg-background">
+        <ContentLoader text="Loading reviews..." />
       </div>
     );
   }
 
   if (error) {
-    return <div>Error loading reviews: {error}</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="border-2 border-destructive/20">
+          <CardContent className="p-8 text-center">
+            <p className="text-destructive font-medium">Error loading reviews: {error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const searchLower = (searchTerm || "").toLowerCase();
@@ -144,23 +154,47 @@ export default function ReviewsPage() {
     return matchesCategory && matchesSearch;
   });
 
+  // Sort reviews
+  const sortedReviews = useMemo(() => {
+    const sorted = [...filteredReviews];
+    switch (sortBy) {
+      case "Highest Rated":
+        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      case "Lowest Rated":
+        return sorted.sort((a, b) => (a.rating || 0) - (b.rating || 0));
+      case "Most Helpful":
+        return sorted.sort((a, b) => (b.helpful_count || 0) - (a.helpful_count || 0));
+      case "Most Recent":
+      default:
+        return sorted.sort((a, b) => {
+          const dateA = new Date(a.created_at || 0).getTime();
+          const dateB = new Date(b.created_at || 0).getTime();
+          return dateB - dateA;
+        });
+    }
+  }, [filteredReviews, sortBy]);
+
   return (
     <div className="min-h-screen bg-background">
       <PageTransition>
-        {/* Header */}
-        <div className="bg-background border-b">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-foreground font-sans">
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-br from-primary/5 via-background to-primary/10 border-b">
+          <div className="container mx-auto px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+              <div className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-heading font-bold text-foreground">
                   Reviews & Ratings
                 </h1>
-                <p className="text-muted-foreground mt-1">
+                <p className="text-sm sm:text-base text-muted-foreground">
                   Community feedback and trust scores
                 </p>
               </div>
               <Link href="/reviews/write">
-                <Button className="bg-primary hover:bg-primary/90">
+                <Button 
+                  size="lg" 
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
                   Write Review
                 </Button>
               </Link>
@@ -168,19 +202,19 @@ export default function ReviewsPage() {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 py-6 sm:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
             {/* Main Content */}
             <div className="lg:col-span-3 space-y-6">
-              {/* Search and Filters */}
-              <div className="flex flex-col md:flex-row gap-4">
+              {/* Enhanced Search and Filters */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
                   <Input
                     placeholder="Search reviews..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-12 h-12 text-base bg-card border-2 focus:border-primary/50 transition-colors"
                   />
                 </div>
 
@@ -188,7 +222,7 @@ export default function ReviewsPage() {
                   value={selectedCategory}
                   onValueChange={setSelectedCategory}
                 >
-                  <SelectTrigger className="w-48 bg-white text-zinc-900 border border-zinc-200 focus:ring-0 dark:bg-white/5 dark:text-white dark:border-white">
+                  <SelectTrigger className="w-full sm:w-48 h-12 text-sm">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -201,7 +235,7 @@ export default function ReviewsPage() {
                 </Select>
 
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-48 bg-white text-zinc-900 border border-zinc-200 focus:ring-0 dark:bg-white/5 dark:text-white dark:border-white">
+                  <SelectTrigger className="w-full sm:w-48 h-12 text-sm">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -217,107 +251,126 @@ export default function ReviewsPage() {
               {/* Reviews List */}
               <div className="space-y-4">
                 {reviewsLoading ? (
-                  // Show skeleton loaders while loading
                   Array.from({ length: 5 }).map((_, index) => (
                     <CardSkeleton key={index} />
                   ))
-                ) : filteredReviews.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-6 text-center">
-                      <p className="text-muted-foreground">
-                        No reviews found matching your criteria.
+                ) : sortedReviews.length === 0 ? (
+                  <Card className="border-2">
+                    <CardContent className="py-16 sm:py-20 text-center px-4">
+                      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-6">
+                        <Star className="h-10 w-10 text-muted-foreground/50" />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2">No reviews found</h3>
+                      <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm">
+                        {searchTerm || selectedCategory !== "All"
+                          ? "Try adjusting your search or filters to find reviews."
+                          : "Be the first to share your experience! Write a review to help others."}
                       </p>
+                      {!searchTerm && selectedCategory === "All" && (
+                        <Link href="/reviews/write">
+                          <Button size="lg" className="bg-primary hover:bg-primary/90">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Write First Review
+                          </Button>
+                        </Link>
+                      )}
                     </CardContent>
                   </Card>
                 ) : (
-                  filteredReviews.map((review) => (
+                  sortedReviews.map((review) => (
                     <Card
                       key={review._id}
-                      className="hover:shadow-md transition-shadow"
+                      className="group border-2 hover:shadow-lg hover:border-primary/50 transition-all duration-300"
                     >
-                      <CardContent className="p-6">
+                      <CardContent className="p-5 sm:p-6">
                         <div className="flex items-start gap-4">
-                          <Avatar className="h-12 w-12">
+                          <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-border group-hover:border-primary/50 transition-colors flex-shrink-0">
                             <AvatarImage
                               src={
                                 review.reviewer_id.avatar_url ||
                                 "/placeholder.svg"
                               }
                             />
-                            <AvatarFallback>
+                            <AvatarFallback className="text-sm font-medium">
                               {review.reviewer_id.full_name
                                 ? review.reviewer_id.full_name
                                     .split(" ")
                                     .map((part: string) => part[0])
                                     .join("")
+                                    .toUpperCase()
                                 : "U"}
                             </AvatarFallback>
                           </Avatar>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between mb-2">
-                              <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-semibold">
+                          <div className="flex-1 min-w-0 space-y-3">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap mb-2">
+                                  <h3 className="font-heading font-semibold text-base sm:text-lg">
                                     {review.reviewer_id.full_name}
-                                  </span>
+                                  </h3>
                                   {review.verified_purchase && (
                                     <Badge
                                       variant="secondary"
-                                      className="text-xs"
+                                      className="text-xs font-medium bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20"
                                     >
                                       <Shield className="h-3 w-3 mr-1" />
-                                      Verified Purchase
+                                      Verified
                                     </Badge>
                                   )}
                                 </div>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-xs sm:text-sm text-muted-foreground">
                                   Review for{" "}
-                                  <span className="font-medium">
+                                  <span className="font-medium text-foreground">
                                     {review.reviewee_id?.full_name ?? "Unknown"}
                                   </span>
                                 </p>
                               </div>
-                              <div className="text-right">
-                                <div className="flex items-center gap-1 mb-1">
+                              <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                                <div className="flex items-center gap-1">
                                   {[...Array(5)].map((_, i) => (
                                     <Star
                                       key={i}
-                                      className={`h-4 w-4 ${
-                                        i < review.rating
+                                      className={cn(
+                                        "h-4 w-4 sm:h-5 sm:w-5 transition-colors",
+                                        i < (review.rating || 0)
                                           ? "fill-yellow-400 text-yellow-400"
-                                          : "text-gray-300"
-                                      }`}
+                                          : "text-muted-foreground/30"
+                                      )}
                                     />
                                   ))}
                                 </div>
-                                <p className="text-sm text-muted-foreground">
-                                  {new Date(
-                                    review.created_at
-                                  ).toLocaleDateString()}
-                                </p>
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {review.created_at ? formatRelativeTime(review.created_at) : "Recently"}
+                                </span>
                               </div>
                             </div>
 
                             {review.title && (
-                              <h3 className="font-semibold mb-2">
+                              <h4 className="font-heading font-semibold text-base group-hover:text-primary transition-colors">
                                 {review.title}
-                              </h3>
+                              </h4>
                             )}
                             {review.comment && (
-                              <p className="text-muted-foreground leading-relaxed mb-3">
+                              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                                 {review.comment}
                               </p>
                             )}
 
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4">
+                            <div className="flex items-center justify-between pt-3 border-t">
+                              <div className="flex items-center gap-3 flex-wrap">
                                 {review.category && (
-                                  <Badge variant="outline">
+                                  <Badge variant="outline" className="text-xs font-medium">
                                     {review.category}
                                   </Badge>
                                 )}
-                                <Button variant="ghost" size="sm">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="h-8 text-xs sm:text-sm text-muted-foreground hover:text-foreground"
+                                >
+                                  <ThumbsUp className="h-3.5 w-3.5 mr-1.5" />
                                   Helpful ({review.helpful_count || 0})
                                 </Button>
                               </div>
@@ -331,45 +384,59 @@ export default function ReviewsPage() {
               </div>
             </div>
 
-            {/* Sidebar */}
+            {/* Enhanced Sidebar */}
             <div className="space-y-6">
               {/* Trust System Overview */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5" />
-                    Trust System
+              <Card className="border-2">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Shield className="h-5 w-5 text-primary" />
+                    </div>
+                    <span>Trust System</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-5">
                   <div>
-                    <h4 className="font-medium mb-2">How Trust Scores Work</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• Based on verified reviews</li>
-                      <li>• Updated in real-time</li>
-                      <li>• Weighted by reviewer credibility</li>
-                      <li>• Includes transaction history</li>
+                    <h4 className="font-semibold mb-3 text-sm sm:text-base">How Trust Scores Work</h4>
+                    <ul className="text-xs sm:text-sm text-muted-foreground space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span>Based on verified reviews</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span>Updated in real-time</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span>Weighted by reviewer credibility</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">•</span>
+                        <span>Includes transaction history</span>
+                      </li>
                     </ul>
                   </div>
 
-                  <div>
-                    <h4 className="font-medium mb-2">Trust Levels</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>New Member</span>
+                  <div className="pt-4 border-t">
+                    <h4 className="font-semibold mb-3 text-sm sm:text-base">Trust Levels</h4>
+                    <div className="space-y-2.5 text-xs sm:text-sm">
+                      <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
+                        <span className="font-medium">New Member</span>
                         <span className="text-muted-foreground">0-3.0</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Trusted</span>
+                      <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
+                        <span className="font-medium">Trusted</span>
                         <span className="text-muted-foreground">3.0-4.0</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Highly Trusted</span>
+                      <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
+                        <span className="font-medium">Highly Trusted</span>
                         <span className="text-muted-foreground">4.0-4.5</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Elite</span>
-                        <span className="text-muted-foreground">4.5-5.0</span>
+                      <div className="flex justify-between items-center p-2 rounded-lg bg-primary/5 border border-primary/20">
+                        <span className="font-medium text-primary">Elite</span>
+                        <span className="text-primary font-semibold">4.5-5.0</span>
                       </div>
                     </div>
                   </div>
@@ -377,11 +444,13 @@ export default function ReviewsPage() {
               </Card>
 
               {/* Top Rated Users */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    Top Rated This Month
+              <Card className="border-2">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <div className="p-2 rounded-lg bg-red-500/10">
+                      <TrendingUp className="h-5 w-5 text-red-500" />
+                    </div>
+                    <span>Top Rated This Month</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -390,36 +459,40 @@ export default function ReviewsPage() {
                       {[1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between"
+                          className="flex items-center justify-between p-3 rounded-lg bg-muted/50 animate-pulse"
                         >
-                          <div className="space-y-2">
-                            <div className="h-4 bg-muted rounded w-24 animate-pulse" />
-                            <div className="h-3 bg-muted rounded w-16 animate-pulse" />
+                          <div className="space-y-2 flex-1">
+                            <div className="h-4 bg-muted rounded w-24" />
+                            <div className="h-3 bg-muted rounded w-16" />
                           </div>
-                          <div className="h-4 bg-muted rounded w-8 animate-pulse" />
+                          <div className="h-4 bg-muted rounded w-8" />
                         </div>
                       ))}
                     </div>
                   ) : topRatedError ? (
-                    <div className="text-center py-4">
+                    <div className="text-center py-8">
                       <p className="text-sm text-muted-foreground">
                         Unable to load top rated users
                       </p>
                     </div>
                   ) : topRated.length === 0 ? (
-                    <div className="text-center py-4">
-                      <p className="text-sm text-muted-foreground">
-                        No top rated users this month
-                      </p>
+                    <div className="text-center py-12 px-4">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                        <TrendingUp className="h-8 w-8 text-muted-foreground/50" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">No top rated users this month</p>
                     </div>
                   ) : (
-                    topRated.slice(0, 3).map((user) => (
+                    topRated.slice(0, 3).map((user, index) => (
                       <div
                         key={user.id}
-                        className="flex items-center justify-between"
+                        className="group flex items-center justify-between p-3 rounded-lg border-2 hover:border-primary/50 hover:bg-muted/50 transition-all"
                       >
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex-shrink-0">
+                            {index + 1}
+                          </div>
+                          <Avatar className="h-10 w-10 border-2 border-border group-hover:border-primary/50 transition-colors flex-shrink-0">
                             <AvatarImage src={user.avatar} alt={user.name} />
                             <AvatarFallback className="text-xs">
                               {user.name
@@ -429,18 +502,16 @@ export default function ReviewsPage() {
                                 .toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <p className="font-medium text-sm">{user.name}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate">{user.name}</p>
                             <p className="text-xs text-muted-foreground">
                               {user.reviews} reviews
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-medium">
-                            {user.rating}
-                          </span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-sm font-bold">{user.rating}</span>
                         </div>
                       </div>
                     ))
@@ -449,66 +520,57 @@ export default function ReviewsPage() {
               </Card>
 
               {/* Review Stats */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Review Statistics</CardTitle>
+              <Card className="border-2">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <div className="p-2 rounded-lg bg-yellow-500/10">
+                      <Award className="h-5 w-5 text-yellow-500" />
+                    </div>
+                    <span>Review Statistics</span>
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-5">
                   {statisticsLoading ? (
                     <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <div className="h-4 bg-muted rounded w-24 animate-pulse" />
-                        <div className="h-4 bg-muted rounded w-16 animate-pulse" />
-                      </div>
-                      <div className="flex justify-between">
-                        <div className="h-4 bg-muted rounded w-24 animate-pulse" />
-                        <div className="h-4 bg-muted rounded w-8 animate-pulse" />
-                      </div>
-                      <div className="flex justify-between">
-                        <div className="h-4 bg-muted rounded w-24 animate-pulse" />
-                        <div className="h-4 bg-muted rounded w-12 animate-pulse" />
-                      </div>
-                      <div className="space-y-2 mt-4">
-                        <div className="h-4 bg-muted rounded w-32 animate-pulse" />
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <div className="h-3 bg-muted rounded w-4 animate-pulse" />
-                            <div className="h-3 bg-muted rounded w-3 animate-pulse" />
-                            <div className="h-2 bg-muted rounded flex-1 animate-pulse" />
-                            <div className="h-3 bg-muted rounded w-8 animate-pulse" />
-                          </div>
-                        ))}
-                      </div>
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="flex justify-between">
+                          <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                          <div className="h-4 bg-muted rounded w-16 animate-pulse" />
+                        </div>
+                      ))}
                     </div>
                   ) : statisticsError ? (
-                    <div className="text-center py-4">
+                    <div className="text-center py-8">
                       <p className="text-sm text-muted-foreground">
                         Unable to load review statistics
                       </p>
                     </div>
                   ) : statistics ? (
                     <>
-                      <div className="flex justify-between text-sm">
-                        <span>Total Reviews</span>
-                        <span className="font-medium">
-                          {statistics.totalReviews.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Average Rating</span>
-                        <span className="font-medium">
-                          {statistics.averageRating}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Verified Reviews</span>
-                        <span className="font-medium">
-                          {statistics.verifiedPercentage}%
-                        </span>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-3 rounded-lg bg-primary/5 border border-primary/10">
+                          <span className="text-sm font-medium">Total Reviews</span>
+                          <span className="text-lg font-bold text-primary">
+                            {statistics.totalReviews.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+                          <span className="text-sm font-medium">Average Rating</span>
+                          <div className="flex items-center gap-1.5">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="text-lg font-bold">{statistics.averageRating}</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+                          <span className="text-sm font-medium">Verified Reviews</span>
+                          <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                            {statistics.verifiedPercentage}%
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="space-y-2 mt-4">
-                        <h4 className="font-medium text-sm">
+                      <div className="space-y-3 pt-4 border-t">
+                        <h4 className="font-semibold text-sm sm:text-base mb-3">
                           Rating Distribution
                         </h4>
                         {statistics.ratingDistribution.map((dist) => (
@@ -516,13 +578,13 @@ export default function ReviewsPage() {
                             key={dist.stars}
                             className="flex items-center gap-2 text-sm"
                           >
-                            <span className="w-4">{dist.stars}</span>
-                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            <span className="w-6 font-medium">{dist.stars}</span>
+                            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
                             <Progress
                               value={dist.percentage}
-                              className="flex-1 h-2"
+                              className="flex-1 h-2.5"
                             />
-                            <span className="text-muted-foreground w-8 text-right">
+                            <span className="text-muted-foreground w-10 text-right text-xs font-medium">
                               {dist.percentage}%
                             </span>
                           </div>
@@ -530,7 +592,10 @@ export default function ReviewsPage() {
                       </div>
                     </>
                   ) : (
-                    <div className="text-center py-4">
+                    <div className="text-center py-12 px-4">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                        <Award className="h-8 w-8 text-muted-foreground/50" />
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         No review statistics available
                       </p>

@@ -13,7 +13,6 @@ import {
   Edit,
   Share,
   MessageSquare,
-  ArrowLeft,
   Settings,
   Building,
   Clock,
@@ -122,25 +121,14 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
   };
 
   return (
-    <div className="bg-card border-b">
-      <div className="container px-4 py-8">
-        {/* Back Navigation */}
-        <div className="mb-6">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Link>
-        </div>
-
-        <Card>
-          <CardContent className="p-8">
+    <div className="bg-gradient-to-br from-primary/5 via-background to-primary/10 border-b">
+      <div className="container px-3 sm:px-4 md:px-6 py-6 sm:py-8 md:py-10">
+        <Card className="border-2 shadow-lg">
+          <CardContent className="p-5 sm:p-6 md:p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
               {/* Avatar and Basic Info */}
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-6">
-                <Avatar className="h-32 w-32 ring-2 ring-black">
+                <Avatar className="h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 border-4 border-primary/20 shadow-lg">
                   <AvatarImage
                     src={
                       hasBusiness && profile?.business_logo
@@ -170,23 +158,23 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
 
                 <div className="flex flex-col gap-3 text-center md:text-left">
                   <div className="flex flex-col items-center gap-2 md:flex-row md:items-center md:gap-3">
-                    <h1 className="font-heading text-3xl font-bold">
+                    <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold">
                       {hasBusiness && profile?.company_name
                         ? profile.company_name
                         : user.name || "User"}
                     </h1>
                     {user.verified && (
-                      <>
-                        <Shield className="h-6 w-6 text-primary" />
-                        <span className="sr-only">Verified Profile</span>
-                      </>
+                      <Badge className="bg-green-500 hover:bg-green-600 text-white border-0">
+                        <Shield className="h-3.5 w-3.5 mr-1.5" />
+                        Verified
+                      </Badge>
                     )}
                   </div>
 
                   {hasBusiness && profile?.company_name && (
                     <div className="flex items-center justify-center gap-2 text-muted-foreground md:justify-start">
-                      <Building className="h-4 w-4" />
-                      <span className="text-sm">Owned by {user.name}</span>
+                      <Building className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Owned by {user.name}</span>
                     </div>
                   )}
 
@@ -203,11 +191,11 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                     {getRoleBadge(user.role)}
 
                     {user.rating && (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-medium">{user.rating}</span>
+                        <span className="font-bold text-sm">{user.rating}</span>
                         {user.completedJobs && (
-                          <span className="text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             ({user.completedJobs} jobs)
                           </span>
                         )}
@@ -220,27 +208,27 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
               {/* Profile Details */}
               <div className="flex-1 space-y-4">
                 {user.bio && (
-                  <p className="text-muted-foreground leading-relaxed max-w-2xl">
+                  <p className="text-muted-foreground leading-relaxed max-w-2xl text-sm sm:text-base">
                     {user.bio}
                   </p>
                 )}
 
                 <div className="flex flex-col gap-3 sm:gap-4">
-                  <div className="flex items-start gap-3 text-muted-foreground">
-                    <MapPin className="mt-1 h-4 w-4" />
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                    <MapPin className="mt-0.5 h-4 w-4 text-primary flex-shrink-0" />
                     <span className="text-sm leading-relaxed whitespace-pre-line">
                       {user.location}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                    <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
                     <span className="text-sm">
                       Joined {formatJoinDate(user.joinDate)}
                     </span>
                   </div>
                   {hasBusiness && profile?.business_hours && (
-                    <div className="flex items-center gap-3 text-muted-foreground">
-                      <Clock className="h-4 w-4" />
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
+                      <Clock className="h-4 w-4 text-primary flex-shrink-0" />
                       <span className="text-sm">
                         Business Hours: {profile.business_hours}
                       </span>
@@ -253,8 +241,8 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-3 pt-6 md:flex-row md:items-center">
-              <Button size="lg" className="w-full md:w-auto" asChild>
+            <div className="flex flex-col gap-3 pt-6 border-t md:flex-row md:items-center">
+              <Button size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all" asChild>
                 <Link href="/settings">
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Profile
@@ -264,7 +252,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full md:w-auto bg-transparent"
+                className="w-full md:w-auto border-2 hover:bg-muted"
                 asChild
               >
                 <Link href="/settings">
