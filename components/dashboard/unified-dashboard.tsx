@@ -236,19 +236,6 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="space-y-8">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">Loading dashboard...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="space-y-8">
@@ -263,50 +250,51 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 md:space-y-8">
       {/* Header with Role Switcher */}
-      <header className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <header className="flex flex-col gap-3 sm:gap-4 md:gap-6">
+        <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="font-heading text-3xl md:text-4xl font-bold text-foreground">
+            <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
               Welcome back, {user.name ? user.name.split(" ")[0] : "User"}!
             </h1>
-            <p className="text-muted-foreground mt-2">{config.subtitle}</p>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">{config.subtitle}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Removed Bell Notification Button */}
             <Button
               size="lg"
-              className="w-fit shadow-lg hover:shadow-xl transition-all duration-200"
+              className="w-full sm:w-fit shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
               onClick={() => handleQuickAction(config.primaryAction.toLowerCase().replace(" ", "-"), activeRole)}
             >
-              <PrimaryIcon className="mr-2 h-5 w-5" />
-              {config.primaryAction}
+              <PrimaryIcon className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden sm:inline">{config.primaryAction}</span>
+              <span className="sm:hidden">Browse</span>
             </Button>
           </div>
         </div>
 
         {/* Role Switcher Tabs */}
         <Tabs value={activeRole} onValueChange={setActiveRole} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 lg:w-fit">
-            <TabsTrigger value="worker" className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              Member
+          <TabsList className="grid w-full grid-cols-3 lg:w-fit gap-1 sm:gap-2">
+            <TabsTrigger value="worker" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Briefcase className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">Member</span>
             </TabsTrigger>
-            <TabsTrigger value="recruiter" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Employer
+            <TabsTrigger value="recruiter" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">Employer</span>
             </TabsTrigger>
-            <TabsTrigger value="buyer" className="flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4" />
-              Trader
+            <TabsTrigger value="buyer" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">Trader</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Worker Dashboard */}
-          <TabsContent value="worker" className="space-y-6 mt-6">
+          <TabsContent value="worker" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             {/* Stats Grid */}
-            <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <section className="grid gap-3 sm:gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
               <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-blue-600 dark:text-blue-400">Active Jobs</CardTitle>
@@ -315,7 +303,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-900 dark:text-blue-300">{stats?.worker?.acceptedJobs || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-blue-900 dark:text-blue-300">{stats?.worker?.acceptedJobs || 0}</div>
                   <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">Currently working</p>
                 </CardContent>
               </Card>
@@ -328,7 +316,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-900 dark:text-green-300">{stats?.worker?.activeApplications || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-300">{stats?.worker?.activeApplications || 0}</div>
                   <p className="text-xs text-green-500 dark:text-green-400 mt-1">Total applications</p>
                 </CardContent>
               </Card>
@@ -341,7 +329,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-900 dark:text-purple-300">{stats?.user?.trust_score || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-purple-900 dark:text-purple-300">{stats?.user?.trust_score || 0}</div>
                   <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">Your reputation</p>
                 </CardContent>
               </Card>
@@ -354,13 +342,13 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-amber-900 dark:text-amber-300">{stats?.reviewsReceived || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-amber-900 dark:text-amber-300">{stats?.reviewsReceived || 0}</div>
                   <p className="text-xs text-amber-500 dark:text-amber-400 mt-1">Reviews received</p>
                 </CardContent>
               </Card>
             </section>
 
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-3">
               {/* Recent Jobs */}
               <section className="lg:col-span-2">
                 <Card>
@@ -487,9 +475,9 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
           </TabsContent>
 
           {/* Recruiter Dashboard */}
-          <TabsContent value="recruiter" className="space-y-6 mt-6">
+          <TabsContent value="recruiter" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             {/* Stats Grid */}
-            <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <section className="grid gap-3 sm:gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
               <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-blue-600 dark:text-blue-400">Active Jobs</CardTitle>
@@ -498,7 +486,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-900 dark:text-blue-300">{stats?.recruiter?.activeJobs || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-blue-900 dark:text-blue-300">{stats?.recruiter?.activeJobs || 0}</div>
                   <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">Currently posted</p>
                 </CardContent>
               </Card>
@@ -511,7 +499,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-900 dark:text-green-300">{stats?.recruiter?.totalApplications || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-300">{stats?.recruiter?.totalApplications || 0}</div>
                   <p className="text-xs text-green-500 dark:text-green-400 mt-1">All applications</p>
                 </CardContent>
               </Card>
@@ -524,7 +512,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-emerald-900 dark:text-emerald-300">{(stats?.recruiter as any)?.hiredWorkers || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-emerald-900 dark:text-emerald-300">{(stats?.recruiter as any)?.hiredWorkers || 0}</div>
                   <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-1">Accepted applications</p>
                 </CardContent>
               </Card>
@@ -537,13 +525,13 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-900 dark:text-purple-300">{stats?.reviewsReceived || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-purple-900 dark:text-purple-300">{stats?.reviewsReceived || 0}</div>
                   <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">Reviews received</p>
                 </CardContent>
               </Card>
             </section>
 
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-3">
               {/* Active Job Postings */}
               <section className="lg:col-span-2">
                 <Card>
@@ -678,9 +666,9 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
           </TabsContent>
 
           {/* Buyer Dashboard */}
-          <TabsContent value="buyer" className="space-y-6 mt-6">
+          <TabsContent value="buyer" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             {/* Stats Grid */}
-            <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <section className="grid gap-3 sm:gap-4 md:gap-6 md:grid-cols-2 lg:grid-cols-4">
               <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium text-blue-600 dark:text-blue-400">Active Orders</CardTitle>
@@ -689,7 +677,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-900 dark:text-blue-300">{stats?.buyer?.pendingOrders || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-blue-900 dark:text-blue-300">{stats?.buyer?.pendingOrders || 0}</div>
                   <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">Currently processing</p>
                 </CardContent>
               </Card>
@@ -702,7 +690,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-green-900 dark:text-green-300">{stats?.buyer?.totalOrders || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-green-900 dark:text-green-300">{stats?.buyer?.totalOrders || 0}</div>
                   <p className="text-xs text-green-500 dark:text-green-400 mt-1">All time orders</p>
                 </CardContent>
               </Card>
@@ -715,7 +703,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-900 dark:text-purple-300">{stats?.seller?.activeProducts || 0}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-purple-900 dark:text-purple-300">{stats?.seller?.activeProducts || 0}</div>
                   <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">Active listings</p>
                 </CardContent>
               </Card>
@@ -728,7 +716,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-emerald-900 dark:text-emerald-300">₱{(stats?.seller?.totalEarnings || 0).toLocaleString()}</div>
+                  <div className="text-2xl sm:text-3xl font-bold text-emerald-900 dark:text-emerald-300">₱{(stats?.seller?.totalEarnings || 0).toLocaleString()}</div>
                   <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-1">From sales</p>
                 </CardContent>
               </Card>
@@ -833,9 +821,9 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
               </Card>
             </section>
 
-            <div className="flex gap-6 lg:flex-row">
+            <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 md:gap-6">
               {/* Left Column - Orders and Sales */}
-              <div className="flex-1 space-y-6">
+              <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6">
                 {/* Recent Orders */}
                 <section>
                 <Card>
@@ -998,7 +986,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
               </div>
 
               {/* Featured Products */}
-              <section className="lg:w-80">
+              <section className="w-full lg:w-80">
                 <Card className="h-full">
                   <CardHeader>
                     <CardTitle className="font-heading">Featured Products</CardTitle>

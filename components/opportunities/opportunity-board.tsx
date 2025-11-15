@@ -246,7 +246,7 @@ export function OpportunityBoard() {
   };
 
   return (
-    <div className="flex gap-4 lg:gap-6">
+    <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 md:gap-6">
       {/* Desktop Filter Sidebar */}
       <aside className="hidden lg:block w-64 flex-shrink-0">
         <div className="sticky top-4">
@@ -255,24 +255,24 @@ export function OpportunityBoard() {
       </aside>
 
       {/* Main Content */}
-      <section className="flex-1 space-y-4 sm:space-y-6" aria-label="Job Opportunities">
+      <section className="flex-1 space-y-3 sm:space-y-4 md:space-y-6" aria-label="Job Opportunities">
         {/* Sort and View Options */}
-        <header className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
+        <header className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="font-heading text-lg sm:text-xl font-semibold">
+            <h2 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold">
               {total} Job Opportunities
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Showing jobs matching your profile and preferences
             </p>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Mobile Filter Button */}
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="lg:hidden">
-                  <Filter className="h-4 w-4 mr-2" />
+                <Button variant="outline" size="sm" className="lg:hidden text-xs sm:text-sm">
+                  <Filter className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Filters
                 </Button>
               </SheetTrigger>
@@ -285,7 +285,7 @@ export function OpportunityBoard() {
             </Sheet>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-32 sm:w-48">
+              <SelectTrigger className="w-28 sm:w-36 md:w-48 text-xs sm:text-sm">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -303,14 +303,14 @@ export function OpportunityBoard() {
         <section aria-label="Job Listings">
           <div className="space-y-3 sm:space-y-4 max-h-[900px] overflow-y-auto pr-1 sm:pr-2">
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading opportunities...</p>
+          <div className="text-center py-8 sm:py-12">
+            <p className="text-sm sm:text-base text-muted-foreground">Loading opportunities...</p>
           </div>
         ) : jobs.length === 0 ? (
-          <div className="text-center py-12">
-            <Search className="mx-auto h-12 w-12 text-muted-foreground opacity-30" />
-            <h3 className="mt-4 text-lg font-medium">No matching jobs found</h3>
-            <p className="text-muted-foreground mt-2">
+          <div className="text-center py-8 sm:py-12">
+            <Search className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground opacity-30" />
+            <h3 className="mt-4 text-base sm:text-lg font-medium">No matching jobs found</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2 px-4">
               Try adjusting your search or location filters to find more
               opportunities
             </p>
@@ -319,16 +319,16 @@ export function OpportunityBoard() {
           jobs.map((job) => (
             <article key={job.id} className="hover:shadow-md transition-shadow">
               <Card className="relative">
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex gap-4">
+                <CardContent className="p-3 sm:p-4 md:p-6">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     {/* Company Logo */}
-                    <div className="flex-shrink-0">
-                      <Avatar className="h-12 w-12 md:h-16 md:w-16">
+                    <div className="flex-shrink-0 flex items-start">
+                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16">
                         <AvatarImage
                           src={job.companyLogo || "/placeholder.svg"}
                           alt={job.company}
                         />
-                        <AvatarFallback className="bg-black text-white">
+                        <AvatarFallback className="bg-black text-white text-xs sm:text-sm">
                           {job.company
                             ? job.company
                                 .split(" ")
@@ -340,22 +340,22 @@ export function OpportunityBoard() {
                     </div>
 
                     {/* Job Details */}
-                    <div className="flex-1 min-w-0 space-y-3">
+                    <div className="flex-1 min-w-0 space-y-2 sm:space-y-3">
                       {/* Header with Title, Company, Rating, and Bookmark */}
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start justify-between gap-2 sm:gap-4">
                         <div className="flex-1 min-w-0">
                           <Link href={`/opportunities/${job.id}`}>
-                            <h3 className="font-heading text-lg md:text-xl font-semibold hover:text-primary transition-colors mb-1">
+                            <h3 className="font-heading text-base sm:text-lg md:text-xl font-semibold hover:text-primary transition-colors mb-1 line-clamp-2">
                               {job.title}
                             </h3>
                           </Link>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-muted-foreground">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs sm:text-sm font-medium text-muted-foreground">
                               {job.company || "Not specified"}
                             </span>
                             <div className="flex items-center gap-1">
                               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              <span className="text-sm text-muted-foreground">
+                              <span className="text-xs sm:text-sm text-muted-foreground">
                                 {job.companyRating || 0}
                               </span>
                             </div>
@@ -363,16 +363,16 @@ export function OpportunityBoard() {
                         </div>
 
                         {/* Bookmark and Report Icons - Top Right */}
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleSaveJob(job.id)}
-                            className="flex-shrink-0 h-8 w-8 p-0"
+                            className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 p-0"
                             aria-label="Save job"
                           >
                             <Bookmark
-                              className={`h-4 w-4 ${
+                              className={`h-3 w-3 sm:h-4 sm:w-4 ${
                                 savedJobs.includes(job.id) ? "fill-current text-primary" : ""
                               }`}
                             />
@@ -381,44 +381,44 @@ export function OpportunityBoard() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleReportClick(job.id)}
-                            className="flex-shrink-0 h-8 w-8 p-0"
+                            className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 p-0"
                             aria-label="Report job"
                           >
-                            <Flag className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                            <Flag className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground hover:text-destructive" />
                           </Button>
                         </div>
                       </div>
 
                       {/* Job Description */}
-                      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2">
                         {job.description || "No description available."}
                       </p>
 
                       {/* Job Meta Information */}
-                      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <span>{job.location || "Not specified"}</span>
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{job.location || "Not specified"}</span>
                         </div>
 
                         <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{job.type || "Not specified"}</span>
+                          <Clock className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{job.type || "Not specified"}</span>
                         </div>
 
                         <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
+                          <Calendar className="h-3 w-3 flex-shrink-0" />
                           <span>Posted {formatRelativeTime(job.postedDate)}</span>
                         </div>
 
                         <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
+                          <Users className="h-3 w-3 flex-shrink-0" />
                           <span>{job.applicants || 0} applicants</span>
                         </div>
                       </div>
 
                       {/* Tags: Priority, Pay Rate, Skills */}
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         <Badge
                           variant={getUrgencyColor(job.urgency || "low")}
                           className="text-xs"
@@ -446,7 +446,7 @@ export function OpportunityBoard() {
                       {/* Action Buttons */}
                       <div className="flex flex-col sm:flex-row gap-2 pt-2">
                         {user && job.recruiterId && String(job.recruiterId) === String(user.id) ? (
-                          <Button className="w-full sm:flex-1" variant="outline" disabled>
+                          <Button className="w-full sm:flex-1 text-xs sm:text-sm" variant="outline" disabled>
                             Your Job Posting
                           </Button>
                         ) : (
@@ -454,7 +454,7 @@ export function OpportunityBoard() {
                             href={`/opportunities/${job.id}`}
                             className="flex-1"
                           >
-                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm">
                               Apply Now
                             </Button>
                           </Link>
@@ -463,9 +463,9 @@ export function OpportunityBoard() {
                         <Link href={`/opportunities/${job.id}`} className="sm:w-auto">
                           <Button
                             variant="outline"
-                            className="w-full sm:w-auto"
+                            className="w-full sm:w-auto text-xs sm:text-sm"
                           >
-                            <ExternalLink className="mr-2 h-4 w-4" />
+                            <ExternalLink className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                             View Details
                           </Button>
                         </Link>

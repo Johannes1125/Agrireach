@@ -13,7 +13,9 @@ export default async function OpportunitiesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <OpportunityBoard />
+      <div className="container px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
+        <OpportunityBoard />
+      </div>
     </div>
   );
 }

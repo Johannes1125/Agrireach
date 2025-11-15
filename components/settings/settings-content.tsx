@@ -522,41 +522,41 @@ export function SettingsContent({ user }: SettingsContentProps) {
   };
 
   return (
-    <Tabs defaultValue="profile" className="space-y-4 sm:space-y-6">
-      <TabsList className="grid w-full grid-cols-3 grid-rows-2 gap-2 h-auto sm:grid-cols-6 sm:grid-rows-1">
-        <TabsTrigger value="profile" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+    <Tabs defaultValue="profile" className="space-y-3 sm:space-y-4 md:space-y-6">
+      <TabsList className="grid w-full grid-cols-3 grid-rows-2 gap-1.5 sm:gap-2 h-auto sm:grid-cols-6 sm:grid-rows-1">
+        <TabsTrigger value="profile" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-2.5">
           <Bell className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
           <span>Profile</span>
         </TabsTrigger>
-        <TabsTrigger value="notifications" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+        <TabsTrigger value="notifications" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-2.5">
           <Shield className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
           <span>Notifications</span>
         </TabsTrigger>
-        <TabsTrigger value="privacy" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+        <TabsTrigger value="privacy" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-2.5">
           <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
           <span>Privacy</span>
         </TabsTrigger>
-        <TabsTrigger value="business" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+        <TabsTrigger value="business" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-2.5">
           <Briefcase className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
           <span>Business</span>
         </TabsTrigger>
-        <TabsTrigger value="billing" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+        <TabsTrigger value="billing" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-2.5">
           <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
           <span>Billing</span>
         </TabsTrigger>
-        <TabsTrigger value="account" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm">
+        <TabsTrigger value="account" className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 sm:py-2.5">
           <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
           <span>Account</span>
         </TabsTrigger>
       </TabsList>
 
       {/* Profile Settings */}
-      <TabsContent value="profile" className="space-y-4 sm:space-y-6">
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+      <TabsContent value="profile" className="space-y-3 sm:space-y-4 md:space-y-6">
+        <div className="grid gap-3 sm:gap-4 md:gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-3 sm:space-y-4 md:space-y-6">
             {/* Basic Information */}
             <Card>
-              <CardHeader className="p-4 sm:p-6">
+              <CardHeader className="p-3 sm:p-4 md:p-6">
                 <CardTitle className="font-heading text-base sm:text-lg">
                   Basic Information
                 </CardTitle>
@@ -564,8 +564,8 @@ export function SettingsContent({ user }: SettingsContentProps) {
                   Update your personal details and contact information
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 p-4 sm:p-6">
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <Input
@@ -639,15 +639,15 @@ export function SettingsContent({ user }: SettingsContentProps) {
 
             {/* Role Selection */}
             <Card>
-              <CardHeader className="p-4 sm:p-6">
+              <CardHeader className="p-3 sm:p-4 md:p-6">
                 <CardTitle className="font-heading text-base sm:text-lg">Platform Roles</CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
                   Select all roles that apply to you - you can have multiple
                   roles at once
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 p-4 sm:p-6">
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                   {(["worker", "recruiter", "buyer"] as const).map((role) => {
                     const isSelected = selectedRoles.includes(role);
                     return (
@@ -712,14 +712,14 @@ export function SettingsContent({ user }: SettingsContentProps) {
               return isWorker;
             })() && (
               <Card>
-                <CardHeader className="p-4 sm:p-6">
+                <CardHeader className="p-3 sm:p-4 md:p-6">
                   <CardTitle className="font-heading text-base sm:text-lg">My Skills</CardTitle>
                   <CardDescription className="text-xs sm:text-sm">
                     Add your skills with proficiency levels to get better job matches. 
                     Jobs matching your skills will be prioritized based on your skill levels.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-3 sm:space-y-4 md:space-y-6">
                   {/* Selected Skills */}
                   {workerSkills.length > 0 && (
                     <div className="space-y-3">
@@ -772,14 +772,14 @@ export function SettingsContent({ user }: SettingsContentProps) {
           </div>
 
           {/* Profile Picture */}
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-3 sm:space-y-4 md:space-y-6">
             <Card>
-              <CardHeader className="p-4 sm:p-6">
+              <CardHeader className="p-3 sm:p-4 md:p-6">
                 <CardTitle className="font-heading text-base sm:text-lg">Profile Picture</CardTitle>
                 <CardDescription className="text-xs sm:text-sm">Upload a professional photo</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
-                <div className="flex flex-col items-center gap-4">
+              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
+                <div className="flex flex-col items-center gap-3 sm:gap-4">
                   <Avatar className="h-32 w-32">
                     <AvatarImage
                       src={formData.avatar || "/placeholder.svg"}
@@ -855,13 +855,13 @@ export function SettingsContent({ user }: SettingsContentProps) {
             </Card>
 
             <Card>
-              <CardHeader className="p-4 sm:p-6">
+              <CardHeader className="p-3 sm:p-4 md:p-6">
                 <CardTitle className="font-heading text-base sm:text-lg">Account Verification</CardTitle>
                 <CardDescription className="text-xs sm:text-sm">
                   Verified profiles build more trust with employers and buyers.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+              <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   {(() => {
                     switch (verificationStatus) {
@@ -942,9 +942,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
       </TabsContent>
 
       {/* Notification Settings */}
-      <TabsContent value="notifications" className="space-y-4 sm:space-y-6">
+      <TabsContent value="notifications" className="space-y-3 sm:space-y-4 md:space-y-6">
         <Card>
-          <CardHeader className="p-4 sm:p-6">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
             <CardTitle className="font-heading text-base sm:text-lg">
               Notification Preferences
             </CardTitle>
@@ -952,8 +952,8 @@ export function SettingsContent({ user }: SettingsContentProps) {
               Choose how you want to be notified about important updates
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
-            <div className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
+            <div className="space-y-3 sm:space-y-4">
               <h4 className="font-medium">Communication Channels</h4>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -1037,7 +1037,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <h4 className="font-medium">Content Preferences</h4>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -1129,16 +1129,16 @@ export function SettingsContent({ user }: SettingsContentProps) {
       </TabsContent>
 
       {/* Privacy Settings */}
-      <TabsContent value="privacy" className="space-y-4 sm:space-y-6">
+      <TabsContent value="privacy" className="space-y-3 sm:space-y-4 md:space-y-6">
         <Card>
-          <CardHeader className="p-4 sm:p-6">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
             <CardTitle className="font-heading text-base sm:text-lg">Privacy Settings</CardTitle>
             <CardDescription className="text-xs sm:text-sm">
               Control who can see your information and how it's used
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
-            <div className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
+            <div className="space-y-3 sm:space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="profile-visibility">Profile Visibility</Label>
                 <Select
@@ -1265,9 +1265,9 @@ export function SettingsContent({ user }: SettingsContentProps) {
       </TabsContent>
 
       {/* Billing Settings */}
-      <TabsContent value="billing" className="space-y-4 sm:space-y-6">
+      <TabsContent value="billing" className="space-y-3 sm:space-y-4 md:space-y-6">
         <Card>
-          <CardHeader className="p-4 sm:p-6">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
             <CardTitle className="font-heading text-base sm:text-lg">
               Billing & Subscription
             </CardTitle>
@@ -1275,7 +1275,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               Manage your payment methods and subscription
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
             <div className="p-4 bg-muted/50 rounded-lg">
               <h4 className="font-medium mb-2">Current Plan: Free</h4>
               <p className="text-sm text-muted-foreground mb-4">
@@ -1285,7 +1285,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               <Button>Upgrade to Premium</Button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <h4 className="font-medium">Payment Methods</h4>
               <div className="p-4 border rounded-lg">
                 <p className="text-sm text-muted-foreground">
@@ -1297,7 +1297,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <h4 className="font-medium">Billing History</h4>
               <div className="p-4 border rounded-lg">
                 <p className="text-sm text-muted-foreground">
@@ -1310,15 +1310,15 @@ export function SettingsContent({ user }: SettingsContentProps) {
       </TabsContent>
 
       {/* Business Settings */}
-      <TabsContent value="business" className="space-y-4 sm:space-y-6">
+      <TabsContent value="business" className="space-y-3 sm:space-y-4 md:space-y-6">
         <Card>
-          <CardHeader className="p-4 sm:p-6">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
             <CardTitle className="font-heading text-base sm:text-lg">Business Information</CardTitle>
             <CardDescription className="text-xs sm:text-sm">
               Manage your business profile and company details
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div>
                 <Label htmlFor="company-name">Company Name</Label>
@@ -1582,7 +1582,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
         </Card>
 
         <Card>
-          <CardHeader className="p-4 sm:p-6">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
             <CardTitle className="font-heading text-base sm:text-lg">Business Logo</CardTitle>
             <CardDescription className="text-xs sm:text-sm">
               Upload your company logo for professional branding
@@ -1623,10 +1623,10 @@ export function SettingsContent({ user }: SettingsContentProps) {
       </TabsContent>
 
       {/* Account Settings */}
-      <TabsContent value="account" className="space-y-4 sm:space-y-6">
+      <TabsContent value="account" className="space-y-3 sm:space-y-4 md:space-y-6">
         {/* Appearance/Dark Mode card */}
         <Card>
-          <CardHeader className="p-4 sm:p-6">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
             <CardTitle className="font-heading flex items-center gap-2 text-base sm:text-lg">
               <Moon className="h-4 w-4 sm:h-5 sm:w-5" />
               Appearance
@@ -1635,7 +1635,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               Customize how AgriReach looks on your device
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="dark-mode">Dark Mode</Label>
@@ -1746,14 +1746,14 @@ export function SettingsContent({ user }: SettingsContentProps) {
         </Card>
 
         <Card>
-          <CardHeader className="p-4 sm:p-6">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
             <CardTitle className="font-heading text-base sm:text-lg">Account Security</CardTitle>
             <CardDescription className="text-xs sm:text-sm">
               Manage your account security and data preferences
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
-            <div className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
+            <div className="space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between">
                 {/* Two-Factor Authentication removed */}
               </div>
@@ -1799,7 +1799,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
         </Card>
 
         <Card className="border-destructive/50">
-          <CardHeader className="p-4 sm:p-6">
+          <CardHeader className="p-3 sm:p-4 md:p-6">
             <CardTitle className="font-heading text-destructive text-base sm:text-lg">
               Danger Zone
             </CardTitle>
@@ -1807,7 +1807,7 @@ export function SettingsContent({ user }: SettingsContentProps) {
               Irreversible actions that affect your account
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 p-4 sm:p-6 pt-0">
+          <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6 pt-0">
             <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg">
               <div>
                 <h4 className="font-medium">Delete Account</h4>
