@@ -27,11 +27,8 @@ const Marker = dynamic(
 );
 
 import type { LeafletMouseEvent } from "leaflet";
-
-// Import Leaflet CSS dynamically
-if (typeof window !== "undefined") {
-  import("leaflet/dist/leaflet.css");
-}
+// Import Leaflet CSS
+import "leaflet/dist/leaflet.css";
 
 export interface PhilippineAddress {
   region: string
@@ -795,10 +792,10 @@ export function PhilippineAddressSelector({
                 {typeof window !== "undefined" && MapContainer && (
                   <MapContainer
                     key={mapKey}
-                    center={mapCoordinates || [14.5995, 120.9842]} // Default to Manila
+                    center={mapCoordinates ? [mapCoordinates.lat, mapCoordinates.lng] : [14.5995, 120.9842]} // Default to Manila
                     zoom={13}
                     style={{ height: "100%", width: "100%" }}
-                    onClick={handleMapClick}
+                    scrollWheelZoom={true}
                   >
                     <TileLayer
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -808,6 +805,7 @@ export function PhilippineAddressSelector({
                       <Marker position={[mapCoordinates.lat, mapCoordinates.lng]}>
                       </Marker>
                     )}
+                    <MapClickComponent onMapClick={handleMapClick} />
                   </MapContainer>
                 )}
               </div>
@@ -960,3 +958,35 @@ export function formatPhilippineAddress(address: PhilippineAddress): string {
 export function isAddressComplete(address: PhilippineAddress): boolean {
   return !!(address.region && address.province && address.city && address.barangay)
 }
+
+// Component to handle map clicks - must be inside MapContainer
+const MapClickComponent = ({ onMapClick }: { onMapClick: (e: LeafletMouseEvent) => void }) => {
+  const [useMapHook, setUseMapHook] = useState<any>(null);
+  
+  useEffect(() => {
+    import("react-leaflet").then((mod) => {
+      setUseMapHook(() => mod.useMap);
+    });
+  }, []);
+  
+  if (!useMapHook) return null;
+  
+  function InnerComponent() {
+    const map = useMapHook();
+    
+    useEffect(() => {
+      const handleClick = (e: LeafletMouseEvent) => {
+        onMapClick(e);
+      };
+      
+      map.on("click", handleClick);
+      return () => {
+        map.off("click", handleClick);
+      };
+    }, [map, onMapClick]);
+    
+    return null;
+  }
+  
+  return <InnerComponent />;
+};
