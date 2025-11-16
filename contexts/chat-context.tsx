@@ -28,6 +28,7 @@ export interface ChatConversation {
   last_message?: ChatMessage
   last_message_at?: string
   created_at: string
+  unread_count?: number
 }
 
 interface ChatState {
@@ -114,7 +115,7 @@ interface ChatContextType {
   sendMessage: (recipientId: string, content: string, messageType?: 'text' | 'image' | 'file') => Promise<void>
   loadConversations: () => Promise<void>
   loadMessages: (userId: string) => Promise<void>
-  selectConversation: (conversation: ChatConversation) => void
+  selectConversation: (conversation: ChatConversation | null) => void
   searchUsers: (query: string) => Promise<ChatUser[]>
 }
 
@@ -311,7 +312,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user])
 
-  const selectConversation = useCallback((conversation: ChatConversation) => {
+  const selectConversation = useCallback((conversation: ChatConversation | null) => {
     dispatch({ type: 'SET_CURRENT_CONVERSATION', payload: conversation })
     // Don't clear messages here - let ChatWindow handle loading
     // This prevents flickering and allows ChatWindow to manage its own loading state

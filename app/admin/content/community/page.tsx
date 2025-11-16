@@ -253,14 +253,14 @@ export default function CommunityContentPage() {
                             <div className="flex flex-col gap-1.5">
                               <Badge
                                 className={
-                                  post.status === "active"
+                                  (post.status === "active"
                                     ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
                                     : post.status === "pending"
                                       ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
-                                      : "bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800"
+                                      : "bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800") +
+                                  " border-2 capitalize w-fit"
                                 }
                                 variant="outline"
-                                className="border-2 capitalize w-fit"
                               >
                                 {post.status}
                               </Badge>

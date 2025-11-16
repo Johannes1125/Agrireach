@@ -89,7 +89,7 @@ export function ChatList({ onSelectConversation }: ChatListProps = {}) {
               >
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 border-2 border-border">
-                    <AvatarImage src={conversation.other_user.avatar_url} />
+                    <AvatarImage src={conversation.other_user.avatar} />
                     <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                       {conversation.other_user.name?.[0] || 'U'}
                     </AvatarFallback>
@@ -99,14 +99,14 @@ export function ChatList({ onSelectConversation }: ChatListProps = {}) {
                       <p className="text-sm font-medium text-foreground truncate">
                         {conversation.other_user.name}
                       </p>
-                      {conversation.unread_count > 0 && (
+                      {(conversation.unread_count ?? 0) > 0 && (
                         <Badge className="ml-2 bg-primary text-primary-foreground text-xs px-1.5 py-0.5">
                           {conversation.unread_count}
                         </Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {conversation.last_message?.text || 'No messages yet'}
+                      {conversation.last_message?.content || 'No messages yet'}
                     </p>
                     {conversation.last_message?.created_at && (
                       <p className="text-xs text-muted-foreground mt-1">

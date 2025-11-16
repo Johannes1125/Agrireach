@@ -133,7 +133,7 @@ export function ChatWindow({ onBackToConversations }: ChatWindowProps = {} as Ch
             </Button>
           )}
           <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-border flex-shrink-0">
-            <AvatarImage src={currentConversation.other_user.avatar_url || currentConversation.other_user.avatar} />
+            <AvatarImage src={currentConversation.other_user.avatar} />
             <AvatarFallback className="bg-primary/10 text-primary font-semibold">
               {currentConversation.other_user.name?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
@@ -183,7 +183,7 @@ export function ChatWindow({ onBackToConversations }: ChatWindowProps = {} as Ch
               const isOwnMessage = messageSenderId === currentUserId
               
               // Use message ID as key (messages are now deduplicated)
-              const messageId = message.id?.toString() || message._id?.toString() || `temp-${i}-${message.created_at || Date.now()}`
+              const messageId = message.id?.toString() || (message as any)._id?.toString() || `temp-${i}-${message.created_at || Date.now()}`
               
               return (
                 <div
