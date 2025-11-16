@@ -65,15 +65,45 @@ export async function createDeliveryForOrder(orderId: string): Promise<DeliveryS
 
     // Prepare pickup address (seller location)
     let pickupAddress = order.pickup_address;
-    if (!pickupAddress && seller.location) {
+    
+    // Validate and fix pickup address if needed
+    if (pickupAddress) {
+      // Ensure city is present - if missing, try to extract or use fallback
+      if (!pickupAddress.city || pickupAddress.city.trim() === "") {
+        if (seller.location) {
+          // Try to extract city from location string
+          const locationParts = seller.location.split(',');
+          pickupAddress.city = locationParts[0]?.trim() || seller.location || "Unknown";
+        } else {
+          pickupAddress.city = "Unknown";
+        }
+      }
+      
+      // Ensure line1 is present
+      if (!pickupAddress.line1 || pickupAddress.line1.trim() === "") {
+        pickupAddress.line1 = seller.location || "Seller Location";
+      }
+    } else if (seller.location) {
+      // Create pickup address from seller location
+      const locationParts = seller.location.split(',');
       pickupAddress = {
         line1: seller.location,
-        city: seller.location.split(',')[0] || "Unknown",
+        city: locationParts[0]?.trim() || seller.location || "Unknown",
         coordinates: seller.location_coordinates || undefined,
       };
     }
 
-    if (!pickupAddress) {
+    // Final validation - ensure city is never empty
+    if (!pickupAddress || !pickupAddress.city || pickupAddress.city.trim() === "") {
+      // Last resort: use seller location or default
+      pickupAddress = {
+        line1: seller.location || "Seller Location",
+        city: seller.location ? seller.location.split(',')[0]?.trim() || seller.location : "Unknown",
+        coordinates: seller.location_coordinates || undefined,
+      };
+    }
+
+    if (!pickupAddress || !pickupAddress.city || pickupAddress.city.trim() === "") {
       console.error(`[Delivery Setup] No pickup address for order ${orderId}`);
       return { success: false, error: "Seller location is required for delivery" };
     }
