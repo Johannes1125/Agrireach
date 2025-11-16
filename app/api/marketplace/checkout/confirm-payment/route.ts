@@ -7,6 +7,7 @@ import { Payment } from "@/server/models/Payment";
 import { Order } from "@/server/models/Product";
 import { PaymentConfirmationSchema } from "@/server/validators/payment";
 import { retrievePaymentIntent, retrieveSource, retrievePayment, PayMongoError } from "@/lib/paymongo";
+import mongoose from "mongoose";
 
 export async function POST(req: NextRequest) {
   const mm = requireMethod(req, ["POST"]);
@@ -45,28 +46,51 @@ export async function POST(req: NextRequest) {
 
     // Find the payment record
     let payment;
+    console.log('Payment confirmation request:', { payment_intent_id, source_id, payment_id, userId });
+    
     if (payment_intent_id) {
       payment = await Payment.findOne({ 
         paymongo_payment_intent_id: payment_intent_id,
         buyer_id: userId 
       });
+      console.log('Searching by payment_intent_id:', payment_intent_id, 'Found:', !!payment);
     } else if (source_id) {
       payment = await Payment.findOne({ 
         paymongo_source_id: source_id,
         buyer_id: userId 
       });
+      console.log('Searching by source_id:', source_id, 'Found:', !!payment);
     } else if (payment_id) {
-      payment = await Payment.findOne({ 
-        paymongo_payment_id: payment_id,
-        buyer_id: userId 
-      });
+      // Check if payment_id is a valid MongoDB ObjectId (our internal ID)
+      // or a PayMongo payment ID
+      const isMongoId = mongoose.Types.ObjectId.isValid(payment_id);
+      console.log('Payment ID provided:', payment_id, 'Is MongoDB ID:', isMongoId);
+      
+      if (isMongoId) {
+        // Search by MongoDB _id
+        payment = await Payment.findOne({ 
+          _id: payment_id,
+          buyer_id: userId 
+        });
+        console.log('Searching by MongoDB _id:', payment_id, 'Found:', !!payment);
+      } else {
+        // Search by PayMongo payment ID
+        payment = await Payment.findOne({ 
+          paymongo_payment_id: payment_id,
+          buyer_id: userId 
+        });
+        console.log('Searching by paymongo_payment_id:', payment_id, 'Found:', !!payment);
+      }
     } else {
       return jsonError("No payment identifier provided", 400);
     }
 
     if (!payment) {
+      console.error('Payment not found with identifiers:', { payment_intent_id, source_id, payment_id, userId });
       return jsonError("Payment not found", 404);
     }
+    
+    console.log('Payment found:', payment._id, 'Status:', payment.status);
 
     // Check if payment is already processed
     if (payment.status === 'paid') {
