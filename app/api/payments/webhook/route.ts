@@ -111,6 +111,13 @@ async function handlePaymentPaid(paymentData: any) {
         coordinates: seller.location_coordinates || undefined,
       } : undefined;
       
+      // Ensure coordinates are preserved when copying from payment to order
+      const deliveryAddressStructured = payment.delivery_address ? {
+        ...payment.delivery_address,
+        // Explicitly preserve coordinates
+        coordinates: payment.delivery_address.coordinates || undefined
+      } : undefined;
+
       const order = await Order.create({
         buyer_id: payment.buyer_id,
         seller_id: item.seller_id,
@@ -118,7 +125,7 @@ async function handlePaymentPaid(paymentData: any) {
         quantity: item.quantity,
         total_price: item.price * item.quantity,
         delivery_address: payment.delivery_address?.line1 || '',
-        delivery_address_structured: payment.delivery_address,
+        delivery_address_structured: deliveryAddressStructured, // Use the explicitly preserved version
         pickup_address: pickupAddress,
         status: "pending",
         payment_status: "paid",

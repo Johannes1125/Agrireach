@@ -145,6 +145,15 @@ export async function POST(req: NextRequest) {
     console.log("Saving payment with delivery_address:", JSON.stringify(deliveryAddressToSave, null, 2));
     console.log("Coordinates in delivery_address:", deliveryAddressToSave?.coordinates);
 
+    // Validate coordinates are present before saving
+    if (!deliveryAddressToSave?.coordinates) {
+      console.error("⚠️ WARNING: No coordinates in delivery_address_structured! This will cause Lalamove setup to fail.");
+      console.error("Delivery address data:", JSON.stringify(deliveryAddressToSave, null, 2));
+      // Don't fail the payment, but log the warning
+    } else {
+      console.log("✅ Coordinates validated and present in delivery_address_structured");
+    }
+
     // Create payment record
     const payment = new Payment({
       buyer_id: userId,

@@ -253,6 +253,20 @@ export async function POST(req: NextRequest) {
           };
         }
         
+        // Ensure coordinates are preserved when copying from payment to order
+        const deliveryAddressStructured = payment.delivery_address ? {
+          ...payment.delivery_address,
+          // Explicitly preserve coordinates
+          coordinates: payment.delivery_address.coordinates || undefined
+        } : undefined;
+
+        // Log coordinate preservation for debugging
+        if (payment.delivery_address?.coordinates) {
+          console.log(`[Order Creation] ✅ Preserving coordinates from payment:`, payment.delivery_address.coordinates);
+        } else {
+          console.warn(`[Order Creation] ⚠️ No coordinates in payment.delivery_address for order item ${item.product_id}`);
+        }
+
         const order = await Order.create({
           buyer_id: userId,
           seller_id: item.seller_id,
@@ -260,7 +274,7 @@ export async function POST(req: NextRequest) {
           quantity: item.quantity,
           total_price: item.price * item.quantity,
           delivery_address: payment.delivery_address?.line1 || '',
-          delivery_address_structured: payment.delivery_address,
+          delivery_address_structured: deliveryAddressStructured, // Use the explicitly preserved version
           pickup_address: pickupAddress,
           status: "pending",
           payment_status: "paid",

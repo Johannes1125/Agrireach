@@ -131,20 +131,34 @@ export async function autoSetupLalamoveDelivery(orderId: string): Promise<AutoSe
         structured_keys: order.delivery_address_structured ? Object.keys(order.delivery_address_structured) : [],
         has_delivery_address: !!order.delivery_address,
         structured_content: order.delivery_address_structured ? JSON.stringify(order.delivery_address_structured).substring(0, 200) : 'none',
+        // Check if coordinates exist but are nested differently
+        has_coordinates_field: order.delivery_address_structured?.coordinates ? 'YES' : 'NO',
+        coordinates_value: order.delivery_address_structured?.coordinates || 'NONE',
       });
       
       if (order.delivery_address_structured) {
         const addr = order.delivery_address_structured;
-        // Build address string from structured data
-        const parts = [
-          addr.line1,
-          addr.line2,
-          addr.city,
-          addr.state,
-          addr.postal_code,
-          addr.country || "Philippines"
-        ].filter(Boolean);
-        deliveryAddress = parts.join(", ");
+        
+        // Check if line1 already contains a full formatted address (has commas and multiple parts)
+        // If so, use it directly. Otherwise, build from components.
+        if (addr.line1 && addr.line1.includes(',') && addr.line1.split(',').length > 2) {
+          // line1 is already a full formatted address, use it directly
+          deliveryAddress = addr.line1;
+          if (addr.line2) {
+            deliveryAddress = `${addr.line2}, ${deliveryAddress}`;
+          }
+        } else {
+          // Build address from components (line1 is just street address)
+          const parts = [
+            addr.line1,
+            addr.line2,
+            addr.city,
+            addr.state,
+            addr.postal_code,
+            addr.country || "Philippines"
+          ].filter(Boolean);
+          deliveryAddress = parts.join(", ");
+        }
         
         if (addr.coordinates) {
           deliveryCoordinates = addr.coordinates;
