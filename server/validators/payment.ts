@@ -25,7 +25,11 @@ export const DeliveryAddressSchema = z.object({
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State/Province is required'),
   postal_code: z.string().min(1, 'Postal code is required'),
-  country: z.string().default('PH')
+  country: z.string().default('PH'),
+  coordinates: z.object({
+    latitude: z.number(),
+    longitude: z.number()
+  }).optional() // Optional but highly recommended for Lalamove delivery
 })
 
 // Cart item validation
