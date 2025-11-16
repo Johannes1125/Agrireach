@@ -14,6 +14,7 @@ import { useOrdersData } from "@/hooks/use-orders-data"
 import { useFeaturedProductsData } from "@/hooks/use-featured-products-data"
 import { ManageJobModal } from "@/components/dashboard/manage-job-modal"
 import { ManageProductModal } from "@/components/marketplace/manage-product-modal"
+import { OrderTrackingModal } from "@/components/marketplace/order-tracking-modal"
 import { formatDate, formatRelativeTime, cn } from "@/lib/utils"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -54,6 +55,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
   const [manageModalOpen, setManageModalOpen] = useState(false)
   const [manageProductModalOpen, setManageProductModalOpen] = useState(false)
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null)
   const router = useRouter()
   const notifications = useNotifications()
   const { stats, activities, loading, error } = useDashboardData()
@@ -995,23 +997,35 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                                 <div className="font-medium">₱{order.total_price.toLocaleString()}</div>
                                 <div className="text-sm text-muted-foreground">{daysAgo}</div>
                               </div>
-                              <div className="flex gap-2">
-                                <Badge variant={
-                                  order.status === "delivered" ? "default" :
-                                  order.status === "shipped" ? "secondary" :
-                                  order.status === "confirmed" ? "outline" :
-                                  order.status === "cancelled" ? "destructive" :
-                                  "secondary"
-                                }>
-                                  {order.status}
-                                </Badge>
-                                <Badge variant={
-                                  order.payment_status === "paid" ? "default" :
-                                  order.payment_status === "failed" ? "destructive" :
-                                  "secondary"
-                                }>
-                                  {order.payment_status}
-                                </Badge>
+                              <div className="flex flex-col gap-2">
+                                <div className="flex gap-2">
+                                  <Badge variant={
+                                    order.status === "delivered" ? "default" :
+                                    order.status === "shipped" ? "secondary" :
+                                    order.status === "confirmed" ? "outline" :
+                                    order.status === "cancelled" ? "destructive" :
+                                    "secondary"
+                                  }>
+                                    {order.status}
+                                  </Badge>
+                                  <Badge variant={
+                                    order.payment_status === "paid" ? "default" :
+                                    order.payment_status === "failed" ? "destructive" :
+                                    "secondary"
+                                  }>
+                                    {order.payment_status}
+                                  </Badge>
+                                </div>
+                                {/* Track Order button for buyers */}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full sm:w-auto"
+                                  onClick={() => setTrackingOrderId(order._id)}
+                                >
+                                  <Truck className="mr-2 h-4 w-4" />
+                                  Track Order
+                                </Button>
                               </div>
                             </div>
                           </article>
@@ -1075,23 +1089,54 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                                 <div className="font-medium">₱{order.total_price.toLocaleString()}</div>
                                 <div className="text-sm text-muted-foreground">{daysAgo}</div>
                               </div>
-                              <div className="flex gap-2">
-                                <Badge variant={
-                                  order.status === "delivered" ? "default" :
-                                  order.status === "shipped" ? "secondary" :
-                                  order.status === "confirmed" ? "outline" :
-                                  order.status === "cancelled" ? "destructive" :
-                                  "secondary"
-                                }>
-                                  {order.status}
-                                </Badge>
-                                <Badge variant={
-                                  order.payment_status === "paid" ? "default" :
-                                  order.payment_status === "failed" ? "destructive" :
-                                  "secondary"
-                                }>
-                                  {order.payment_status}
-                                </Badge>
+                              <div className="flex flex-col gap-2">
+                                <div className="flex gap-2">
+                                  <Badge variant={
+                                    order.status === "delivered" ? "default" :
+                                    order.status === "shipped" ? "secondary" :
+                                    order.status === "confirmed" ? "outline" :
+                                    order.status === "cancelled" ? "destructive" :
+                                    "secondary"
+                                  }>
+                                    {order.status}
+                                  </Badge>
+                                  <Badge variant={
+                                    order.payment_status === "paid" ? "default" :
+                                    order.payment_status === "failed" ? "destructive" :
+                                    "secondary"
+                                  }>
+                                    {order.payment_status}
+                                  </Badge>
+                                </div>
+                                {/* Confirm Order button for sellers - only show for pending orders with paid status */}
+                                {order.status === "pending" && order.payment_status === "paid" && (
+                                  <Button
+                                    size="sm"
+                                    className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+                                    onClick={async () => {
+                                      try {
+                                        const res = await authFetch(`/api/marketplace/orders/${order._id}`, {
+                                          method: "PUT",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({ status: "confirmed" }),
+                                        });
+                                        if (res.ok) {
+                                          notifications.showSuccess("Order Confirmed", "Order has been confirmed");
+                                          // Refresh orders
+                                          window.location.reload();
+                                        } else {
+                                          const errorData = await res.json().catch(() => ({}));
+                                          notifications.showError("Error", errorData.message || "Failed to confirm order");
+                                        }
+                                      } catch (error: any) {
+                                        notifications.showError("Error", error.message || "Failed to confirm order");
+                                      }
+                                    }}
+                                  >
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Confirm Order
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           </article>

@@ -55,25 +55,45 @@ export async function POST(req: NextRequest) {
     const seller = order.seller_id as any;
     const buyer = order.buyer_id as any;
 
+    // Get quotation details to extract stopIds
+    // According to Lalamove API docs, we need to use stopId from quotation response
+    const { getQuotationDetails } = await import("@/lib/lalamove");
+    let quotationDetails;
+    try {
+      quotationDetails = await getQuotationDetails(quotationId);
+    } catch (err) {
+      console.error("Error getting quotation details:", err);
+      // Fallback: use index-based stopIds if quotation details unavailable
+      quotationDetails = null;
+    }
+
+    // Extract stopIds from quotation (first stop is pickup, rest are delivery)
+    const quotationStops = quotationDetails?.data?.stops || [];
+    const pickupStopId = quotationStops[0]?.stopId || "1";
+    const deliveryStopId = quotationStops[1]?.stopId || "2";
+
     // Prepare Lalamove place order request
+    // According to Lalamove API docs: https://developers.lalamove.com/#place-order
     const placeOrderRequest: LalamovePlaceOrderRequest = {
       quotationId,
       sender: {
-        stopId: "1", // First stop is pickup
+        stopId: pickupStopId, // Use stopId from quotation
         name: senderName || seller.full_name || "Seller",
         phone: senderPhone || seller.phone || "",
       },
       recipients: [
         {
-          stopId: "2", // Second stop is delivery
+          stopId: deliveryStopId, // Use stopId from quotation
           name: recipientName || buyer.full_name || "Buyer",
           phone: recipientPhone || buyer.phone || "",
         },
       ],
+      isPODEnabled: true, // Enable Proof of Delivery for better tracking
       metadata: {
         order_id: String(order._id),
         buyer_id: String(order.buyer_id),
         seller_id: String(order.seller_id),
+        product_id: String(order.product_id),
       },
     };
 

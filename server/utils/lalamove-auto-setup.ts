@@ -178,26 +178,45 @@ export async function autoSetupLalamoveDelivery(orderId: string): Promise<AutoSe
 
     console.log(`[Lalamove Auto-Setup] Quotation received: ${quotationId} for order ${orderId}`);
 
-    // Step 2: Place Lalamove order
+    // Step 2: Get quotation details to extract stopIds
+    // According to Lalamove API docs, we need to use stopId from quotation response
+    const { getQuotationDetails } = await import("@/lib/lalamove");
+    let quotationDetails;
+    try {
+      quotationDetails = await getQuotationDetails(quotationId);
+    } catch (err) {
+      console.error(`[Lalamove Auto-Setup] Error getting quotation details for order ${orderId}:`, err);
+      quotationDetails = null;
+    }
+
+    // Extract stopIds from quotation (first stop is pickup, rest are delivery)
+    const quotationStops = quotationDetails?.data?.stops || [];
+    const pickupStopId = quotationStops[0]?.stopId || "1";
+    const deliveryStopId = quotationStops[1]?.stopId || "2";
+
+    // Step 3: Place Lalamove order
+    // According to Lalamove API docs: https://developers.lalamove.com/#place-order
     console.log(`[Lalamove Auto-Setup] Placing Lalamove order for order ${orderId}`);
     const placeOrderRequest: LalamovePlaceOrderRequest = {
       quotationId,
       sender: {
-        stopId: "1",
+        stopId: pickupStopId, // Use stopId from quotation
         name: seller.full_name || "Seller",
         phone: seller.phone,
       },
       recipients: [
         {
-          stopId: "2",
+          stopId: deliveryStopId, // Use stopId from quotation
           name: buyer.full_name || "Buyer",
           phone: buyer.phone,
         },
       ],
+      isPODEnabled: true, // Enable Proof of Delivery for better tracking
       metadata: {
         order_id: String(order._id),
         buyer_id: String(order.buyer_id),
         seller_id: String(order.seller_id),
+        product_id: String(order.product_id),
       },
     };
 

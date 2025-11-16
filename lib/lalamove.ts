@@ -59,12 +59,16 @@ export interface LalamovePlaceOrderRequest {
     stopId: string;
     name: string;
     phone: string;
+    remarks?: string; // optional
   };
   recipients: Array<{
     stopId: string;
     name: string;
     phone: string;
+    remarks?: string; // optional
   }>;
+  isPODEnabled?: boolean; // optional - enable Proof of Delivery
+  partner?: string; // optional
   metadata?: Record<string, any>;
 }
 
@@ -110,6 +114,7 @@ export async function getQuotation(request: LalamoveQuotationRequest) {
     const path = '/quotations';
     const body = JSON.stringify({
       data: {
+        market: LALAMOVE_MARKET, // Required for proper market routing
         serviceType: request.serviceType,
         specialRequests: request.specialRequests || [],
         language: request.language || 'en',
@@ -188,6 +193,8 @@ export async function placeOrder(request: LalamovePlaceOrderRequest) {
         quotationId: request.quotationId,
         sender: request.sender,
         recipients: request.recipients,
+        isPODEnabled: request.isPODEnabled || false,
+        partner: request.partner,
         metadata: request.metadata || {},
       },
     });
@@ -278,6 +285,72 @@ export async function cancelOrder(orderId: string) {
       throw error;
     }
     throw new LalamoveError(error.message || 'Failed to cancel order');
+  }
+}
+
+/**
+ * Edit order
+ * PATCH /v3/orders/{orderId}
+ * Allows editing order details before pickup
+ */
+export interface LalamoveEditOrderRequest {
+  stops?: Array<{
+    stopId: string;
+    coordinates?: {
+      lat: string;
+      lng: string;
+    };
+    address?: string;
+  }>;
+  recipients?: Array<{
+    stopId: string;
+    name?: string;
+    phone?: string;
+    remarks?: string;
+  }>;
+  sender?: {
+    stopId: string;
+    name?: string;
+    phone?: string;
+  };
+  metadata?: Record<string, any>;
+}
+
+export async function editOrder(orderId: string, request: LalamoveEditOrderRequest) {
+  try {
+    if (!LALAMOVE_API_KEY || !LALAMOVE_SECRET) {
+      throw new LalamoveError('Lalamove API credentials are not configured');
+    }
+
+    const path = `/orders/${orderId}`;
+    const body = JSON.stringify({
+      data: {
+        stops: request.stops,
+        recipients: request.recipients,
+        sender: request.sender,
+        metadata: request.metadata,
+      },
+    });
+
+    const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders('PATCH', path, body),
+      body,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    }
+
+    return await response.json();
+  } catch (error: any) {
+    console.error('Lalamove editOrder error:', error);
+    if (error instanceof LalamoveError) {
+      throw error;
+    }
+    throw new LalamoveError(error.message || 'Failed to edit order');
   }
 }
 

@@ -56,15 +56,43 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           driverDetails = await getDriverDetails(order.lalamove_order_id);
         } catch (err) {
           // Driver details optional
+          console.log("Driver details not available yet:", err);
         }
       }
       
+      // Extract comprehensive tracking information from Lalamove response
+      // According to Lalamove API docs: https://developers.lalamove.com/#order-flow
+      const lalamoveData = lalamoveOrder.data || {};
+      
       trackingInfo = {
-        order_id: lalamoveOrder.data.orderId,
-        status: lalamoveOrder.data.status,
-        tracking_url: order.lalamove_tracking_url || lalamoveOrder.data.shareLink,
-        driver: driverDetails?.data || null,
-        stops: lalamoveOrder.data.stops || [],
+        order_id: lalamoveData.orderId || order.lalamove_order_id,
+        quotation_id: lalamoveData.quotationId || order.lalamove_quotation_id || null,
+        status: lalamoveData.status || order.lalamove_status || "PENDING",
+        tracking_url: order.lalamove_tracking_url || lalamoveData.shareLink || null,
+        driver: driverDetails?.data ? {
+          name: driverDetails.data.name || driverDetails.data.driverName || null,
+          phone: driverDetails.data.phone || driverDetails.data.phoneNumber || null,
+          vehicle: driverDetails.data.vehicle || driverDetails.data.vehicleType || null,
+          plateNumber: driverDetails.data.plateNumber || driverDetails.data.plate || null,
+        } : null,
+        stops: (lalamoveData.stops || []).map((stop: any) => ({
+          stopId: stop.stopId || null,
+          coordinates: stop.coordinates || null,
+          address: stop.address || null,
+          name: stop.name || null,
+          phone: stop.phone || null,
+          status: stop.status || null,
+          POD: stop.POD || null, // Proof of Delivery info if enabled
+        })),
+        distance: lalamoveData.distance || null, // { value: string, unit: string }
+        priceBreakdown: lalamoveData.priceBreakdown || null, // Price breakdown details
+        priorityFee: lalamoveData.priorityFee || null,
+        serviceType: lalamoveData.serviceType || null,
+        specialRequests: lalamoveData.specialRequests || [],
+        metadata: lalamoveData.metadata || null,
+        remarks: lalamoveData.remarks || [], // Array of strings
+        placedAt: lalamoveData.placedAt || lalamoveData.createdAt || order.created_at,
+        pickupTime: lalamoveData.pickupTime || lalamoveData.scheduledAt || null,
       };
     } catch (err) {
       console.error("Error fetching Lalamove tracking:", err);
