@@ -4,6 +4,34 @@ import { useState, useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { MapPin, Navigation, Loader2, Map } from "lucide-react"
+import { toast } from "sonner"
+import dynamic from "next/dynamic"
+
+// Dynamically import Leaflet components to avoid SSR issues
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+);
+
+import type { LeafletMouseEvent } from "leaflet";
+
+// Import Leaflet CSS dynamically
+if (typeof window !== "undefined") {
+  import("leaflet/dist/leaflet.css");
+}
 
 export interface PhilippineAddress {
   region: string
@@ -20,6 +48,7 @@ interface PhilippineAddressSelectorProps {
   showStreetAddress?: boolean
   showZipCode?: boolean
   className?: string
+  showMap?: boolean
 }
 
 // Static Philippine address data
@@ -485,7 +514,8 @@ export function PhilippineAddressSelector({
   onChange,
   showStreetAddress = true,
   showZipCode = true,
-  className = ""
+  className = "",
+  showMap = true
 }: PhilippineAddressSelectorProps) {
   const [selectedRegion, setSelectedRegion] = useState(value?.region || "")
   const [selectedProvince, setSelectedProvince] = useState(value?.province || "")
@@ -497,6 +527,31 @@ export function PhilippineAddressSelector({
   const [provinces, setProvinces] = useState<Array<{code: string, name: string}>>([])
   const [cities, setCities] = useState<Array<{code: string, name: string}>>([])
   const [barangays, setBarangays] = useState<Array<{code: string, name: string}>>([])
+  
+  // Location and map state
+  const [isGettingLocation, setIsGettingLocation] = useState(false)
+  const [mapVisible, setMapVisible] = useState(false)
+  const [mapCoordinates, setMapCoordinates] = useState<{ lat: number; lng: number } | null>(null)
+  const [mapKey, setMapKey] = useState(0)
+
+  // Fix Leaflet marker icon issue in Next.js
+  useEffect(() => {
+    if (typeof window !== "undefined" && showMap) {
+      import("leaflet").then((leafletModule) => {
+        const L = (leafletModule.default || leafletModule) as any;
+        if (L && L.Icon && L.Icon.Default) {
+          delete (L.Icon.Default.prototype as any)._getIconUrl;
+          L.Icon.Default.mergeOptions({
+            iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+            iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+            shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+          });
+        }
+      }).catch((err) => {
+        console.error("Failed to load Leaflet:", err);
+      });
+    }
+  }, [showMap])
 
   // Load provinces when region changes
   useEffect(() => {
@@ -569,8 +624,198 @@ export function PhilippineAddressSelector({
     setSelectedBarangay(value)
   }
 
+  // Get current location using browser geolocation
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser")
+      return
+    }
+
+    setIsGettingLocation(true)
+    toast.info("Getting your location...")
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+        setMapCoordinates({ lat: latitude, lng: longitude })
+        setMapKey(prev => prev + 1)
+
+        try {
+          // Reverse geocode to get address
+          const response = await fetch(
+            `/api/geocoding?action=reverse&lat=${latitude}&lng=${longitude}`
+          )
+          const data = await response.json()
+
+          if (response.ok && data.data) {
+            const addressData = data.data.formatted_address || data.data.address
+            await parseAndSetAddress(addressData, latitude, longitude)
+            toast.success("Location found! Please verify the address details.")
+          } else {
+            toast.error("Could not determine address from location. Please select manually.")
+          }
+        } catch (err) {
+          console.error("Reverse geocoding error:", err)
+          toast.error("Failed to get address from location")
+        } finally {
+          setIsGettingLocation(false)
+        }
+      },
+      (err) => {
+        console.error("Geolocation error:", err)
+        setIsGettingLocation(false)
+        if (err.code === 1) {
+          toast.error("Location access denied. Please enable location permissions.")
+        } else {
+          toast.error("Failed to get your location")
+        }
+      }
+    )
+  }
+
+  // Parse address string and try to match with Philippine address structure
+  const parseAndSetAddress = async (addressString: string, lat?: number, lng?: number) => {
+    // Try to extract region, province, city from the address string
+    const addressLower = addressString.toLowerCase()
+    let matchedRegion = ""
+    let matchedProvince = ""
+    let matchedCity = ""
+    
+    // Try to match region
+    for (const region of PHILIPPINE_REGIONS) {
+      if (addressLower.includes(region.name.toLowerCase()) || 
+          addressLower.includes(region.code.toLowerCase())) {
+        matchedRegion = region.code
+        setSelectedRegion(region.code)
+        break
+      }
+    }
+
+    // Try to match province and city
+    if (matchedRegion) {
+      const provincesData = PHILIPPINE_PROVINCES[matchedRegion] || []
+      for (const province of provincesData) {
+        if (addressLower.includes(province.name.toLowerCase())) {
+          matchedProvince = province.code
+          setSelectedProvince(province.code)
+          
+          // Try to match city
+          const citiesData = PHILIPPINE_CITIES[province.code] || []
+          for (const city of citiesData) {
+            if (addressLower.includes(city.name.toLowerCase())) {
+              matchedCity = city.code
+              setSelectedCity(city.code)
+              break
+            }
+          }
+          break
+        }
+      }
+    }
+
+    // Extract street address if available
+    const parts = addressString.split(',')
+    if (parts.length > 0) {
+      const firstPart = parts[0].trim()
+      if (firstPart && !firstPart.match(/^\d+\.\d+/)) { // Not coordinates
+        setStreetAddress(firstPart)
+      }
+    }
+  }
+
+  // Handle map click
+  const handleMapClick = async (e: LeafletMouseEvent) => {
+    const { lat, lng } = e.latlng
+    setMapCoordinates({ lat, lng })
+    setMapKey(prev => prev + 1)
+
+    try {
+      const response = await fetch(
+        `/api/geocoding?action=reverse&lat=${lat}&lng=${lng}`
+      )
+      const data = await response.json()
+
+      if (response.ok && data.data) {
+        const addressData = data.data.formatted_address || data.data.address
+        await parseAndSetAddress(addressData, lat, lng)
+        toast.success("Location selected! Please verify the address details.")
+      }
+    } catch (err) {
+      console.error("Reverse geocoding error:", err)
+      toast.error("Failed to get address from selected location")
+    }
+  }
+
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* Action buttons */}
+      <div className="flex gap-2 flex-wrap">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={getCurrentLocation}
+          disabled={isGettingLocation}
+          className="flex items-center gap-2"
+        >
+          {isGettingLocation ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Getting location...
+            </>
+          ) : (
+            <>
+              <Navigation className="h-4 w-4" />
+              Use Current Location
+            </>
+          )}
+        </Button>
+        
+        {showMap && (
+          <Dialog open={mapVisible} onOpenChange={setMapVisible}>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Map className="h-4 w-4" />
+                Pick on Map
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh]">
+              <DialogHeader>
+                <DialogTitle>Select Location on Map</DialogTitle>
+                <DialogDescription>
+                  Click on the map to select your delivery location
+                </DialogDescription>
+              </DialogHeader>
+              <div className="h-[500px] w-full rounded-lg overflow-hidden">
+                {typeof window !== "undefined" && MapContainer && (
+                  <MapContainer
+                    key={mapKey}
+                    center={mapCoordinates || [14.5995, 120.9842]} // Default to Manila
+                    zoom={13}
+                    style={{ height: "100%", width: "100%" }}
+                    onClick={handleMapClick}
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    {mapCoordinates && (
+                      <Marker position={[mapCoordinates.lat, mapCoordinates.lng]}>
+                      </Marker>
+                    )}
+                  </MapContainer>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
       {/* Two-column grid for main address fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Region */}

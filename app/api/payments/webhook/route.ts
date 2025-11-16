@@ -3,51 +3,54 @@ import { jsonError, jsonOk } from "@/server/utils/api";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Payment } from "@/server/models/Payment";
 import { Order, Product, CartItem } from "@/server/models/Product";
-import { verifyWebhookSignature, STRIPE_CONFIG } from "@/lib/stripe";
+import { verifyWebhookSignature, PAYMONGO_CONFIG } from "@/lib/paymongo";
 
 export async function POST(req: NextRequest) {
   try {
+    // Get raw body as text (important for signature verification)
     const body = await req.text();
-    const signature = req.headers.get('stripe-signature') || '';
     
-    if (!STRIPE_CONFIG.webhookSecret) {
-      console.error('Stripe webhook secret is not configured');
+    // PayMongo sends signature in 'paymongo-signature' header
+    const signature = req.headers.get('paymongo-signature') || '';
+    
+    if (!PAYMONGO_CONFIG.webhookSecret) {
+      console.error('PayMongo webhook secret is not configured');
       return jsonError('Webhook secret not configured', 500);
     }
 
     // Verify webhook signature
-    let event;
-    try {
-      event = verifyWebhookSignature(body, signature, STRIPE_CONFIG.webhookSecret);
-    } catch (error: any) {
-      console.error('Invalid webhook signature:', error);
+    if (!verifyWebhookSignature(body, signature, PAYMONGO_CONFIG.webhookSecret)) {
+      console.error('Invalid webhook signature');
       return jsonError('Invalid signature', 401);
     }
 
-    console.log(`Received Stripe webhook: ${event.type}`, event.id);
+    // Parse the event
+    const event = JSON.parse(body);
+    console.log(`Received PayMongo webhook: ${event.type}`, event.id);
 
     await connectToDatabase();
 
-    // Handle different webhook events
+    // Handle different webhook events based on what you selected
     switch (event.type) {
-      case 'payment_intent.succeeded':
-        await handlePaymentIntentSucceeded(event.data.object);
+      case 'payment.paid':
+        await handlePaymentPaid(event.data);
         break;
       
-      case 'payment_intent.payment_failed':
-        await handlePaymentIntentFailed(event.data.object);
+      case 'payment.failed':
+        await handlePaymentFailed(event.data);
         break;
       
-      case 'checkout.session.completed':
-        await handleCheckoutSessionCompleted(event.data.object);
+      case 'source.chargeable':
+        await handleSourceChargeable(event.data);
         break;
       
-      case 'checkout.session.async_payment_succeeded':
-        await handleCheckoutSessionAsyncPaymentSucceeded(event.data.object);
+      case 'checkout_session.payment.paid':
+        await handleCheckoutSessionPaymentPaid(event.data);
         break;
       
-      case 'checkout.session.async_payment_failed':
-        await handleCheckoutSessionAsyncPaymentFailed(event.data.object);
+      case 'payment.refunded':
+      case 'payment.refund.updated':
+        await handlePaymentRefunded(event.data);
         break;
       
       default:
@@ -61,16 +64,24 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function handlePaymentIntentSucceeded(paymentIntent: any) {
-  const paymentIntentId = paymentIntent.id;
+/**
+ * Handle payment.paid event
+ * Triggered when a payment is successfully completed
+ */
+async function handlePaymentPaid(paymentData: any) {
+  const paymentId = paymentData.id;
   
   try {
+    // Find payment by PayMongo payment ID
     const payment = await Payment.findOne({ 
-      stripe_payment_intent_id: paymentIntentId 
+      $or: [
+        { paymongo_payment_id: paymentId },
+        { 'metadata.paymongo_payment_id': paymentId }
+      ]
     });
 
     if (!payment) {
-      console.error(`Payment not found for intent: ${paymentIntentId}`);
+      console.error(`Payment not found for PayMongo payment: ${paymentId}`);
       return;
     }
 
@@ -96,7 +107,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
         payment_status: "paid",
         payment_method: payment.payment_method,
         payment_id: payment._id,
-        stripe_payment_intent_id: paymentIntentId
+        paymongo_payment_id: paymentId
       });
       
       createdOrders.push(order._id);
@@ -116,54 +127,135 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
     // Update payment
     payment.status = 'paid';
     payment.paid_at = new Date();
+    payment.paymongo_payment_id = paymentId;
     payment.metadata = {
       ...payment.metadata,
-      order_ids: createdOrders
+      order_ids: createdOrders,
+      paymongo_payment_id: paymentId
     };
-    await payment.addWebhookEvent('payment_intent.succeeded', paymentIntent);
+    await payment.addWebhookEvent('payment.paid', paymentData);
     await payment.save();
 
-    console.log(`Payment ${payment._id} confirmed via webhook`);
+    console.log(`Payment ${payment._id} confirmed via webhook - Orders created: ${createdOrders.length}`);
   } catch (error) {
-    console.error(`Error processing payment intent succeeded: ${error}`);
+    console.error(`Error processing payment.paid: ${error}`);
   }
 }
 
-async function handlePaymentIntentFailed(paymentIntent: any) {
-  const paymentIntentId = paymentIntent.id;
+/**
+ * Handle payment.failed event
+ * Triggered when a payment fails
+ */
+async function handlePaymentFailed(paymentData: any) {
+  const paymentId = paymentData.id;
   
   try {
     const payment = await Payment.findOne({ 
-      stripe_payment_intent_id: paymentIntentId 
+      $or: [
+        { paymongo_payment_id: paymentId },
+        { 'metadata.paymongo_payment_id': paymentId }
+      ]
     });
 
     if (!payment) {
-      console.error(`Payment not found for intent: ${paymentIntentId}`);
+      console.error(`Payment not found for PayMongo payment: ${paymentId}`);
       return;
     }
 
     payment.status = 'failed';
     payment.failed_at = new Date();
-    payment.failure_reason = paymentIntent.last_payment_error?.message || 'Payment failed';
-    await payment.addWebhookEvent('payment_intent.payment_failed', paymentIntent);
+    payment.failure_reason = paymentData.attributes?.failure_message || 
+                            paymentData.attributes?.failure_code || 
+                            'Payment failed';
+    await payment.addWebhookEvent('payment.failed', paymentData);
     await payment.save();
 
     console.log(`Payment ${payment._id} failed via webhook`);
   } catch (error) {
-    console.error(`Error processing payment intent failed: ${error}`);
+    console.error(`Error processing payment.failed: ${error}`);
   }
 }
 
-async function handleCheckoutSessionCompleted(session: any) {
-  const sessionId = session.id;
+/**
+ * Handle source.chargeable event
+ * Triggered when an e-wallet source (GCash, GrabPay) is ready to be charged
+ * We need to create a payment from the source
+ */
+async function handleSourceChargeable(sourceData: any) {
+  const sourceId = sourceData.id;
   
   try {
     const payment = await Payment.findOne({ 
-      stripe_checkout_session_id: sessionId 
+      paymongo_source_id: sourceId 
     });
 
     if (!payment) {
-      console.error(`Payment not found for session: ${sessionId}`);
+      console.error(`Payment not found for source: ${sourceId}`);
+      return;
+    }
+
+    // Check if source is chargeable
+    if (sourceData.attributes?.status !== 'chargeable') {
+      console.log(`Source ${sourceId} is not chargeable yet. Status: ${sourceData.attributes?.status}`);
+      return;
+    }
+
+    // Get payment intent ID
+    const paymentIntentId = payment.paymongo_payment_intent_id;
+    
+    if (!paymentIntentId) {
+      console.error(`No payment intent found for source ${sourceId}`);
+      return;
+    }
+
+    // Create payment from chargeable source
+    const { createPayment } = await import('@/lib/paymongo');
+    const paymongoPayment = await createPayment(paymentIntentId, sourceId);
+    
+    // Update payment record
+    payment.paymongo_payment_id = paymongoPayment.id;
+    payment.status = 'processing';
+    payment.metadata = {
+      ...payment.metadata,
+      paymongo_payment_id: paymongoPayment.id
+    };
+    await payment.addWebhookEvent('source.chargeable', sourceData);
+    await payment.save();
+
+    console.log(`Payment created from source ${sourceId}: ${paymongoPayment.id}`);
+    
+    // Note: The payment.paid event will be triggered separately when payment succeeds
+  } catch (error) {
+    console.error(`Error processing source.chargeable: ${error}`);
+  }
+}
+
+/**
+ * Handle checkout_session.payment.paid event
+ * Triggered when a checkout session payment is completed
+ */
+async function handleCheckoutSessionPaymentPaid(sessionData: any) {
+  const sessionId = sessionData.id;
+  
+  try {
+    // Try to find payment by session metadata or payment ID
+    const paymentId = sessionData.attributes?.metadata?.payment_id;
+    
+    let payment;
+    if (paymentId) {
+      payment = await Payment.findById(paymentId);
+    } else {
+      // Fallback: search by any PayMongo identifiers
+      payment = await Payment.findOne({
+        $or: [
+          { paymongo_payment_intent_id: sessionData.attributes?.payment_intent?.id },
+          { 'metadata.checkout_session_id': sessionId }
+        ]
+      });
+    }
+
+    if (!payment) {
+      console.error(`Payment not found for checkout session: ${sessionId}`);
       return;
     }
 
@@ -172,85 +264,92 @@ async function handleCheckoutSessionCompleted(session: any) {
       return;
     }
 
-    // If payment was successful, create orders
-    if (session.payment_status === 'paid') {
-      const orderItems = payment.metadata?.order_items || [];
-      const createdOrders = [];
+    // Create orders
+    const orderItems = payment.metadata?.order_items || [];
+    const createdOrders = [];
 
-      for (const item of orderItems) {
-        const order = await Order.create({
-          buyer_id: payment.buyer_id,
-          seller_id: item.seller_id,
-          product_id: item.product_id,
-          quantity: item.quantity,
-          total_price: item.price * item.quantity,
-          delivery_address: payment.delivery_address?.line1 || '',
-          delivery_address_structured: payment.delivery_address,
-          status: "pending",
-          payment_status: "paid",
-          payment_method: payment.payment_method,
-          payment_id: payment._id,
-          stripe_checkout_session_id: sessionId
-        });
-        
-        createdOrders.push(order._id);
-        
-        // Update product quantity
-        await Product.findByIdAndUpdate(item.product_id, {
-          $inc: { quantity_available: -item.quantity }
-        });
-        
-        // Remove from cart
-        await CartItem.deleteMany({ 
-          user_id: payment.buyer_id, 
-          product_id: item.product_id 
-        });
-      }
-
-      // Update payment
-      payment.status = 'paid';
-      payment.paid_at = new Date();
-      payment.metadata = {
-        ...payment.metadata,
-        order_ids: createdOrders
-      };
-      await payment.addWebhookEvent('checkout.session.completed', session);
-      await payment.save();
-
-      console.log(`Payment ${payment._id} confirmed via checkout session`);
+    for (const item of orderItems) {
+      const order = await Order.create({
+        buyer_id: payment.buyer_id,
+        seller_id: item.seller_id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        total_price: item.price * item.quantity,
+        delivery_address: payment.delivery_address?.line1 || '',
+        delivery_address_structured: payment.delivery_address,
+        status: "pending",
+        payment_status: "paid",
+        payment_method: payment.payment_method,
+        payment_id: payment._id,
+        paymongo_payment_id: sessionData.attributes?.payment?.id
+      });
+      
+      createdOrders.push(order._id);
+      
+      // Update product quantity
+      await Product.findByIdAndUpdate(item.product_id, {
+        $inc: { quantity_available: -item.quantity }
+      });
+      
+      // Remove from cart
+      await CartItem.deleteMany({ 
+        user_id: payment.buyer_id, 
+        product_id: item.product_id 
+      });
     }
+
+    // Update payment
+    payment.status = 'paid';
+    payment.paid_at = new Date();
+    if (sessionData.attributes?.payment?.id) {
+      payment.paymongo_payment_id = sessionData.attributes.payment.id;
+    }
+    payment.metadata = {
+      ...payment.metadata,
+      order_ids: createdOrders,
+      checkout_session_id: sessionId
+    };
+    await payment.addWebhookEvent('checkout_session.payment.paid', sessionData);
+    await payment.save();
+
+    console.log(`Payment ${payment._id} confirmed via checkout session - Orders created: ${createdOrders.length}`);
   } catch (error) {
-    console.error(`Error processing checkout session completed: ${error}`);
+    console.error(`Error processing checkout_session.payment.paid: ${error}`);
   }
 }
 
-async function handleCheckoutSessionAsyncPaymentSucceeded(session: any) {
-  // Similar to handleCheckoutSessionCompleted
-  await handleCheckoutSessionCompleted(session);
-}
-
-async function handleCheckoutSessionAsyncPaymentFailed(session: any) {
-  const sessionId = session.id;
+/**
+ * Handle payment.refunded and payment.refund.updated events
+ * Triggered when a payment is refunded
+ */
+async function handlePaymentRefunded(paymentData: any) {
+  const paymentId = paymentData.id;
   
   try {
     const payment = await Payment.findOne({ 
-      stripe_checkout_session_id: sessionId 
+      $or: [
+        { paymongo_payment_id: paymentId },
+        { 'metadata.paymongo_payment_id': paymentId }
+      ]
     });
 
     if (!payment) {
-      console.error(`Payment not found for session: ${sessionId}`);
+      console.error(`Payment not found for PayMongo payment: ${paymentId}`);
       return;
     }
 
-    payment.status = 'failed';
-    payment.failed_at = new Date();
-    payment.failure_reason = 'Payment failed';
-    await payment.addWebhookEvent('checkout.session.async_payment_failed', session);
+    payment.status = 'refunded';
+    payment.metadata = {
+      ...payment.metadata,
+      refund_amount: paymentData.attributes?.amount || payment.amount,
+      refund_reason: paymentData.attributes?.reason || 'Refund processed',
+      refund_id: paymentData.attributes?.refund?.id || paymentData.id
+    };
+    await payment.addWebhookEvent('payment.refunded', paymentData);
     await payment.save();
 
-    console.log(`Payment ${payment._id} failed via checkout session`);
+    console.log(`Payment ${payment._id} refunded via webhook`);
   } catch (error) {
-    console.error(`Error processing checkout session async payment failed: ${error}`);
+    console.error(`Error processing payment.refunded: ${error}`);
   }
 }
-

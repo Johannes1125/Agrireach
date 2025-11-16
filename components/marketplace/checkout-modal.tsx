@@ -299,23 +299,37 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
         toast.success("Order placed successfully! Payment will be collected upon delivery.")
         onSuccess()
         onClose()
-      } else if (actualData.payment_type === "checkout") {
-        // For Stripe Checkout (GCash, GrabPay, Card)
+      } else if (actualData.payment_type === "source") {
+        // For PayMongo e-wallet payments (GCash, GrabPay) - redirect to checkout URL
         toast.success("Redirecting to payment...")
         
         // Store cart items in sessionStorage for confirmation later
         sessionStorage.setItem("pending_payment", JSON.stringify({
-          session_id: actualData.session_id,
+          source_id: actualData.source_id,
+          payment_id: actualData.payment_id,
           cart_item_ids: Array.from(selectedItems),
           delivery_address: deliveryAddress,
         }))
 
-        // Redirect to Stripe Checkout
+        // Redirect to PayMongo checkout URL
         if (actualData.checkout_url) {
           window.location.href = actualData.checkout_url
         } else {
           toast.error("Payment URL not available. Please try again.")
         }
+      } else if (actualData.payment_type === "payment_intent") {
+        // For card payments - use PayMongo JS SDK
+        toast.success("Initializing payment...")
+        
+        // Store payment data and redirect to payment page
+        sessionStorage.setItem('paymongo_payment', JSON.stringify({
+          payment_intent_id: actualData.payment_intent_id,
+          client_key: actualData.client_key,
+          payment_id: actualData.payment_id,
+        }))
+        
+        // Redirect to payment processing page
+        window.location.href = `/marketplace/payment/process?payment_id=${actualData.payment_id}`
       } else {
         toast.error("Unknown payment type. Please try again.")
       }
@@ -454,6 +468,7 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
                   onChange={setDeliveryAddress}
                   showStreetAddress={true}
                   showZipCode={true}
+                  showMap={true}
                 />
               </div>
 
@@ -501,7 +516,7 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
                       Payment Information
                     </p>
                     <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                      Your billing details will be used for payment processing with Stripe. 
+                      Your billing details will be used for payment processing with PayMongo. 
                       All transactions are secure and encrypted.
                     </p>
                   </div>
@@ -578,10 +593,10 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
                   <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm text-green-800 dark:text-green-200 font-medium">
-                      Secure Payment via Stripe
+                      Secure Payment via PayMongo
                     </p>
                     <p className="text-sm text-green-700 dark:text-green-300 mt-1">
-                      You'll be redirected to Stripe's secure checkout page to complete your payment.
+                      You'll be redirected to PayMongo's secure checkout page to complete your payment.
                     </p>
                   </div>
                 </div>
