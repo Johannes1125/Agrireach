@@ -58,6 +58,10 @@ export default function PaymentSuccessPage() {
           return
         }
         
+        console.log('Confirming payment with payload:', confirmationPayload)
+        console.log('URL params:', { sourceId, paymentId, paymentIntentId })
+        console.log('SessionStorage:', pendingPayment)
+        
         // Confirm payment with backend
         const res = await authFetch("/api/marketplace/checkout/confirm-payment", {
           method: "POST",

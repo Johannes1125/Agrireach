@@ -55,11 +55,23 @@ export async function POST(req: NextRequest) {
       });
       console.log('Searching by payment_intent_id:', payment_intent_id, 'Found:', !!payment);
     } else if (source_id) {
+      // Try with buyer_id first
       payment = await Payment.findOne({ 
         paymongo_source_id: source_id,
         buyer_id: userId 
       });
-      console.log('Searching by source_id:', source_id, 'Found:', !!payment);
+      console.log('Searching by source_id with buyer_id:', source_id, 'Found:', !!payment);
+      
+      // If not found, try without buyer_id to see if payment exists
+      if (!payment) {
+        const paymentWithoutBuyer = await Payment.findOne({ 
+          paymongo_source_id: source_id
+        });
+        if (paymentWithoutBuyer) {
+          console.error('Payment found but buyer_id mismatch. Payment buyer_id:', paymentWithoutBuyer.buyer_id, 'Requested userId:', userId);
+          return jsonError("Payment not found for this user", 404);
+        }
+      }
     } else if (payment_id) {
       // Check if payment_id is a valid MongoDB ObjectId (our internal ID)
       // or a PayMongo payment ID
@@ -73,6 +85,15 @@ export async function POST(req: NextRequest) {
           buyer_id: userId 
         });
         console.log('Searching by MongoDB _id:', payment_id, 'Found:', !!payment);
+        
+        // If not found, try without buyer_id to see if payment exists
+        if (!payment) {
+          const paymentWithoutBuyer = await Payment.findById(payment_id);
+          if (paymentWithoutBuyer) {
+            console.error('Payment found but buyer_id mismatch. Payment buyer_id:', paymentWithoutBuyer.buyer_id, 'Requested userId:', userId);
+            return jsonError("Payment not found for this user", 404);
+          }
+        }
       } else {
         // Search by PayMongo payment ID
         payment = await Payment.findOne({ 
@@ -87,10 +108,21 @@ export async function POST(req: NextRequest) {
 
     if (!payment) {
       console.error('Payment not found with identifiers:', { payment_intent_id, source_id, payment_id, userId });
+      
+      // Additional debugging: check if any payment exists with these identifiers
+      if (source_id) {
+        const anyPayment = await Payment.findOne({ paymongo_source_id: source_id });
+        console.error('Any payment with source_id:', !!anyPayment, anyPayment ? { id: anyPayment._id, buyer_id: anyPayment.buyer_id, status: anyPayment.status } : null);
+      }
+      if (payment_id && mongoose.Types.ObjectId.isValid(payment_id)) {
+        const anyPayment = await Payment.findById(payment_id);
+        console.error('Any payment with payment_id:', !!anyPayment, anyPayment ? { id: anyPayment._id, buyer_id: anyPayment.buyer_id, status: anyPayment.status } : null);
+      }
+      
       return jsonError("Payment not found", 404);
     }
     
-    console.log('Payment found:', payment._id, 'Status:', payment.status);
+    console.log('Payment found:', payment._id, 'Status:', payment.status, 'Buyer ID:', payment.buyer_id);
 
     // Check if payment is already processed
     if (payment.status === 'paid') {
@@ -122,9 +154,26 @@ export async function POST(req: NextRequest) {
       } else if (source_id) {
         const source = await retrieveSource(source_id);
         paymongoStatus = source.attributes.status;
+        console.log('Source status from PayMongo:', paymongoStatus, 'Source ID:', source_id);
         
         if (source.attributes.status === 'consumed' && source.attributes.payment) {
           paymongoPaymentId = source.attributes.payment.id;
+          console.log('Source consumed, payment ID:', paymongoPaymentId);
+          
+          // Also check the payment status directly
+          if (paymongoPaymentId) {
+            try {
+              const paymongoPayment = await retrievePayment(paymongoPaymentId);
+              paymongoStatus = paymongoPayment.attributes.status;
+              console.log('Payment status from PayMongo:', paymongoStatus);
+            } catch (err: any) {
+              console.error('Error retrieving payment:', err.message);
+            }
+          }
+        } else if (source.attributes.status === 'chargeable') {
+          // Source is chargeable but not yet consumed - payment might still be processing
+          console.log('Source is chargeable, waiting for payment to be processed');
+          paymongoStatus = 'pending';
         }
       } else if (payment_id) {
         const paymongoPayment = await retrievePayment(payment_id);
