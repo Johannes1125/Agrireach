@@ -45,18 +45,31 @@ export async function autoSetupLalamoveDelivery(orderId: string): Promise<AutoSe
     }
 
     // Validate required data
-    const seller = order.seller_id as any;
-    const buyer = order.buyer_id as any;
+    let seller = order.seller_id as any;
+    let buyer = order.buyer_id as any;
 
     if (!seller || !buyer) {
       console.error(`[Lalamove Auto-Setup] Missing seller or buyer data for order ${orderId}`);
       return { success: false, error: "Missing seller or buyer data" };
     }
 
-    // Check for pickup address
+    // Re-fetch seller to ensure we have latest location data (in case it was updated after order creation)
+    if (!seller.location && !order.pickup_address) {
+      console.log(`[Lalamove Auto-Setup] Re-fetching seller data for order ${orderId} to get location`);
+      const { User } = await import("@/server/models/User");
+      const freshSeller = await User.findById(seller._id || seller).select('full_name phone location location_coordinates').lean();
+      if (freshSeller) {
+        seller = freshSeller;
+      }
+    }
+
+    // Check for pickup address - use seller location as pickup (seller's location = pickup point)
     if (!order.pickup_address && !seller.location) {
       console.error(`[Lalamove Auto-Setup] No pickup address for order ${orderId}`);
-      return { success: false, error: "No pickup address available" };
+      console.error(`[Lalamove Auto-Setup] Order pickup_address: ${JSON.stringify(order.pickup_address)}`);
+      console.error(`[Lalamove Auto-Setup] Seller location: ${seller.location}`);
+      console.error(`[Lalamove Auto-Setup] Seller ID: ${seller._id || seller}`);
+      return { success: false, error: "No pickup address available. Seller location is required." };
     }
 
     // Check for delivery address
@@ -71,29 +84,46 @@ export async function autoSetupLalamoveDelivery(orderId: string): Promise<AutoSe
       return { success: false, error: "Seller or buyer phone number missing" };
     }
 
-    // Prepare pickup address
+    // Prepare pickup address (seller's location = pickup point)
     let pickupAddress: string;
     let pickupCoordinates: { latitude: number; longitude: number } | null = null;
 
-    if (order.pickup_address) {
-      pickupAddress = order.pickup_address.line1 || seller.location || "";
+    // Priority: order.pickup_address > seller.location
+    if (order.pickup_address && order.pickup_address.line1) {
+      pickupAddress = order.pickup_address.line1;
       if (order.pickup_address.coordinates) {
         pickupCoordinates = order.pickup_address.coordinates;
       } else if (seller.location_coordinates) {
         pickupCoordinates = seller.location_coordinates;
       }
-    } else {
-      pickupAddress = seller.location || "";
+    } else if (seller.location) {
+      // Use seller's location as pickup address
+      pickupAddress = seller.location;
       if (seller.location_coordinates) {
         pickupCoordinates = seller.location_coordinates;
       }
+    } else {
+      // This shouldn't happen due to check above, but just in case
+      console.error(`[Lalamove Auto-Setup] Cannot determine pickup address for order ${orderId}`);
+      return { success: false, error: "Cannot determine pickup address" };
     }
 
-    // Prepare delivery address
+    if (!pickupAddress || pickupAddress.trim() === "") {
+      console.error(`[Lalamove Auto-Setup] Pickup address is empty for order ${orderId}`);
+      return { success: false, error: "Pickup address is empty" };
+    }
+
+    // Prepare delivery address (buyer's delivery address = drop-off point)
     let deliveryAddress: string;
     let deliveryCoordinates: { latitude: number; longitude: number } | null = null;
 
-    if (order.delivery_address_structured) {
+    // Priority: coordinates from delivery_address_structured > geocoding
+    if (order.delivery_address_structured?.coordinates) {
+      // Use coordinates directly from delivery_address_structured (from location buttons)
+      deliveryCoordinates = order.delivery_address_structured.coordinates;
+      deliveryAddress = order.delivery_address_structured.line1 || "Location selected";
+      console.log(`[Lalamove Auto-Setup] Using coordinates from delivery_address_structured`);
+    } else if (order.delivery_address_structured) {
       const addr = order.delivery_address_structured;
       // Build address string from structured data
       const parts = [
@@ -109,11 +139,14 @@ export async function autoSetupLalamoveDelivery(orderId: string): Promise<AutoSe
       if (addr.coordinates) {
         deliveryCoordinates = addr.coordinates;
       }
+    } else if (order.delivery_address) {
+      deliveryAddress = order.delivery_address;
     } else {
-      deliveryAddress = order.delivery_address || "";
+      console.error(`[Lalamove Auto-Setup] Cannot determine delivery address for order ${orderId}`);
+      return { success: false, error: "Cannot determine delivery address" };
     }
 
-    // Geocode addresses if coordinates are missing
+    // Geocode pickup address if coordinates are missing
     if (!pickupCoordinates && pickupAddress) {
       console.log(`[Lalamove Auto-Setup] Geocoding pickup address: ${pickupAddress}`);
       const geocodeResult = await geocodeAddress(pickupAddress);
@@ -125,6 +158,7 @@ export async function autoSetupLalamoveDelivery(orderId: string): Promise<AutoSe
       }
     }
 
+    // Geocode delivery address ONLY if coordinates are missing (shouldn't happen with new flow)
     if (!deliveryCoordinates && deliveryAddress) {
       console.log(`[Lalamove Auto-Setup] Geocoding delivery address: ${deliveryAddress}`);
       const geocodeResult = await geocodeAddress(deliveryAddress);
@@ -132,13 +166,19 @@ export async function autoSetupLalamoveDelivery(orderId: string): Promise<AutoSe
         deliveryCoordinates = geocodeResult.coordinates;
       } else {
         console.error(`[Lalamove Auto-Setup] Failed to geocode delivery address: ${deliveryAddress}`);
-        return { success: false, error: "Could not geocode delivery address" };
+        return { success: false, error: "Could not geocode delivery address. Please use location buttons to select delivery address." };
       }
     }
 
-    if (!pickupCoordinates || !deliveryCoordinates) {
-      console.error(`[Lalamove Auto-Setup] Missing coordinates for order ${orderId}`);
-      return { success: false, error: "Missing coordinates" };
+    // Coordinates are now required
+    if (!deliveryCoordinates) {
+      console.error(`[Lalamove Auto-Setup] No delivery coordinates for order ${orderId}. Coordinates are required.`);
+      return { success: false, error: "Delivery coordinates are required. Please use location buttons to select delivery address." };
+    }
+
+    if (!pickupCoordinates) {
+      console.error(`[Lalamove Auto-Setup] Missing pickup coordinates for order ${orderId}`);
+      return { success: false, error: "Missing pickup coordinates" };
     }
 
     // Step 1: Get Lalamove quotation
@@ -279,4 +319,5 @@ export async function autoSetupLalamoveDelivery(orderId: string): Promise<AutoSe
     return { success: false, error: error.message || "Unknown error" };
   }
 }
+
 

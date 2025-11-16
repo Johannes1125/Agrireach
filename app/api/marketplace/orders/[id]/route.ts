@@ -166,6 +166,32 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
    .populate('seller_id', 'full_name')
    .populate('product_id', 'title');
 
+  // IMPORTANT: If seller is confirming the order and Lalamove hasn't been set up yet, trigger it
+  if (result.data.status === "confirmed" && isSeller && !order.lalamove_order_id) {
+    console.log(`[Order Confirmation] Triggering Lalamove setup for order ${order._id}`);
+    
+    // Import and trigger Lalamove auto-setup (non-blocking)
+    try {
+      const { autoSetupLalamoveDelivery } = await import("@/server/utils/lalamove-auto-setup");
+      
+      // Run async but don't wait - we want to return success immediately
+      autoSetupLalamoveDelivery(String(order._id))
+        .then((result) => {
+          if (result.success) {
+            console.log(`[Order Confirmation] ✅ Lalamove setup successful for order ${order._id}: ${result.lalamove_order_id}`);
+          } else {
+            console.error(`[Order Confirmation] ❌ Lalamove setup failed for order ${order._id}: ${result.error}`);
+          }
+        })
+        .catch((error) => {
+          // Log error but don't fail the order confirmation
+          console.error(`[Order Confirmation] ❌ Failed to setup Lalamove for order ${order._id}:`, error);
+        });
+    } catch (importError) {
+      console.error(`[Order Confirmation] ❌ Failed to import Lalamove auto-setup:`, importError);
+    }
+  }
+
   // Send notification about status change
   const notificationTarget = isSeller ? order.buyer_id._id : order.seller_id._id;
   const statusMessage = result.data.status ? 

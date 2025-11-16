@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { authFetch } from "@/lib/auth-client"
-import { PhilippineAddressSelector, PhilippineAddress, formatPhilippineAddress, isAddressComplete } from "@/components/ui/philippine-address-selector"
+import { PhilippineAddressSelector, PhilippineAddress, formatPhilippineAddress } from "@/components/ui/philippine-address-selector"
 import { 
   ShoppingCart, 
   CreditCard, 
@@ -52,12 +52,8 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
     new Set(cartItems.map(item => item._id))
   )
   const [deliveryAddress, setDeliveryAddress] = useState<PhilippineAddress>({
-    region: "",
-    province: "",
-    city: "",
-    barangay: "",
-    streetAddress: "",
-    zipCode: ""
+    coordinates: undefined,
+    formattedAddress: ""
   })
   const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash" | "grab_pay" | "paymaya" | "cod">("gcash")
   const [billingName, setBillingName] = useState("")
@@ -157,8 +153,8 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
   }
 
   const handleProceedToPayment = () => {
-    if (!isAddressComplete(deliveryAddress)) {
-      toast.error("Please complete your delivery address")
+    if (!deliveryAddress.coordinates) {
+      toast.error("Please select your delivery location using 'Use Current Location' or 'Pick on Map'")
       return
     }
     if (!billingName.trim()) {
@@ -185,8 +181,8 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
       return
     }
 
-    if (!isAddressComplete(deliveryAddress)) {
-      toast.error("Please complete your delivery address")
+    if (!deliveryAddress.coordinates) {
+      toast.error("Please select your delivery location using 'Use Current Location' or 'Pick on Map'")
       return
     }
 
@@ -205,20 +201,15 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
       return
     }
 
-    // Map Philippine address to validation schema format
+    // Map Philippine address to validation schema format with coordinates
     const mappedDeliveryAddress = {
-      line1: deliveryAddress.streetAddress || deliveryAddress.barangay || "",
+      line1: deliveryAddress.formattedAddress || "Location selected",
       line2: "", // Optional field
-      city: deliveryAddress.city || "",
-      state: deliveryAddress.province || "",
-      postal_code: deliveryAddress.zipCode || "",
-      country: "PH"
-    }
-
-    // Validate mapped address has required fields
-    if (!mappedDeliveryAddress.line1 || !mappedDeliveryAddress.city || !mappedDeliveryAddress.state || !mappedDeliveryAddress.postal_code) {
-      toast.error("Please complete all required address fields (street address, city, province, and postal code)")
-      return
+      city: "", // Will be reverse geocoded if needed
+      state: "",
+      postal_code: "",
+      country: "PH",
+      coordinates: deliveryAddress.coordinates || undefined // REQUIRED - coordinates from location buttons
     }
 
     setIsProcessing(true)
@@ -497,8 +488,6 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
                 <PhilippineAddressSelector
                   value={deliveryAddress}
                   onChange={setDeliveryAddress}
-                  showStreetAddress={true}
-                  showZipCode={true}
                   showMap={true}
                 />
               </div>
@@ -679,7 +668,7 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
               <Button
                 className="flex-1"
                 onClick={handleProceedToPayment}
-                disabled={!isAddressComplete(deliveryAddress) || !billingName.trim() || !billingEmail.trim()}
+                disabled={!deliveryAddress.coordinates || !billingName.trim() || !billingEmail.trim()}
               >
                 Proceed to Payment
               </Button>
