@@ -94,7 +94,22 @@ async function handlePaymentPaid(paymentData: any) {
     const orderItems = payment.metadata?.order_items || [];
     const createdOrders = [];
 
+    // Get User and Product models for pickup address
+    const { User } = await import("@/server/models/User");
+    const { Product } = await import("@/server/models/Product");
+    
     for (const item of orderItems) {
+      // Get seller info for pickup address
+      const seller = await User.findById(item.seller_id).lean();
+      const product = await Product.findById(item.product_id).lean();
+      
+      // Prepare pickup address from seller location
+      const pickupAddress = seller?.location ? {
+        line1: seller.location,
+        city: seller.location_coordinates ? undefined : seller.location.split(',')[0] || seller.location,
+        coordinates: seller.location_coordinates || undefined,
+      } : undefined;
+      
       const order = await Order.create({
         buyer_id: payment.buyer_id,
         seller_id: item.seller_id,
@@ -103,6 +118,7 @@ async function handlePaymentPaid(paymentData: any) {
         total_price: item.price * item.quantity,
         delivery_address: payment.delivery_address?.line1 || '',
         delivery_address_structured: payment.delivery_address,
+        pickup_address: pickupAddress,
         status: "pending",
         payment_status: "paid",
         payment_method: payment.payment_method,

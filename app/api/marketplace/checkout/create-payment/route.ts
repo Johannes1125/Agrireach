@@ -175,14 +175,15 @@ export async function POST(req: NextRequest) {
         billing_details,
       });
     } 
-    else if (payment_method === "gcash" || payment_method === "grab_pay" || payment_method === "card") {
+    else if (payment_method === "gcash" || payment_method === "grab_pay" || payment_method === "paymaya" || payment_method === "card") {
       // For PayMongo payments
       try {
         const amountInCentavos = convertToCentavos(totalAmount);
         const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
         
         if (payment_method === "card") {
-          // For card payments, create a Payment Intent
+          // For card payments, use Payment Intent + Payment Method flow
+          // Step 1: Create Payment Intent
           const paymentIntent = await createPaymentIntent({
             amount: amountInCentavos,
             currency: 'PHP',
@@ -195,8 +196,39 @@ export async function POST(req: NextRequest) {
             },
           });
 
+          // Step 2: Create Payment Method for card
+          const paymentMethod = await createPaymentMethod({
+            type: 'card',
+            billing: {
+              name: billing_details.name,
+              email: billing_details.email,
+              phone: billing_details.phone || '',
+              address: billing_details.address ? {
+                line1: billing_details.address.line1,
+                line2: billing_details.address.line2,
+                city: billing_details.address.city,
+                state: billing_details.address.state,
+                postal_code: billing_details.address.postal_code,
+                country: billing_details.address.country || 'PH',
+              } : undefined,
+            },
+          });
+
+          // Step 3: Attach Payment Method to Payment Intent
+          const returnUrl = `${baseUrl}/marketplace/payment/success?payment_id=${payment._id}&payment_intent_id=${paymentIntent.id}`;
+          const attachedIntent = await attachPaymentIntent(
+            paymentIntent.id,
+            paymentMethod.id,
+            returnUrl
+          );
+
+          // Check if 3DS authentication is required
+          const requires3DS = attachedIntent.attributes?.next_action?.type === 'redirect';
+          const checkoutUrl = attachedIntent.attributes?.next_action?.redirect?.url || null;
+
           // Update payment with PayMongo info
           payment.paymongo_payment_intent_id = paymentIntent.id;
+          payment.paymongo_payment_method_id = paymentMethod.id;
           payment.paymongo_client_key = paymentIntent.attributes.client_key;
           payment.status = 'processing';
           await payment.save();
@@ -206,16 +238,21 @@ export async function POST(req: NextRequest) {
             payment_type: "payment_intent",
             payment_id: payment._id,
             payment_intent_id: paymentIntent.id,
+            payment_method_id: paymentMethod.id,
             client_key: paymentIntent.attributes.client_key,
+            checkout_url: checkoutUrl, // For 3DS redirect
+            requires_3ds: requires3DS,
             amount: totalAmount,
             currency: "PHP",
             status: "processing",
-            message: "Payment intent created. Use client_key to initialize PayMongo JS SDK.",
+            message: requires3DS 
+              ? "Redirecting for card authentication..." 
+              : "Payment intent created. Use client_key to initialize PayMongo JS SDK.",
             order_items: orderItems,
             delivery_address: delivery_address_structured || delivery_address,
             billing_details,
           });
-        } else if (payment_method === "gcash" || payment_method === "grab_pay") {
+        } else if (payment_method === "gcash" || payment_method === "grab_pay" || payment_method === "paymaya") {
           // For e-wallet payments, use Payment Intent + Payment Method flow
           // Step 1: Create Payment Intent
           const paymentIntent = await createPaymentIntent({
@@ -231,8 +268,12 @@ export async function POST(req: NextRequest) {
           });
 
           // Step 2: Create Payment Method for e-wallet
+          const ewalletType = payment_method === "gcash" ? "gcash" 
+            : payment_method === "grab_pay" ? "grab_pay" 
+            : "paymaya";
+          
           const paymentMethod = await createPaymentMethod({
-            type: payment_method === "gcash" ? "gcash" : "grab_pay",
+            type: ewalletType as 'gcash' | 'grab_pay' | 'paymaya',
             billing: {
               name: billing_details.name,
               email: billing_details.email,

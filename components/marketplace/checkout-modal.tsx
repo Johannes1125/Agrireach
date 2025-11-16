@@ -315,8 +315,22 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
 
           // Redirect to PayMongo checkout URL
           window.location.href = actualData.checkout_url
+        } else if (actualData.checkout_url && actualData.requires_3ds) {
+          // Card payments requiring 3DS authentication - redirect to 3DS page
+          toast.success("Redirecting for card authentication...")
+          
+          // Store payment data in sessionStorage
+          sessionStorage.setItem("pending_payment", JSON.stringify({
+            payment_intent_id: actualData.payment_intent_id,
+            payment_id: actualData.payment_id,
+            cart_item_ids: Array.from(selectedItems),
+            delivery_address: deliveryAddress,
+          }))
+
+          // Redirect to 3DS authentication URL
+          window.location.href = actualData.checkout_url
         } else if (actualData.client_key) {
-          // Card payments - use PayMongo JS SDK
+          // Card payments without 3DS - use PayMongo JS SDK
           toast.success("Initializing payment...")
           
           // Store payment data and redirect to payment page

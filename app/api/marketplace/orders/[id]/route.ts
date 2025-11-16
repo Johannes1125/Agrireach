@@ -30,8 +30,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   await connectToDatabase();
   
   const order = await Order.findById(id)
-    .populate('buyer_id', 'full_name email location')
-    .populate('seller_id', 'full_name email location')
+    .populate('buyer_id', 'full_name email location location_coordinates phone')
+    .populate('seller_id', 'full_name email location location_coordinates phone')
     .populate('product_id', 'title price unit images')
     .lean();
 
@@ -43,7 +43,41 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return jsonError("Forbidden", 403);
   }
 
-  return jsonOk({ order });
+  // If order has Lalamove tracking, include tracking info
+  let trackingInfo = null;
+  if (order.lalamove_order_id) {
+    try {
+      const { getOrderDetails, getDriverDetails } = await import("@/lib/lalamove");
+      const lalamoveOrder = await getOrderDetails(order.lalamove_order_id);
+      
+      let driverDetails = null;
+      if (order.lalamove_driver_id || lalamoveOrder.data.driverId) {
+        try {
+          driverDetails = await getDriverDetails(order.lalamove_order_id);
+        } catch (err) {
+          // Driver details optional
+        }
+      }
+      
+      trackingInfo = {
+        order_id: lalamoveOrder.data.orderId,
+        status: lalamoveOrder.data.status,
+        tracking_url: order.lalamove_tracking_url || lalamoveOrder.data.shareLink,
+        driver: driverDetails?.data || null,
+        stops: lalamoveOrder.data.stops || [],
+      };
+    } catch (err) {
+      console.error("Error fetching Lalamove tracking:", err);
+      // Continue without tracking info if API fails
+    }
+  }
+
+  return jsonOk({ 
+    order: {
+      ...order,
+      tracking: trackingInfo,
+    }
+  });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

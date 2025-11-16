@@ -198,7 +198,22 @@ export async function POST(req: NextRequest) {
       const orderItems = payment.metadata?.order_items || [];
       const createdOrders = [];
 
+      // Get seller information for pickup address
+      const { User } = await import("@/server/models/User");
+      const { Product } = await import("@/server/models/Product");
+      
       for (const item of orderItems) {
+        // Get seller and product info for pickup address
+        const seller = await User.findById(item.seller_id).lean();
+        const product = await Product.findById(item.product_id).lean();
+        
+        // Prepare pickup address from seller location
+        const pickupAddress = seller?.location ? {
+          line1: seller.location,
+          city: seller.location_coordinates ? undefined : seller.location.split(',')[0] || seller.location,
+          coordinates: seller.location_coordinates || undefined,
+        } : undefined;
+        
         const order = await Order.create({
           buyer_id: userId,
           seller_id: item.seller_id,
@@ -207,6 +222,7 @@ export async function POST(req: NextRequest) {
           total_price: item.price * item.quantity,
           delivery_address: payment.delivery_address?.line1 || '',
           delivery_address_structured: payment.delivery_address,
+          pickup_address: pickupAddress,
           status: "pending",
           payment_status: "paid",
           payment_method: payment.payment_method,
