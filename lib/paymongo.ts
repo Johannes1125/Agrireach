@@ -153,7 +153,11 @@ export async function createPaymentMethod(data: PaymentMethodData) {
 /**
  * Attach Payment Method to Payment Intent
  */
-export async function attachPaymentIntent(paymentIntentId: string, paymentMethodId: string, clientKey: string) {
+export async function attachPaymentIntent(
+  paymentIntentId: string, 
+  paymentMethodId: string, 
+  returnUrl?: string
+) {
   try {
     const response = await fetch(`https://api.paymongo.com/v1/payment_intents/${paymentIntentId}/attach`, {
       method: 'POST',
@@ -165,8 +169,7 @@ export async function attachPaymentIntent(paymentIntentId: string, paymentMethod
         data: {
           attributes: {
             payment_method: paymentMethodId,
-            client_key: clientKey,
-            return_url: `${BASE_URL}/marketplace/payment/success`,
+            return_url: returnUrl || `${BASE_URL}/marketplace/payment/success`,
           },
         },
       }),

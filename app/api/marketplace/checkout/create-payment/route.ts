@@ -8,6 +8,8 @@ import { Payment } from "@/server/models/Payment";
 import { CheckoutRequestSchema, convertToCentavos, PAYMENT_ERRORS } from "@/server/validators/payment";
 import { 
   createPaymentIntent, 
+  createPaymentMethod,
+  attachPaymentIntent,
   createSource, 
   PayMongoError,
   PAYMONGO_CONFIG 
@@ -214,33 +216,66 @@ export async function POST(req: NextRequest) {
             billing_details,
           });
         } else if (payment_method === "gcash" || payment_method === "grab_pay") {
-          // For e-wallet payments, create a Source
-          const source = await createSource({
-            type: payment_method === "gcash" ? "gcash" : "grab_pay",
+          // For e-wallet payments, use Payment Intent + Payment Method flow
+          // Step 1: Create Payment Intent
+          const paymentIntent = await createPaymentIntent({
             amount: amountInCentavos,
             currency: 'PHP',
-            redirect: {
-              success: `${baseUrl}/marketplace/payment/success?payment_id=${payment._id}&source_id={source.id}`,
-              failed: `${baseUrl}/marketplace/payment/failed?payment_id=${payment._id}`,
+            description: `AgriReach order - ${orderItems.length} item(s)`,
+            statement_descriptor: 'AgriReach',
+            payment_method_allowed: [payment_method],
+            metadata: {
+              payment_id: String(payment._id),
+              buyer_id: userId,
             },
+          });
+
+          // Step 2: Create Payment Method for e-wallet
+          const paymentMethod = await createPaymentMethod({
+            type: payment_method === "gcash" ? "gcash" : "grab_pay",
             billing: {
               name: billing_details.name,
               email: billing_details.email,
               phone: billing_details.phone || '',
+              address: billing_details.address ? {
+                line1: billing_details.address.line1,
+                line2: billing_details.address.line2,
+                city: billing_details.address.city,
+                state: billing_details.address.state,
+                postal_code: billing_details.address.postal_code,
+                country: billing_details.address.country || 'PH',
+              } : undefined,
             },
           });
 
-          // Update payment with PayMongo source info
-          payment.paymongo_source_id = source.id;
+          // Step 3: Attach Payment Method to Payment Intent
+          const returnUrl = `${baseUrl}/marketplace/payment/success?payment_id=${payment._id}&payment_intent_id=${paymentIntent.id}`;
+          const attachedIntent = await attachPaymentIntent(
+            paymentIntent.id,
+            paymentMethod.id,
+            returnUrl
+          );
+
+          // Get the redirect URL from next_action
+          const checkoutUrl = attachedIntent.attributes?.next_action?.redirect?.url || null;
+
+          if (!checkoutUrl) {
+            throw new Error('No checkout URL returned from PayMongo');
+          }
+
+          // Update payment with PayMongo info
+          payment.paymongo_payment_intent_id = paymentIntent.id;
+          payment.paymongo_payment_method_id = paymentMethod.id;
           payment.status = 'processing';
           await payment.save();
 
           return jsonOk({
             success: true,
-            payment_type: "source",
+            payment_type: "payment_intent",
             payment_id: payment._id,
-            source_id: source.id,
-            checkout_url: source.attributes.redirect.checkout_url,
+            payment_intent_id: paymentIntent.id,
+            payment_method_id: paymentMethod.id,
+            checkout_url: checkoutUrl,
             amount: totalAmount,
             currency: "PHP",
             status: "processing",

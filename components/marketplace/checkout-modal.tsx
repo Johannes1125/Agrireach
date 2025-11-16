@@ -299,11 +299,42 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
         toast.success("Order placed successfully! Payment will be collected upon delivery.")
         onSuccess()
         onClose()
+      } else if (actualData.payment_type === "payment_intent") {
+        // For both card and e-wallet payments (now both use Payment Intent)
+        if (actualData.checkout_url) {
+          // E-wallet payments (GCash, GrabPay) - redirect to checkout URL
+          toast.success("Redirecting to payment...")
+          
+          // Store payment data in sessionStorage for confirmation later
+          sessionStorage.setItem("pending_payment", JSON.stringify({
+            payment_intent_id: actualData.payment_intent_id,
+            payment_id: actualData.payment_id,
+            cart_item_ids: Array.from(selectedItems),
+            delivery_address: deliveryAddress,
+          }))
+
+          // Redirect to PayMongo checkout URL
+          window.location.href = actualData.checkout_url
+        } else if (actualData.client_key) {
+          // Card payments - use PayMongo JS SDK
+          toast.success("Initializing payment...")
+          
+          // Store payment data and redirect to payment page
+          sessionStorage.setItem('paymongo_payment', JSON.stringify({
+            payment_intent_id: actualData.payment_intent_id,
+            client_key: actualData.client_key,
+            payment_id: actualData.payment_id,
+          }))
+          
+          // Redirect to payment processing page
+          window.location.href = `/marketplace/payment/process?payment_id=${actualData.payment_id}`
+        } else {
+          toast.error("Payment URL not available. Please try again.")
+        }
       } else if (actualData.payment_type === "source") {
-        // For PayMongo e-wallet payments (GCash, GrabPay) - redirect to checkout URL
+        // Legacy source-based payments (kept for backward compatibility)
         toast.success("Redirecting to payment...")
         
-        // Store cart items in sessionStorage for confirmation later
         sessionStorage.setItem("pending_payment", JSON.stringify({
           source_id: actualData.source_id,
           payment_id: actualData.payment_id,
@@ -311,25 +342,11 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
           delivery_address: deliveryAddress,
         }))
 
-        // Redirect to PayMongo checkout URL
         if (actualData.checkout_url) {
           window.location.href = actualData.checkout_url
         } else {
           toast.error("Payment URL not available. Please try again.")
         }
-      } else if (actualData.payment_type === "payment_intent") {
-        // For card payments - use PayMongo JS SDK
-        toast.success("Initializing payment...")
-        
-        // Store payment data and redirect to payment page
-        sessionStorage.setItem('paymongo_payment', JSON.stringify({
-          payment_intent_id: actualData.payment_intent_id,
-          client_key: actualData.client_key,
-          payment_id: actualData.payment_id,
-        }))
-        
-        // Redirect to payment processing page
-        window.location.href = `/marketplace/payment/process?payment_id=${actualData.payment_id}`
       } else {
         toast.error("Unknown payment type. Please try again.")
       }

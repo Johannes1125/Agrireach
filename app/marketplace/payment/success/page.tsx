@@ -19,36 +19,41 @@ export default function PaymentSuccessPage() {
   useEffect(() => {
     const confirmPayment = async () => {
       try {
-        // Get payment identifiers from URL params or sessionStorage
+        // Get pending payment data from sessionStorage FIRST (most reliable for e-wallet payments)
+        const pendingPaymentStr = sessionStorage.getItem("pending_payment")
+        const pendingPayment = pendingPaymentStr ? JSON.parse(pendingPaymentStr) : null
+        
+        // Get payment identifiers from URL params (PayMongo might include these)
         const sourceId = searchParams.get("source_id")
         const paymentId = searchParams.get("payment_id")
         const paymentIntentId = searchParams.get("payment_intent_id")
         
-        // Get pending payment data from sessionStorage (for e-wallet payments)
-        const pendingPaymentStr = sessionStorage.getItem("pending_payment")
-        const pendingPayment = pendingPaymentStr ? JSON.parse(pendingPaymentStr) : null
-        
-        // Build confirmation payload - prioritize URL params, then sessionStorage
+        // Build confirmation payload - prioritize sessionStorage, then URL params
         const confirmationPayload: {
           source_id?: string
           payment_id?: string
           payment_intent_id?: string
         } = {}
         
-        if (sourceId) {
-          confirmationPayload.source_id = sourceId
-        } else if (pendingPayment?.source_id) {
-          confirmationPayload.source_id = pendingPayment.source_id
-        }
-        
-        if (paymentId) {
-          confirmationPayload.payment_id = paymentId
-        } else if (pendingPayment?.payment_id) {
-          confirmationPayload.payment_id = pendingPayment.payment_id
-        }
-        
-        if (paymentIntentId) {
+        // For payment_intent_id: prioritize sessionStorage, then URL param (for both card and e-wallet)
+        if (pendingPayment?.payment_intent_id) {
+          confirmationPayload.payment_intent_id = pendingPayment.payment_intent_id
+        } else if (paymentIntentId) {
           confirmationPayload.payment_intent_id = paymentIntentId
+        }
+        
+        // For source_id: use sessionStorage first (legacy support), then URL param
+        if (pendingPayment?.source_id) {
+          confirmationPayload.source_id = pendingPayment.source_id
+        } else if (sourceId) {
+          confirmationPayload.source_id = sourceId
+        }
+        
+        // For payment_id: use sessionStorage first, then URL param
+        if (pendingPayment?.payment_id) {
+          confirmationPayload.payment_id = pendingPayment.payment_id
+        } else if (paymentId) {
+          confirmationPayload.payment_id = paymentId
         }
         
         // Check if we have at least one identifier
