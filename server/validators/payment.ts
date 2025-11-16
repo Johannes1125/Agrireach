@@ -59,11 +59,18 @@ export const PaymentIntentSchema = z.object({
 })
 
 // Payment confirmation validation
+// At least one of payment_intent_id, source_id, or payment_id must be provided
 export const PaymentConfirmationSchema = z.object({
-  payment_intent_id: z.string().min(1, 'Payment intent ID is required'),
-  source_id: z.string().optional(),
-  payment_id: z.string().optional()
-})
+  payment_intent_id: z.string().min(1).optional(),
+  source_id: z.string().min(1).optional(),
+  payment_id: z.string().min(1).optional()
+}).refine(
+  (data) => data.payment_intent_id || data.source_id || data.payment_id,
+  {
+    message: "At least one payment identifier (payment_intent_id, source_id, or payment_id) is required",
+    path: ["payment_intent_id"]
+  }
+)
 
 // Webhook event validation
 export const WebhookEventSchema = z.object({

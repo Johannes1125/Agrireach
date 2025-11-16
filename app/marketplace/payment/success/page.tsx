@@ -19,25 +19,50 @@ export default function PaymentSuccessPage() {
   useEffect(() => {
     const confirmPayment = async () => {
       try {
-        // Get pending payment data from sessionStorage
+        // Get payment identifiers from URL params or sessionStorage
+        const sourceId = searchParams.get("source_id")
+        const paymentId = searchParams.get("payment_id")
+        const paymentIntentId = searchParams.get("payment_intent_id")
+        
+        // Get pending payment data from sessionStorage (for e-wallet payments)
         const pendingPaymentStr = sessionStorage.getItem("pending_payment")
-        if (!pendingPaymentStr) {
-          setError("No pending payment found")
+        const pendingPayment = pendingPaymentStr ? JSON.parse(pendingPaymentStr) : null
+        
+        // Build confirmation payload - prioritize URL params, then sessionStorage
+        const confirmationPayload: {
+          source_id?: string
+          payment_id?: string
+          payment_intent_id?: string
+        } = {}
+        
+        if (sourceId) {
+          confirmationPayload.source_id = sourceId
+        } else if (pendingPayment?.source_id) {
+          confirmationPayload.source_id = pendingPayment.source_id
+        }
+        
+        if (paymentId) {
+          confirmationPayload.payment_id = paymentId
+        } else if (pendingPayment?.payment_id) {
+          confirmationPayload.payment_id = pendingPayment.payment_id
+        }
+        
+        if (paymentIntentId) {
+          confirmationPayload.payment_intent_id = paymentIntentId
+        }
+        
+        // Check if we have at least one identifier
+        if (!confirmationPayload.source_id && !confirmationPayload.payment_id && !confirmationPayload.payment_intent_id) {
+          setError("No payment identifier found")
           setProcessing(false)
           return
         }
-
-        const pendingPayment = JSON.parse(pendingPaymentStr)
         
         // Confirm payment with backend
         const res = await authFetch("/api/marketplace/checkout/confirm-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            source_id: pendingPayment.source_id,
-            cart_item_ids: pendingPayment.cart_item_ids,
-            delivery_address: pendingPayment.delivery_address,
-          }),
+          body: JSON.stringify(confirmationPayload),
         })
 
         if (!res.ok) {
@@ -46,10 +71,13 @@ export default function PaymentSuccessPage() {
         }
 
         const data = await res.json()
-        setOrderIds(data.orders || [])
+        // API returns order_ids array
+        setOrderIds(data.order_ids || data.orders || [])
         
         // Clear pending payment
-        sessionStorage.removeItem("pending_payment")
+        if (pendingPaymentStr) {
+          sessionStorage.removeItem("pending_payment")
+        }
         
         toast.success("Payment successful! Your order has been placed.")
       } catch (err: any) {
@@ -62,7 +90,7 @@ export default function PaymentSuccessPage() {
     }
 
     confirmPayment()
-  }, [])
+  }, [searchParams])
 
   if (processing) {
     return (
@@ -105,7 +133,7 @@ export default function PaymentSuccessPage() {
                   Back to Marketplace
                 </Button>
               </Link>
-              <Link href="/orders" className="flex-1">
+              <Link href="/marketplace" className="flex-1">
                 <Button className="w-full">View Orders</Button>
               </Link>
             </div>
@@ -149,7 +177,7 @@ export default function PaymentSuccessPage() {
           </div>
 
           <div className="space-y-2">
-            <Link href="/orders">
+            <Link href="/marketplace">
               <Button className="w-full">
                 View My Orders
                 <ArrowRight className="ml-2 h-4 w-4" />
