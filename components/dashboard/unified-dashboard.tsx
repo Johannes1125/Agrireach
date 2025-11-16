@@ -214,22 +214,22 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
   const handleQuickAction = (action: string, role: string) => {
     switch (action) {
       case "find-jobs":
-        notifications.showSuccess("Redirecting to Jobs", "Finding new opportunities for you...")
+        router.push("/opportunities")
         break
-      case "post-job":
-        notifications.showSuccess("Opening Job Form", "Create a new job posting...")
+      case "post-new-job":
+        router.push("/opportunities/post")
         break
       case "browse-marketplace":
-        notifications.showSuccess("Opening Marketplace", "Discover fresh products from local farmers...")
+        router.push("/marketplace")
         break
       case "complete-profile":
-        notifications.showInfo("Profile Completion", "Complete your profile to get better matches")
+        router.push("/profile")
         break
       case "view-applicants":
-        notifications.showInfo("Viewing Applicants", "Loading recent job applications...")
+        router.push("/dashboard")
         break
       case "track-order":
-        notifications.showInfo("Order Tracking", "Checking delivery status...")
+        router.push("/marketplace")
         break
       default:
         notifications.showInfo("Action", `Performing ${action}...`)
@@ -265,7 +265,10 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
             <Button
               size="lg"
               className="w-full sm:w-fit shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
-              onClick={() => handleQuickAction(config.primaryAction.toLowerCase().replace(" ", "-"), activeRole)}
+              onClick={() => {
+                const action = config.primaryAction.toLowerCase().replace(/\s+/g, "-")
+                handleQuickAction(action, activeRole)
+              }}
             >
               <PrimaryIcon className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
               <span className="hidden sm:inline">{config.primaryAction}</span>

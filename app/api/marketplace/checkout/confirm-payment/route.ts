@@ -7,6 +7,7 @@ import { Payment } from "@/server/models/Payment";
 import { Order } from "@/server/models/Product";
 import { PaymentConfirmationSchema } from "@/server/validators/payment";
 import { retrievePaymentIntent, retrieveSource, retrievePayment, PayMongoError } from "@/lib/paymongo";
+import { autoSetupLalamoveDelivery } from "@/server/utils/lalamove-auto-setup";
 import mongoose from "mongoose";
 
 export async function POST(req: NextRequest) {
@@ -242,6 +243,15 @@ export async function POST(req: NextRequest) {
         order_ids: createdOrders
       };
       await payment.save();
+
+      // Automatically set up Lalamove delivery for each order (non-blocking)
+      // This runs asynchronously and won't fail the payment if it errors
+      for (const orderId of createdOrders) {
+        autoSetupLalamoveDelivery(String(orderId)).catch((error) => {
+          // Log error but don't fail payment
+          console.error(`[Payment Confirmation] Failed to auto-setup Lalamove for order ${orderId}:`, error);
+        });
+      }
 
       return jsonOk({
         success: true,
