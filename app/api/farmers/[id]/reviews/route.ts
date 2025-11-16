@@ -3,11 +3,17 @@ import { requireMethod, jsonError, jsonOk, getAuthToken } from "@/server/utils/a
 import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { connectToDatabase } from "@/server/lib/mongodb";
+import mongoose from "mongoose";
 import { Farmer } from "@/server/models/Farmer";
 import { Review } from "@/server/models/Review";
 import { User } from "@/server/models/User";
 import { notifyReviewReceived } from "@/server/utils/notifications";
 import { z } from "zod";
+
+// Ensure User model is registered at module load time
+if (typeof mongoose !== 'undefined' && !mongoose.models.User) {
+  void User;
+}
 
 const CreateReviewSchema = z.object({
   rating: z.number().min(1).max(5),
@@ -22,6 +28,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   await connectToDatabase();
+  
+  // Ensure User model is registered before populate
+  if (!mongoose.models.User) {
+    void User;
+  }
   
   // Get farmer to get user_id
   const farmer = await Farmer.findById(id);
@@ -76,6 +87,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!result.ok) return result.res;
 
   await connectToDatabase();
+  
+  // Ensure User model is registered before populate
+  if (!mongoose.models.User) {
+    void User;
+  }
   
   // Get farmer to get user_id
   const farmer = await Farmer.findById(id).populate('user_id', 'full_name');

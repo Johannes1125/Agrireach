@@ -9,6 +9,13 @@ import { User } from "@/server/models/User";
 import { notifyReviewReceived } from "@/server/utils/notifications";
 import { z } from "zod";
 
+// Ensure User model is registered at module load time
+// This prevents "Schema hasn't been registered" errors during populate
+if (typeof mongoose !== 'undefined' && !mongoose.models.User) {
+  // Force registration by accessing the User export
+  void User;
+}
+
 const CreateReviewSchema = z
   .object({
     reviewee_id: z
@@ -31,6 +38,13 @@ export async function GET(req: NextRequest) {
   if (mm) return mm;
 
   await connectToDatabase();
+
+  // Ensure User model is registered before populate
+  // This prevents "Schema hasn't been registered" errors
+  if (!mongoose.models.User) {
+    // Force registration by accessing the User export
+    void User;
+  }
 
   const { searchParams } = new URL(req.url);
   const reviewee_id = searchParams.get("reviewee_id");

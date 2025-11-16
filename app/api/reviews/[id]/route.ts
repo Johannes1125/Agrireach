@@ -3,8 +3,15 @@ import { requireMethod, jsonError, jsonOk, getAuthToken } from "@/server/utils/a
 import { verifyToken } from "@/server/utils/auth";
 import { validateBody } from "@/server/middleware/validate";
 import { connectToDatabase } from "@/server/lib/mongodb";
+import mongoose from "mongoose";
 import { Review } from "@/server/models/Review";
+import { User } from "@/server/models/User";
 import { z } from "zod";
+
+// Ensure User model is registered at module load time
+if (typeof mongoose !== 'undefined' && !mongoose.models.User) {
+  void User;
+}
 
 const UpdateReviewSchema = z.object({
   rating: z.number().min(1).max(5).optional(),
@@ -19,6 +26,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   await connectToDatabase();
+  
+  // Ensure User model is registered before populate
+  if (!mongoose.models.User) {
+    void User;
+  }
   
   const review = await Review.findById(id)
     .populate('reviewer_id', 'full_name avatar_url')
@@ -46,6 +58,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   await connectToDatabase();
+  
+  // Ensure User model is registered before populate
+  if (!mongoose.models.User) {
+    void User;
+  }
   
   const review = await Review.findById(id);
   if (!review) return jsonError("Review not found", 404);

@@ -1,8 +1,14 @@
 import { NextRequest } from "next/server";
 import { requireMethod, jsonOk } from "@/server/utils/api";
 import { connectToDatabase } from "@/server/lib/mongodb";
-import { Review } from "@/server/models/Review";
 import mongoose from "mongoose";
+import { Review } from "@/server/models/Review";
+import { User } from "@/server/models/User";
+
+// Ensure User model is registered at module load time
+if (typeof mongoose !== 'undefined' && !mongoose.models.User) {
+  void User;
+}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const mm = requireMethod(req, ["GET"]);
@@ -10,6 +16,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   await connectToDatabase();
+
+  // Ensure User model is registered before populate
+  if (!mongoose.models.User) {
+    void User;
+  }
 
   // Convert string ID to ObjectId for proper MongoDB querying (same as detail page)
   const revieweeId = mongoose.Types.ObjectId.isValid(id) 

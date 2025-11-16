@@ -68,9 +68,7 @@ const UserSchema = new Schema<IUser>(
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
 
-// Middleware to sync role with roles array for backward compatibility
 UserSchema.pre('save', function(next) {
-  // If roles is set, sync the first role to the legacy role field
   if (this.roles && this.roles.length > 0) {
     this.role = this.roles[0];
   }

@@ -2,11 +2,17 @@ import { NextRequest } from "next/server";
 import { requireMethod, jsonError, jsonOk, getAuthToken } from "@/server/utils/api";
 import { verifyToken } from "@/server/utils/auth";
 import { connectToDatabase } from "@/server/lib/mongodb";
+import mongoose from "mongoose";
 import { User } from "@/server/models/User";
 import { Opportunity, JobApplication } from "@/server/models/Job";
 import { Product, Order } from "@/server/models/Product";
 import { Review } from "@/server/models/Review";
 import { ForumThread, ForumPost } from "@/server/models/Thread";
+
+// Ensure User model is registered at module load time
+if (typeof mongoose !== 'undefined' && !mongoose.models.User) {
+  void User;
+}
 
 export async function GET(req: NextRequest) {
   const mm = requireMethod(req, ["GET"]);
