@@ -111,7 +111,8 @@ export async function POST(req: NextRequest) {
       payment_type: 'one_time',
       status: 'pending',
       billing_details: billing_details,
-      delivery_address: typeof delivery_address === 'object' ? delivery_address : delivery_address_structured,
+      // Always prefer delivery_address_structured as it contains coordinates
+      delivery_address: delivery_address_structured || (typeof delivery_address === 'object' ? delivery_address : undefined),
       metadata: {
         order_items: orderItems,
         cart_item_ids: cartItemIds

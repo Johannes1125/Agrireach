@@ -58,6 +58,10 @@ export interface IPayment extends Document {
     state: string
     postal_code: string
     country: string
+    coordinates?: {
+      latitude: number
+      longitude: number
+    }
   }
   
   // Metadata and tracking

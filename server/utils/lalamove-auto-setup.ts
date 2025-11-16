@@ -122,28 +122,40 @@ export async function autoSetupLalamoveDelivery(orderId: string): Promise<AutoSe
       // Use coordinates directly from delivery_address_structured (from location buttons)
       deliveryCoordinates = order.delivery_address_structured.coordinates;
       deliveryAddress = order.delivery_address_structured.line1 || "Location selected";
-      console.log(`[Lalamove Auto-Setup] Using coordinates from delivery_address_structured`);
-    } else if (order.delivery_address_structured) {
-      const addr = order.delivery_address_structured;
-      // Build address string from structured data
-      const parts = [
-        addr.line1,
-        addr.line2,
-        addr.city,
-        addr.state,
-        addr.postal_code,
-        addr.country || "Philippines"
-      ].filter(Boolean);
-      deliveryAddress = parts.join(", ");
-      
-      if (addr.coordinates) {
-        deliveryCoordinates = addr.coordinates;
-      }
-    } else if (order.delivery_address) {
-      deliveryAddress = order.delivery_address;
+      console.log(`[Lalamove Auto-Setup] ✅ Using coordinates from delivery_address_structured:`, deliveryCoordinates);
     } else {
-      console.error(`[Lalamove Auto-Setup] Cannot determine delivery address for order ${orderId}`);
-      return { success: false, error: "Cannot determine delivery address" };
+      // Log what we actually have for debugging
+      console.log(`[Lalamove Auto-Setup] ⚠️ No coordinates in delivery_address_structured for order ${orderId}`);
+      console.log(`[Lalamove Auto-Setup] Available data:`, {
+        has_structured: !!order.delivery_address_structured,
+        structured_keys: order.delivery_address_structured ? Object.keys(order.delivery_address_structured) : [],
+        has_delivery_address: !!order.delivery_address,
+        structured_content: order.delivery_address_structured ? JSON.stringify(order.delivery_address_structured).substring(0, 200) : 'none',
+      });
+      
+      if (order.delivery_address_structured) {
+        const addr = order.delivery_address_structured;
+        // Build address string from structured data
+        const parts = [
+          addr.line1,
+          addr.line2,
+          addr.city,
+          addr.state,
+          addr.postal_code,
+          addr.country || "Philippines"
+        ].filter(Boolean);
+        deliveryAddress = parts.join(", ");
+        
+        if (addr.coordinates) {
+          deliveryCoordinates = addr.coordinates;
+          console.log(`[Lalamove Auto-Setup] ✅ Found coordinates in structured address:`, deliveryCoordinates);
+        }
+      } else if (order.delivery_address) {
+        deliveryAddress = order.delivery_address;
+      } else {
+        console.error(`[Lalamove Auto-Setup] Cannot determine delivery address for order ${orderId}`);
+        return { success: false, error: "Cannot determine delivery address" };
+      }
     }
 
     // Geocode pickup address if coordinates are missing
@@ -160,13 +172,18 @@ export async function autoSetupLalamoveDelivery(orderId: string): Promise<AutoSe
 
     // Geocode delivery address ONLY if coordinates are missing (shouldn't happen with new flow)
     if (!deliveryCoordinates && deliveryAddress) {
-      console.log(`[Lalamove Auto-Setup] Geocoding delivery address: ${deliveryAddress}`);
+      console.warn(`[Lalamove Auto-Setup] ⚠️ Coordinates missing for order ${orderId}. Attempting geocoding as fallback...`);
+      console.log(`[Lalamove Auto-Setup] Address to geocode: ${deliveryAddress}`);
       const geocodeResult = await geocodeAddress(deliveryAddress);
       if (geocodeResult?.coordinates) {
         deliveryCoordinates = geocodeResult.coordinates;
+        console.log(`[Lalamove Auto-Setup] ✅ Successfully geocoded delivery address:`, deliveryCoordinates);
       } else {
-        console.error(`[Lalamove Auto-Setup] Failed to geocode delivery address: ${deliveryAddress}`);
-        return { success: false, error: "Could not geocode delivery address. Please use location buttons to select delivery address." };
+        console.error(`[Lalamove Auto-Setup] ❌ Failed to geocode delivery address: ${deliveryAddress}`);
+        return { 
+          success: false, 
+          error: "Delivery coordinates are required but could not be determined. Please ensure you used the location buttons to select your delivery address." 
+        };
       }
     }
 
