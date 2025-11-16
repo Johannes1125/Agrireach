@@ -5,6 +5,18 @@ import { Order } from "@/server/models/Product";
 import { Notification } from "@/server/models/Notification";
 import { verifyWebhookSignature, LALAMOVE_CONFIG } from "@/lib/lalamove";
 
+/**
+ * GET handler for webhook verification
+ * Lalamove may test the endpoint with a GET request to verify it's reachable
+ */
+export async function GET(req: NextRequest) {
+  return jsonOk({
+    message: "Lalamove webhook endpoint is active",
+    endpoint: "/api/delivery/lalamove/webhook",
+    methods: ["GET", "POST"],
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Get raw body as text (important for signature verification)
