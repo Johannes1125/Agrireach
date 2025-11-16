@@ -79,6 +79,10 @@ export async function GET(req: NextRequest) {
         address: result.address,
         coordinates: result.coordinates,
         formatted_address: result.formatted_address,
+        city: result.city,
+        state: result.state,
+        postal_code: result.postal_code,
+        country: result.country,
       });
     }
 

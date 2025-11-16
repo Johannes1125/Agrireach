@@ -12,6 +12,11 @@ export interface GeocodeResult {
   address: string;
   coordinates: Coordinates;
   formatted_address?: string;
+  // Structured address components from reverse geocoding
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
 }
 
 // Simple in-memory cache (consider Redis for production)
@@ -133,10 +138,21 @@ export async function reverseGeocode(
     const address = data.display_name || 
       `${data.address.road || ""} ${data.address.city || data.address.town || data.address.village || ""}, ${data.address.state || ""}, Philippines`.trim();
 
+    // Extract structured address components from Nominatim response
+    const addr = data.address;
+    const city = addr.city || addr.town || addr.village || addr.municipality || "";
+    const state = addr.state || addr.province || "";
+    const postalCode = addr.postcode || "";
+    const country = addr.country || "Philippines";
+
     const geocodeResult: GeocodeResult = {
       address,
       coordinates: { latitude, longitude },
       formatted_address: data.display_name,
+      city: city || undefined,
+      state: state || undefined,
+      postal_code: postalCode || undefined,
+      country: country || "Philippines",
     };
 
     // Cache result

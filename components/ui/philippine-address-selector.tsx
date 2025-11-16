@@ -30,6 +30,11 @@ import "leaflet/dist/leaflet.css";
 export interface PhilippineAddress {
   coordinates?: { latitude: number; longitude: number }
   formattedAddress?: string // Optional: reverse geocoded address for display
+  // Structured address components extracted from reverse geocoding
+  city?: string
+  state?: string
+  postalCode?: string
+  country?: string
 }
 
 interface PhilippineAddressSelectorProps {
@@ -109,10 +114,14 @@ export function PhilippineAddressSelector({
             const addressData = data.data.formatted_address || data.data.address
             setFormattedAddress(addressData)
             
-            // Update parent with coordinates and formatted address
+            // Update parent with coordinates and structured address components
             onChange({
               coordinates: { latitude, longitude },
-              formattedAddress: addressData
+              formattedAddress: addressData,
+              city: data.data.city || "",
+              state: data.data.state || "",
+              postalCode: data.data.postal_code || "",
+              country: data.data.country || "Philippines"
             })
             toast.success("Location found!")
           } else {
@@ -163,10 +172,14 @@ export function PhilippineAddressSelector({
         const addressData = data.data.formatted_address || data.data.address
         setFormattedAddress(addressData)
         
-        // Update parent with coordinates and formatted address
+        // Update parent with coordinates and structured address components
         onChange({
           coordinates: { latitude: lat, longitude: lng },
-          formattedAddress: addressData
+          formattedAddress: addressData,
+          city: data.data.city || "",
+          state: data.data.state || "",
+          postalCode: data.data.postal_code || "",
+          country: data.data.country || "Philippines"
         })
         toast.success("Location selected!")
       } else {
