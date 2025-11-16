@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Navigation, Loader2, Map } from "lucide-react"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
@@ -35,6 +37,9 @@ export interface PhilippineAddress {
   state?: string
   postalCode?: string
   country?: string
+  // Manual input fields for specific address
+  line1?: string  // Street address (e.g., "123 Main Street")
+  line2?: string  // Additional address info (e.g., "Unit 4B")
 }
 
 interface PhilippineAddressSelectorProps {
@@ -121,14 +126,18 @@ export function PhilippineAddressSelector({
               city: data.data.city || "",
               state: data.data.state || "",
               postalCode: data.data.postal_code || "",
-              country: data.data.country || "Philippines"
+              country: data.data.country || "Philippines",
+              line1: value?.line1 || "", // Preserve existing line1
+              line2: value?.line2 || "", // Preserve existing line2
             })
             toast.success("Location found!")
           } else {
             // Still save coordinates even if reverse geocoding fails
             onChange({
               coordinates: { latitude, longitude },
-              formattedAddress: `Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+              formattedAddress: `Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+              line1: value?.line1 || "", // Preserve existing line1
+              line2: value?.line2 || "", // Preserve existing line2
             })
             toast.success("Location saved!")
           }
@@ -137,7 +146,9 @@ export function PhilippineAddressSelector({
           // Still save coordinates even if reverse geocoding fails
           onChange({
             coordinates: { latitude, longitude },
-            formattedAddress: `Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+            formattedAddress: `Location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+            line1: value?.line1 || "", // Preserve existing line1
+            line2: value?.line2 || "", // Preserve existing line2
           })
           toast.success("Location saved!")
         } finally {
@@ -179,14 +190,18 @@ export function PhilippineAddressSelector({
           city: data.data.city || "",
           state: data.data.state || "",
           postalCode: data.data.postal_code || "",
-          country: data.data.country || "Philippines"
+          country: data.data.country || "Philippines",
+          line1: value?.line1 || "", // Preserve existing line1
+          line2: value?.line2 || "", // Preserve existing line2
         })
         toast.success("Location selected!")
       } else {
         // Still save coordinates even if reverse geocoding fails
         onChange({
           coordinates: { latitude: lat, longitude: lng },
-          formattedAddress: `Location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`
+          formattedAddress: `Location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+          line1: value?.line1 || "", // Preserve existing line1
+          line2: value?.line2 || "", // Preserve existing line2
         })
         toast.success("Location selected!")
       }
@@ -195,7 +210,9 @@ export function PhilippineAddressSelector({
       // Still save coordinates even if reverse geocoding fails
       onChange({
         coordinates: { latitude: lat, longitude: lng },
-        formattedAddress: `Location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`
+        formattedAddress: `Location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+        line1: value?.line1 || "", // Preserve existing line1
+        line2: value?.line2 || "", // Preserve existing line2
       })
       toast.success("Location selected!")
     }
@@ -266,24 +283,59 @@ export function PhilippineAddressSelector({
                     <MapClickComponent onMapClick={handleMapClick} />
                   </MapContainer>
                 )}
-              </div>
+        </div>
             </DialogContent>
           </Dialog>
         )}
       </div>
 
-      {/* Display selected location */}
-      {formattedAddress && (
-        <div className="p-3 bg-muted rounded-lg">
-          <p className="text-sm font-medium">Selected Location:</p>
-          <p className="text-sm text-muted-foreground">{formattedAddress}</p>
-          {value?.coordinates && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Coordinates: {value.coordinates.latitude.toFixed(6)}, {value.coordinates.longitude.toFixed(6)}
-            </p>
+          {/* Display selected location */}
+          {formattedAddress && (
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm font-medium">Selected Location:</p>
+              <p className="text-sm text-muted-foreground">{formattedAddress}</p>
+              {value?.coordinates && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Coordinates: {value.coordinates.latitude.toFixed(6)}, {value.coordinates.longitude.toFixed(6)}
+                </p>
+              )}
+            </div>
           )}
-        </div>
-      )}
+
+          {/* Manual address input fields */}
+          {value?.coordinates && (
+            <div className="space-y-4 border-t pt-4">
+              <p className="text-sm font-medium">Enter Specific Address Details</p>
+              <div className="space-y-2">
+                <Label htmlFor="line1">Street Address / Building Name *</Label>
+                <Input
+                  id="line1"
+                  placeholder="e.g., 123 Main Street, Building Name"
+                  value={value.line1 || ""}
+                  onChange={(e) => {
+                    onChange({
+                      ...value,
+                      line1: e.target.value
+                    })
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="line2">Unit / Floor / Additional Info (Optional)</Label>
+                <Input
+                  id="line2"
+                  placeholder="e.g., Unit 4B, 2nd Floor"
+                  value={value.line2 || ""}
+                  onChange={(e) => {
+                    onChange({
+                      ...value,
+                      line2: e.target.value
+                    })
+                  }}
+                />
+              </div>
+            </div>
+          )}
     </div>
   )
 }

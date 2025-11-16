@@ -204,8 +204,8 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
     // Map Philippine address to validation schema format with coordinates
     // Use extracted address components from reverse geocoding, with fallbacks
     const mappedDeliveryAddress = {
-      line1: deliveryAddress.formattedAddress || "Location selected",
-      line2: "", // Optional field
+      line1: deliveryAddress.line1 || deliveryAddress.formattedAddress || "Location selected",
+      line2: deliveryAddress.line2 || "",
       city: deliveryAddress.city || "Manila", // Use extracted city or fallback
       state: deliveryAddress.state || "Metro Manila", // Use extracted state or fallback
       postal_code: deliveryAddress.postalCode || "1000", // Use extracted postal code or fallback

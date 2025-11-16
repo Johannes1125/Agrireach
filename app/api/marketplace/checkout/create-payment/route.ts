@@ -46,7 +46,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Log validated data to see if coordinates survived validation
+    console.log("Validated delivery_address_structured:", JSON.stringify(result.data.delivery_address_structured, null, 2));
+    console.log("Coordinates in validated data:", result.data.delivery_address_structured?.coordinates);
+
     const { items: cartItemIds, delivery_address, delivery_address_structured, payment_method, billing_details } = result.data;
+    
+    // Debug: Log what we received
+    console.log("Received delivery_address_structured:", JSON.stringify(delivery_address_structured, null, 2));
+    console.log("Has coordinates:", !!delivery_address_structured?.coordinates);
+    console.log("Coordinates value:", delivery_address_structured?.coordinates);
     
     console.log("Payment method received:", payment_method);
 
@@ -101,6 +110,41 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Validate that all sellers have location with coordinates
+    const { User } = await import("@/server/models/User");
+    const { geocodeAddress } = await import("@/server/utils/geocoding");
+
+    for (const item of orderItems) {
+      const seller = await User.findById(item.seller_id).select('location location_coordinates').lean();
+      
+      if (!seller?.location) {
+        return jsonError(`Seller for product has no location set. Please contact the seller.`, 400);
+      }
+      
+      // If seller doesn't have coordinates, try to geocode
+      if (!seller.location_coordinates && seller.location) {
+        console.log(`[Checkout] Geocoding seller location: ${seller.location}`);
+        const geocodeResult = await geocodeAddress(seller.location);
+        
+        if (geocodeResult?.coordinates) {
+          // Update seller's location_coordinates
+          await User.findByIdAndUpdate(item.seller_id, {
+            $set: { location_coordinates: geocodeResult.coordinates }
+          }).catch(err => {
+            console.error(`[Checkout] Failed to update seller coordinates:`, err);
+          });
+        } else {
+          return jsonError(`Could not determine coordinates for seller location: ${seller.location}. Please ensure the seller has set a valid location.`, 400);
+        }
+      }
+    }
+
+    // Always prefer delivery_address_structured as it contains coordinates
+    const deliveryAddressToSave = delivery_address_structured || (typeof delivery_address === 'object' ? delivery_address : undefined);
+
+    console.log("Saving payment with delivery_address:", JSON.stringify(deliveryAddressToSave, null, 2));
+    console.log("Coordinates in delivery_address:", deliveryAddressToSave?.coordinates);
+
     // Create payment record
     const payment = new Payment({
       buyer_id: userId,
@@ -112,7 +156,7 @@ export async function POST(req: NextRequest) {
       status: 'pending',
       billing_details: billing_details,
       // Always prefer delivery_address_structured as it contains coordinates
-      delivery_address: delivery_address_structured || (typeof delivery_address === 'object' ? delivery_address : undefined),
+      delivery_address: deliveryAddressToSave,
       metadata: {
         order_items: orderItems,
         cart_item_ids: cartItemIds

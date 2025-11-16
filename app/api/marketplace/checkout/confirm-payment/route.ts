@@ -208,12 +208,50 @@ export async function POST(req: NextRequest) {
         const seller = await User.findById(item.seller_id).lean();
         const product = await Product.findById(item.product_id).lean();
         
+        if (!seller?.location) {
+          console.error(`[Order Creation] Seller ${item.seller_id} has no location`);
+          // Continue but log error - Lalamove setup will fail later
+        }
+        
         // Prepare pickup address from seller location
-        const pickupAddress = seller?.location ? {
-          line1: seller.location,
-          city: seller.location_coordinates ? undefined : seller.location.split(',')[0] || seller.location,
-          coordinates: seller.location_coordinates || undefined,
-        } : undefined;
+        let pickupAddress = undefined;
+        
+        if (seller?.location) {
+          let sellerCoordinates = seller.location_coordinates;
+          
+          // If seller location doesn't have coordinates, geocode it
+          if (!sellerCoordinates && seller.location) {
+            console.log(`[Order Creation] Geocoding seller location: ${seller.location}`);
+            const { geocodeAddress } = await import("@/server/utils/geocoding");
+            const geocodeResult = await geocodeAddress(seller.location);
+            
+            if (geocodeResult?.coordinates) {
+              sellerCoordinates = geocodeResult.coordinates;
+              // Optionally update seller's location_coordinates in database
+              await User.findByIdAndUpdate(item.seller_id, {
+                $set: { location_coordinates: sellerCoordinates }
+              }).catch(err => {
+                console.error(`[Order Creation] Failed to update seller coordinates:`, err);
+              });
+            } else {
+              console.error(`[Order Creation] Failed to geocode seller location: ${seller.location}`);
+            }
+          }
+          
+          // Extract city from location string if coordinates exist, otherwise try to parse
+          let city = undefined;
+          if (!sellerCoordinates) {
+            // Try to extract city from location string
+            const locationParts = seller.location.split(',');
+            city = locationParts[0]?.trim() || seller.location;
+          }
+          
+          pickupAddress = {
+            line1: seller.location,
+            city: city,
+            coordinates: sellerCoordinates || undefined,
+          };
+        }
         
         const order = await Order.create({
           buyer_id: userId,

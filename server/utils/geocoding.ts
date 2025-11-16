@@ -141,7 +141,8 @@ export async function reverseGeocode(
     // Extract structured address components from Nominatim response
     const addr = data.address;
     const city = addr.city || addr.town || addr.village || addr.municipality || "";
-    const state = addr.state || addr.province || "";
+    // For Philippines, check region first (e.g., "Central Luzon"), then state, then province
+    const state = addr.region || addr.state || addr.province || "";
     const postalCode = addr.postcode || "";
     const country = addr.country || "Philippines";
 
