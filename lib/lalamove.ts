@@ -123,21 +123,46 @@ export async function getQuotation(request: LalamoveQuotationRequest) {
       },
     });
 
+    // Log the request being sent
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 [Lalamove API] GET QUOTATION REQUEST');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('URL:', `${LALAMOVE_BASE_URL}${path}`);
+    console.log('Method: POST');
+    console.log('Request Body:', JSON.stringify(JSON.parse(body), null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
       method: 'POST',
       headers: getAuthHeaders('POST', path, body),
       body,
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
-      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    // Get response as text first so we can log it
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
     }
 
-    return await response.json();
+    // Log the response received from Lalamove
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📥 [Lalamove API] GET QUOTATION RESPONSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Status:', response.status, response.statusText);
+    console.log('Full Response from Lalamove:', JSON.stringify(responseData, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (!response.ok) {
+      const errorMessage = responseData.errors?.[0]?.message || responseData.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, responseData.errors?.[0]?.id, responseData);
+    }
+
+    return responseData;
   } catch (error: any) {
-    console.error('Lalamove getQuotation error:', error);
+    console.error('❌ [Lalamove API] GET QUOTATION ERROR:', error);
     if (error instanceof LalamoveError) {
       throw error;
     }
@@ -157,20 +182,43 @@ export async function getQuotationDetails(quotationId: string) {
     const path = `/quotations/${quotationId}`;
     const body = '';
 
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 [Lalamove API] GET QUOTATION DETAILS REQUEST');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('URL:', `${LALAMOVE_BASE_URL}${path}`);
+    console.log('Method: GET');
+    console.log('Quotation ID:', quotationId);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
       method: 'GET',
       headers: getAuthHeaders('GET', path, body),
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
-      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    // Get response as text first so we can log it
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
     }
 
-    return await response.json();
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📥 [Lalamove API] GET QUOTATION DETAILS RESPONSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Status:', response.status, response.statusText);
+    console.log('Full Response from Lalamove:', JSON.stringify(responseData, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (!response.ok) {
+      const errorMessage = responseData.errors?.[0]?.message || responseData.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, responseData.errors?.[0]?.id, responseData);
+    }
+
+    return responseData;
   } catch (error: any) {
-    console.error('Lalamove getQuotationDetails error:', error);
+    console.error('❌ [Lalamove API] GET QUOTATION DETAILS ERROR:', error);
     if (error instanceof LalamoveError) {
       throw error;
     }
@@ -199,21 +247,46 @@ export async function placeOrder(request: LalamovePlaceOrderRequest) {
       },
     });
 
+    // Log the request being sent
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 [Lalamove API] PLACE ORDER REQUEST');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('URL:', `${LALAMOVE_BASE_URL}${path}`);
+    console.log('Method: POST');
+    console.log('Request Body:', JSON.stringify(JSON.parse(body), null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
       method: 'POST',
       headers: getAuthHeaders('POST', path, body),
       body,
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
-      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    // Get response as text first so we can log it
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
     }
 
-    return await response.json();
+    // Log the response received from Lalamove
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📥 [Lalamove API] PLACE ORDER RESPONSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Status:', response.status, response.statusText);
+    console.log('Full Response from Lalamove:', JSON.stringify(responseData, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (!response.ok) {
+      const errorMessage = responseData.errors?.[0]?.message || responseData.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, responseData.errors?.[0]?.id, responseData);
+    }
+
+    return responseData;
   } catch (error: any) {
-    console.error('Lalamove placeOrder error:', error);
+    console.error('❌ [Lalamove API] PLACE ORDER ERROR:', error);
     if (error instanceof LalamoveError) {
       throw error;
     }
@@ -233,20 +306,43 @@ export async function getOrderDetails(orderId: string) {
     const path = `/orders/${orderId}`;
     const body = '';
 
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 [Lalamove API] GET ORDER DETAILS REQUEST');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('URL:', `${LALAMOVE_BASE_URL}${path}`);
+    console.log('Method: GET');
+    console.log('Order ID:', orderId);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
       method: 'GET',
       headers: getAuthHeaders('GET', path, body),
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
-      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    // Get response as text first so we can log it
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
     }
 
-    return await response.json();
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📥 [Lalamove API] GET ORDER DETAILS RESPONSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Status:', response.status, response.statusText);
+    console.log('Full Response from Lalamove:', JSON.stringify(responseData, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (!response.ok) {
+      const errorMessage = responseData.errors?.[0]?.message || responseData.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, responseData.errors?.[0]?.id, responseData);
+    }
+
+    return responseData;
   } catch (error: any) {
-    console.error('Lalamove getOrderDetails error:', error);
+    console.error('❌ [Lalamove API] GET ORDER DETAILS ERROR:', error);
     if (error instanceof LalamoveError) {
       throw error;
     }
@@ -266,21 +362,44 @@ export async function cancelOrder(orderId: string) {
     const path = `/orders/${orderId}/cancel`;
     const body = JSON.stringify({ data: {} });
 
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 [Lalamove API] CANCEL ORDER REQUEST');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('URL:', `${LALAMOVE_BASE_URL}${path}`);
+    console.log('Method: PUT');
+    console.log('Order ID:', orderId);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
       method: 'PUT',
       headers: getAuthHeaders('PUT', path, body),
       body,
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
-      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    // Get response as text first so we can log it
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
     }
 
-    return await response.json();
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📥 [Lalamove API] CANCEL ORDER RESPONSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Status:', response.status, response.statusText);
+    console.log('Full Response from Lalamove:', JSON.stringify(responseData, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (!response.ok) {
+      const errorMessage = responseData.errors?.[0]?.message || responseData.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, responseData.errors?.[0]?.id, responseData);
+    }
+
+    return responseData;
   } catch (error: any) {
-    console.error('Lalamove cancelOrder error:', error);
+    console.error('❌ [Lalamove API] CANCEL ORDER ERROR:', error);
     if (error instanceof LalamoveError) {
       throw error;
     }
@@ -332,21 +451,45 @@ export async function editOrder(orderId: string, request: LalamoveEditOrderReque
       },
     });
 
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 [Lalamove API] EDIT ORDER REQUEST');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('URL:', `${LALAMOVE_BASE_URL}${path}`);
+    console.log('Method: PATCH');
+    console.log('Order ID:', orderId);
+    console.log('Request Body:', JSON.stringify(JSON.parse(body), null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
       method: 'PATCH',
       headers: getAuthHeaders('PATCH', path, body),
       body,
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
-      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    // Get response as text first so we can log it
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
     }
 
-    return await response.json();
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📥 [Lalamove API] EDIT ORDER RESPONSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Status:', response.status, response.statusText);
+    console.log('Full Response from Lalamove:', JSON.stringify(responseData, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (!response.ok) {
+      const errorMessage = responseData.errors?.[0]?.message || responseData.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, responseData.errors?.[0]?.id, responseData);
+    }
+
+    return responseData;
   } catch (error: any) {
-    console.error('Lalamove editOrder error:', error);
+    console.error('❌ [Lalamove API] EDIT ORDER ERROR:', error);
     if (error instanceof LalamoveError) {
       throw error;
     }
@@ -366,20 +509,43 @@ export async function getDriverDetails(orderId: string) {
     const path = `/orders/${orderId}/driver`;
     const body = '';
 
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 [Lalamove API] GET DRIVER DETAILS REQUEST');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('URL:', `${LALAMOVE_BASE_URL}${path}`);
+    console.log('Method: GET');
+    console.log('Order ID:', orderId);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
       method: 'GET',
       headers: getAuthHeaders('GET', path, body),
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
-      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    // Get response as text first so we can log it
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
     }
 
-    return await response.json();
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📥 [Lalamove API] GET DRIVER DETAILS RESPONSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Status:', response.status, response.statusText);
+    console.log('Full Response from Lalamove:', JSON.stringify(responseData, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (!response.ok) {
+      const errorMessage = responseData.errors?.[0]?.message || responseData.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, responseData.errors?.[0]?.id, responseData);
+    }
+
+    return responseData;
   } catch (error: any) {
-    console.error('Lalamove getDriverDetails error:', error);
+    console.error('❌ [Lalamove API] GET DRIVER DETAILS ERROR:', error);
     if (error instanceof LalamoveError) {
       throw error;
     }
@@ -399,20 +565,43 @@ export async function getCityInfo(city: string) {
     const path = `/cities/${city}`;
     const body = '';
 
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 [Lalamove API] GET CITY INFO REQUEST');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('URL:', `${LALAMOVE_BASE_URL}${path}`);
+    console.log('Method: GET');
+    console.log('City:', city);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
       method: 'GET',
       headers: getAuthHeaders('GET', path, body),
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
-      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    // Get response as text first so we can log it
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
     }
 
-    return await response.json();
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📥 [Lalamove API] GET CITY INFO RESPONSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Status:', response.status, response.statusText);
+    console.log('Full Response from Lalamove:', JSON.stringify(responseData, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (!response.ok) {
+      const errorMessage = responseData.errors?.[0]?.message || responseData.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, responseData.errors?.[0]?.id, responseData);
+    }
+
+    return responseData;
   } catch (error: any) {
-    console.error('Lalamove getCityInfo error:', error);
+    console.error('❌ [Lalamove API] GET CITY INFO ERROR:', error);
     if (error instanceof LalamoveError) {
       throw error;
     }
@@ -437,21 +626,44 @@ export async function setWebhookUrl(webhookUrl: string) {
       },
     });
 
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📤 [Lalamove API] SET WEBHOOK URL REQUEST');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('URL:', `${LALAMOVE_BASE_URL}${path}`);
+    console.log('Method: PATCH');
+    console.log('Webhook URL:', webhookUrl);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
       method: 'PATCH',
       headers: getAuthHeaders('PATCH', path, body),
       body,
     });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
-      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    // Get response as text first so we can log it
+    const responseText = await response.text();
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch {
+      responseData = responseText;
     }
 
-    return await response.json();
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📥 [Lalamove API] SET WEBHOOK URL RESPONSE');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('Status:', response.status, response.statusText);
+    console.log('Full Response from Lalamove:', JSON.stringify(responseData, null, 2));
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    if (!response.ok) {
+      const errorMessage = responseData.errors?.[0]?.message || responseData.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, responseData.errors?.[0]?.id, responseData);
+    }
+
+    return responseData;
   } catch (error: any) {
-    console.error('Lalamove setWebhookUrl error:', error);
+    console.error('❌ [Lalamove API] SET WEBHOOK URL ERROR:', error);
     if (error instanceof LalamoveError) {
       throw error;
     }
