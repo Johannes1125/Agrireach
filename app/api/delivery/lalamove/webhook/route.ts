@@ -20,6 +20,14 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  // Lalamove integration has been removed - using custom delivery system instead
+  console.log('Lalamove webhook received but integration is disabled - using custom delivery system');
+  return jsonOk({ 
+    received: true, 
+    message: 'Lalamove integration disabled - using custom delivery system' 
+  });
+  
+  /* DISABLED - Lalamove integration removed
   try {
     // IMPORTANT: Return 200 OK immediately for initial connection
     // Lalamove may send empty body for initial connection test
@@ -118,8 +126,10 @@ export async function POST(req: NextRequest) {
     // Lalamove will retry if there's an issue, but we don't want to disable the webhook
     return jsonOk({ received: true, error: error.message });
   }
+  */
 }
 
+/* DISABLED - Lalamove integration removed
 async function handleOrderStatusChanged(eventData: any, eventId: string, timestamp: string) {
   // Extract order information from webhook payload
   const orderInfo = eventData.order || eventData;
@@ -347,4 +357,5 @@ async function handleOrderEdited(eventData: any, eventId: string, timestamp: str
 
   console.log(`Order ${order._id} delivery information updated`);
 }
+*/
 

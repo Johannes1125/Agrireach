@@ -4,7 +4,7 @@ import { connectToDatabase } from "@/server/lib/mongodb";
 import { Payment } from "@/server/models/Payment";
 import { Order, Product, CartItem } from "@/server/models/Product";
 import { verifyWebhookSignature, PAYMONGO_CONFIG } from "@/lib/paymongo";
-import { autoSetupLalamoveDelivery } from "@/server/utils/lalamove-auto-setup";
+import { createDeliveryForOrder } from "@/server/utils/delivery-setup";
 
 export async function POST(req: NextRequest) {
   try {
@@ -162,12 +162,12 @@ async function handlePaymentPaid(paymentData: any) {
 
     console.log(`Payment ${payment._id} confirmed via webhook - Orders created: ${createdOrders.length}`);
 
-    // Automatically set up Lalamove delivery for each order (non-blocking)
+    // Automatically create delivery records for each order (non-blocking)
     // This runs asynchronously and won't fail the payment if it errors
     for (const orderId of createdOrders) {
-      autoSetupLalamoveDelivery(String(orderId)).catch((error) => {
+      createDeliveryForOrder(String(orderId)).catch((error) => {
         // Log error but don't fail payment
-        console.error(`[Payment Webhook] Failed to auto-setup Lalamove for order ${orderId}:`, error);
+        console.error(`[Payment Webhook] Failed to create delivery for order ${orderId}:`, error);
       });
     }
   } catch (error) {

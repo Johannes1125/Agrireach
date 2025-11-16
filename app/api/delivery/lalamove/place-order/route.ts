@@ -8,6 +8,10 @@ import { Notification } from "@/server/models/Notification";
 import { placeOrder, LalamovePlaceOrderRequest, LalamoveError } from "@/lib/lalamove";
 
 export async function POST(req: NextRequest) {
+  // Lalamove integration has been removed - using custom delivery system instead
+  return jsonError("Lalamove integration disabled - using custom delivery system", 410);
+  
+  /* DISABLED
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
 
@@ -142,5 +146,6 @@ export async function POST(req: NextRequest) {
     }
     return jsonError(error.message || "Failed to place order", 500);
   }
+  */
 }
 

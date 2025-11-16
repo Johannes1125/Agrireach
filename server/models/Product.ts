@@ -103,12 +103,8 @@ export interface IOrder extends Document {
   payment_intent_id?: string;
   payment_source_id?: string;
   paymongo_payment_id?: string;
-  // Lalamove delivery fields
-  lalamove_order_id?: string;
-  lalamove_quotation_id?: string;
-  lalamove_driver_id?: string;
-  lalamove_tracking_url?: string;
-  lalamove_status?: string;
+  // Custom delivery system
+  delivery_id?: Types.ObjectId; // Reference to Delivery model
   created_at: Date;
   updated_at: Date;
 }
@@ -134,12 +130,8 @@ const OrderSchema = new Schema<IOrder>(
     payment_intent_id: { type: String },
     payment_source_id: { type: String },
     paymongo_payment_id: { type: String },
-    // Lalamove delivery fields
-    lalamove_order_id: { type: String },
-    lalamove_quotation_id: { type: String },
-    lalamove_driver_id: { type: String },
-    lalamove_tracking_url: { type: String },
-    lalamove_status: { type: String },
+    // Custom delivery system
+    delivery_id: { type: Schema.Types.ObjectId, ref: "Delivery" },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );

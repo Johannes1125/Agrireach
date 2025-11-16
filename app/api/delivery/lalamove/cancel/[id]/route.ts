@@ -10,6 +10,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Lalamove integration has been removed - using custom delivery system instead
+  return jsonError("Lalamove integration disabled - using custom delivery system", 410);
+  
+  /* DISABLED - Lalamove integration removed
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
 
@@ -86,5 +90,6 @@ export async function POST(
     }
     return jsonError(error.message || "Failed to cancel delivery", 500);
   }
+  */
 }
 

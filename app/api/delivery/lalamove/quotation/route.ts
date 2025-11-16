@@ -6,6 +6,10 @@ import { getQuotation, LalamoveQuotationRequest, LalamoveError } from "@/lib/lal
 import { geocodeAddress } from "@/server/utils/geocoding";
 
 export async function POST(req: NextRequest) {
+  // Lalamove integration has been removed - using custom delivery system instead
+  return jsonError("Lalamove integration disabled - using custom delivery system", 410);
+  
+  /* DISABLED
   const mm = requireMethod(req, ["POST"]);
   if (mm) return mm;
 
@@ -98,5 +102,6 @@ export async function POST(req: NextRequest) {
     }
     return jsonError(error.message || "Failed to get quotation", 500);
   }
+  */
 }
 

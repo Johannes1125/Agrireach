@@ -43,59 +43,45 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return jsonError("Forbidden", 403);
   }
 
-  // If order has Lalamove tracking, include tracking info
+  // If order has delivery tracking, include tracking info
   let trackingInfo = null;
-  if (order.lalamove_order_id) {
+  if (order.delivery_id) {
     try {
-      const { getOrderDetails, getDriverDetails } = await import("@/lib/lalamove");
-      const lalamoveOrder = await getOrderDetails(order.lalamove_order_id);
-      
-      let driverDetails = null;
-      if (order.lalamove_driver_id || lalamoveOrder.data.driverId) {
-        try {
-          driverDetails = await getDriverDetails(order.lalamove_order_id);
-        } catch (err) {
-          // Driver details optional
-          console.log("Driver details not available yet:", err);
-        }
+      const { Delivery } = await import("@/server/models/Delivery");
+      const delivery = await Delivery.findById(order.delivery_id)
+        .populate('buyer_id', 'full_name phone')
+        .populate('seller_id', 'full_name phone')
+        .lean();
+
+      if (delivery) {
+        trackingInfo = {
+          delivery_id: String(delivery._id),
+          tracking_number: delivery.tracking_number,
+          status: delivery.status,
+          driver: delivery.driver_name ? {
+            name: delivery.driver_name,
+            phone: delivery.driver_phone || null,
+            email: delivery.driver_email || null,
+            vehicle_type: delivery.vehicle_type || null,
+            vehicle_plate_number: delivery.vehicle_plate_number || null,
+            vehicle_description: delivery.vehicle_description || null,
+          } : null,
+          pickup_address: delivery.pickup_address,
+          delivery_address: delivery.delivery_address,
+          estimated_delivery_time: delivery.estimated_delivery_time || null,
+          actual_delivery_time: delivery.actual_delivery_time || null,
+          delivery_notes: delivery.delivery_notes || null,
+          seller_notes: delivery.seller_notes || null,
+          proof_of_delivery: delivery.proof_of_delivery || null,
+          assigned_at: delivery.assigned_at || null,
+          picked_up_at: delivery.picked_up_at || null,
+          in_transit_at: delivery.in_transit_at || null,
+          created_at: delivery.created_at,
+          updated_at: delivery.updated_at,
+        };
       }
-      
-      // Extract comprehensive tracking information from Lalamove response
-      // According to Lalamove API docs: https://developers.lalamove.com/#order-flow
-      const lalamoveData = lalamoveOrder.data || {};
-      
-      trackingInfo = {
-        order_id: lalamoveData.orderId || order.lalamove_order_id,
-        quotation_id: lalamoveData.quotationId || order.lalamove_quotation_id || null,
-        status: lalamoveData.status || order.lalamove_status || "PENDING",
-        tracking_url: order.lalamove_tracking_url || lalamoveData.shareLink || null,
-        driver: driverDetails?.data ? {
-          name: driverDetails.data.name || driverDetails.data.driverName || null,
-          phone: driverDetails.data.phone || driverDetails.data.phoneNumber || null,
-          vehicle: driverDetails.data.vehicle || driverDetails.data.vehicleType || null,
-          plateNumber: driverDetails.data.plateNumber || driverDetails.data.plate || null,
-        } : null,
-        stops: (lalamoveData.stops || []).map((stop: any) => ({
-          stopId: stop.stopId || null,
-          coordinates: stop.coordinates || null,
-          address: stop.address || null,
-          name: stop.name || null,
-          phone: stop.phone || null,
-          status: stop.status || null,
-          POD: stop.POD || null, // Proof of Delivery info if enabled
-        })),
-        distance: lalamoveData.distance || null, // { value: string, unit: string }
-        priceBreakdown: lalamoveData.priceBreakdown || null, // Price breakdown details
-        priorityFee: lalamoveData.priorityFee || null,
-        serviceType: lalamoveData.serviceType || null,
-        specialRequests: lalamoveData.specialRequests || [],
-        metadata: lalamoveData.metadata || null,
-        remarks: lalamoveData.remarks || [], // Array of strings
-        placedAt: lalamoveData.placedAt || lalamoveData.createdAt || order.created_at,
-        pickupTime: lalamoveData.pickupTime || lalamoveData.scheduledAt || null,
-      };
     } catch (err) {
-      console.error("Error fetching Lalamove tracking:", err);
+      console.error("Error fetching delivery tracking:", err);
       // Continue without tracking info if API fails
     }
   }
@@ -166,29 +152,29 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
    .populate('seller_id', 'full_name')
    .populate('product_id', 'title');
 
-  // IMPORTANT: If seller is confirming the order and Lalamove hasn't been set up yet, trigger it
-  if (result.data.status === "confirmed" && isSeller && !order.lalamove_order_id) {
-    console.log(`[Order Confirmation] Triggering Lalamove setup for order ${order._id}`);
+  // IMPORTANT: If seller is confirming the order, create delivery record if it doesn't exist
+  if (result.data.status === "confirmed" && isSeller && !order.delivery_id) {
+    console.log(`[Order Confirmation] Creating delivery for order ${order._id}`);
     
-    // Import and trigger Lalamove auto-setup (non-blocking)
+    // Import and trigger custom delivery setup (non-blocking)
     try {
-      const { autoSetupLalamoveDelivery } = await import("@/server/utils/lalamove-auto-setup");
+      const { createDeliveryForOrder } = await import("@/server/utils/delivery-setup");
       
       // Run async but don't wait - we want to return success immediately
-      autoSetupLalamoveDelivery(String(order._id))
+      createDeliveryForOrder(String(order._id))
         .then((result) => {
           if (result.success) {
-            console.log(`[Order Confirmation] ✅ Lalamove setup successful for order ${order._id}: ${result.lalamove_order_id}`);
+            console.log(`[Order Confirmation] ✅ Delivery created for order ${order._id}: ${result.tracking_number}`);
           } else {
-            console.error(`[Order Confirmation] ❌ Lalamove setup failed for order ${order._id}: ${result.error}`);
+            console.error(`[Order Confirmation] ❌ Delivery creation failed for order ${order._id}: ${result.error}`);
           }
         })
         .catch((error) => {
           // Log error but don't fail the order confirmation
-          console.error(`[Order Confirmation] ❌ Failed to setup Lalamove for order ${order._id}:`, error);
+          console.error(`[Order Confirmation] ❌ Failed to create delivery for order ${order._id}:`, error);
         });
     } catch (importError) {
-      console.error(`[Order Confirmation] ❌ Failed to import Lalamove auto-setup:`, importError);
+      console.error(`[Order Confirmation] ❌ Failed to import delivery setup:`, importError);
     }
   }
 

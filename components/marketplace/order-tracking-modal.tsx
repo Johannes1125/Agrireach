@@ -16,50 +16,47 @@ interface OrderTrackingModalProps {
 }
 
 interface TrackingInfo {
-  order_id: string
-  quotation_id?: string
+  delivery_id?: string
+  tracking_number?: string
   status: string
-  tracking_url?: string
   driver?: {
     name?: string
     phone?: string
-    vehicle?: string
-    plateNumber?: string
+    email?: string
+    vehicle_type?: string
+    vehicle_plate_number?: string
+    vehicle_description?: string
   }
-  stops?: Array<{
-    stopId?: string
-    coordinates?: { lat: string; lng: string }
-    address?: string
-    name?: string
-    phone?: string
-    status?: string
-    POD?: {
-      status: string
-      image?: string
-      deliveredAt?: string
-    }
-  }>
-  distance?: {
-    value: string
-    unit: string
+  pickup_address?: {
+    line1: string
+    city: string
+    coordinates?: { latitude: number; longitude: number }
   }
-  priceBreakdown?: {
-    base?: string
-    extraMileage?: string
-    surcharge?: string
-    adminFee?: string
-    totalExcludePriorityFee?: string
-    total?: string
-    currency?: string
-    priorityFee?: string
+  delivery_address?: {
+    line1: string
+    line2?: string
+    city: string
+    state: string
+    postal_code: string
+    country: string
+    coordinates?: { latitude: number; longitude: number }
   }
-  priorityFee?: string
-  serviceType?: string
-  specialRequests?: string[]
-  metadata?: Record<string, any>
-  remarks?: string[]
-  placedAt?: string
-  pickupTime?: string
+  estimated_delivery_time?: string
+  actual_delivery_time?: string
+  delivery_notes?: string
+  seller_notes?: string
+  proof_of_delivery?: {
+    image_url?: string
+    signature?: string
+    delivered_at?: string
+    received_by?: string
+    notes?: string
+  }
+  assigned_at?: string
+  picked_up_at?: string
+  in_transit_at?: string
+  created_at?: string
+  updated_at?: string
 }
 
 interface OrderDetails {
@@ -86,11 +83,7 @@ interface OrderDetails {
     line1: string
     city?: string
   }
-  lalamove_order_id?: string
-  lalamove_tracking_url?: string
-  lalamove_status?: string
-  lalamove_details?: any
-  driver?: any
+  delivery_id?: string
   created_at: string
   tracking?: TrackingInfo
 }
@@ -129,19 +122,16 @@ export function OrderTrackingModal({ open, onOpenChange, orderId }: OrderTrackin
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "delivered":
-      case "completed":
         return "bg-green-500"
-      case "shipped":
-      case "on_going":
+      case "in_transit":
+        return "bg-blue-500"
       case "picked_up":
         return "bg-blue-500"
-      case "confirmed":
-      case "assigning_driver":
+      case "assigned":
         return "bg-yellow-500"
       case "pending":
         return "bg-gray-500"
       case "cancelled":
-      case "canceled":
         return "bg-red-500"
       default:
         return "bg-gray-500"
@@ -151,14 +141,11 @@ export function OrderTrackingModal({ open, onOpenChange, orderId }: OrderTrackin
   const getStatusLabel = (status: string) => {
     const statusMap: Record<string, string> = {
       "pending": "Pending",
-      "confirmed": "Confirmed",
-      "shipped": "Shipped",
+      "assigned": "Driver Assigned",
+      "picked_up": "Picked Up",
+      "in_transit": "In Transit",
       "delivered": "Delivered",
       "cancelled": "Cancelled",
-      "assigning_driver": "Assigning Driver",
-      "on_going": "On the Way",
-      "picked_up": "Picked Up",
-      "completed": "Delivered",
     }
     return statusMap[status.toLowerCase()] || status
   }
@@ -236,14 +223,14 @@ export function OrderTrackingModal({ open, onOpenChange, orderId }: OrderTrackin
             <Separator />
 
             {/* Delivery Tracking */}
-            {order.lalamove_order_id || order.tracking ? (
+            {order.delivery_id || order.tracking ? (
               <div className="space-y-4">
                 <h4 className="font-semibold flex items-center gap-2">
                   <Truck className="h-5 w-5" />
                   Delivery Tracking
                 </h4>
 
-                {/* Lalamove Status */}
+                {/* Delivery Status */}
                 {order.tracking && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
@@ -253,216 +240,207 @@ export function OrderTrackingModal({ open, onOpenChange, orderId }: OrderTrackin
                           <span className="font-medium">
                             {getStatusLabel(order.tracking.status)}
                           </span>
-                          {order.tracking.placedAt && (
+                          {order.tracking.tracking_number && (
                             <p className="text-xs text-muted-foreground mt-1">
-                              Placed: {formatDate(order.tracking.placedAt)}
+                              Tracking: {order.tracking.tracking_number}
+                            </p>
+                          )}
+                          {order.tracking.created_at && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Created: {formatDate(order.tracking.created_at)}
                             </p>
                           )}
                         </div>
                       </div>
-                      {order.tracking.tracking_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(order.tracking!.tracking_url, "_blank")}
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Track on Lalamove
-                        </Button>
-                      )}
                     </div>
 
-                    {/* Service Type & Special Requests */}
-                    {(order.tracking.serviceType || order.tracking.specialRequests?.length) && (
-                      <div className="p-4 border rounded-lg space-y-2">
-                        <h5 className="font-medium">Service Details</h5>
-                        {order.tracking.serviceType && (
-                          <p className="text-sm">Service Type: <Badge variant="outline">{order.tracking.serviceType}</Badge></p>
-                        )}
-                        {order.tracking.specialRequests && order.tracking.specialRequests.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <span className="text-sm text-muted-foreground">Special Requests:</span>
-                            {order.tracking.specialRequests.map((req, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">{req}</Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Price Breakdown */}
-                    {order.tracking.priceBreakdown && (
-                      <div className="p-4 border rounded-lg space-y-2">
-                        <h5 className="font-medium">Price Breakdown</h5>
-                        <div className="space-y-1 text-sm">
-                          {order.tracking.priceBreakdown.base && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Base:</span>
-                              <span>{order.tracking.priceBreakdown.currency} {order.tracking.priceBreakdown.base}</span>
-                            </div>
-                          )}
-                          {order.tracking.priceBreakdown.extraMileage && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Extra Mileage:</span>
-                              <span>{order.tracking.priceBreakdown.currency} {order.tracking.priceBreakdown.extraMileage}</span>
-                            </div>
-                          )}
-                          {order.tracking.priceBreakdown.surcharge && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Surcharge:</span>
-                              <span>{order.tracking.priceBreakdown.currency} {order.tracking.priceBreakdown.surcharge}</span>
-                            </div>
-                          )}
-                          {order.tracking.priceBreakdown.adminFee && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Admin Fee:</span>
-                              <span>{order.tracking.priceBreakdown.currency} {order.tracking.priceBreakdown.adminFee}</span>
-                            </div>
-                          )}
-                          {order.tracking.priceBreakdown.priorityFee && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Priority Fee:</span>
-                              <span>{order.tracking.priceBreakdown.currency} {order.tracking.priceBreakdown.priorityFee}</span>
-                            </div>
-                          )}
-                          {order.tracking.priceBreakdown.total && (
-                            <div className="flex justify-between font-semibold pt-2 border-t">
-                              <span>Total:</span>
-                              <span>{order.tracking.priceBreakdown.currency} {order.tracking.priceBreakdown.total}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Distance */}
-                    {order.tracking.distance && (
+                    {/* Estimated Delivery Time */}
+                    {order.tracking.estimated_delivery_time && (
                       <div className="p-4 border rounded-lg">
-                        <h5 className="font-medium mb-2">Delivery Distance</h5>
+                        <h5 className="font-medium mb-2 flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          Estimated Delivery
+                        </h5>
                         <p className="text-sm">
-                          {parseFloat(order.tracking.distance.value).toLocaleString()} {order.tracking.distance.unit}
-                          {order.tracking.distance.unit === "m" && ` (${(parseFloat(order.tracking.distance.value) / 1000).toFixed(2)} km)`}
+                          {formatDate(order.tracking.estimated_delivery_time)}
                         </p>
                       </div>
                     )}
 
-                    {/* Remarks */}
-                    {order.tracking.remarks && order.tracking.remarks.length > 0 && (
+                    {/* Delivery Notes */}
+                    {order.tracking.delivery_notes && (
                       <div className="p-4 border rounded-lg">
-                        <h5 className="font-medium mb-2">Remarks</h5>
-                        <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                          {order.tracking.remarks.map((remark, idx) => (
-                            <li key={idx}>{remark}</li>
-                          ))}
-                        </ul>
+                        <h5 className="font-medium mb-2">Delivery Notes</h5>
+                        <p className="text-sm text-muted-foreground">{order.tracking.delivery_notes}</p>
+                      </div>
+                    )}
+
+                    {/* Seller Notes */}
+                    {order.tracking.seller_notes && (
+                      <div className="p-4 border rounded-lg">
+                        <h5 className="font-medium mb-2">Seller Notes</h5>
+                        <p className="text-sm text-muted-foreground">{order.tracking.seller_notes}</p>
                       </div>
                     )}
 
                     {/* Driver Info */}
-                    {order.tracking.driver && (
+                    {order.tracking.driver && order.tracking.driver.name && (
                       <div className="p-4 border rounded-lg space-y-2">
                         <h5 className="font-medium flex items-center gap-2">
                           <User className="h-4 w-4" />
                           Driver Information
                         </h5>
-                        {order.tracking.driver.name && (
-                          <p className="text-sm">Driver: {order.tracking.driver.name}</p>
-                        )}
+                        <p className="text-sm font-medium">Name: {order.tracking.driver.name}</p>
                         {order.tracking.driver.phone && (
                           <p className="text-sm flex items-center gap-2">
                             <Phone className="h-4 w-4" />
-                            {order.tracking.driver.phone}
+                            <a href={`tel:${order.tracking.driver.phone}`} className="text-primary hover:underline">
+                              {order.tracking.driver.phone}
+                            </a>
                           </p>
                         )}
-                        {order.tracking.driver.vehicle && (
-                          <p className="text-sm">Vehicle: {order.tracking.driver.vehicle}</p>
+                        {order.tracking.driver.email && (
+                          <p className="text-sm">
+                            Email: <a href={`mailto:${order.tracking.driver.email}`} className="text-primary hover:underline">
+                              {order.tracking.driver.email}
+                            </a>
+                          </p>
                         )}
-                        {order.tracking.driver.plateNumber && (
-                          <p className="text-sm">Plate Number: {order.tracking.driver.plateNumber}</p>
+                        {order.tracking.driver.vehicle_type && (
+                          <p className="text-sm">
+                            Vehicle Type: <Badge variant="outline" className="ml-2 capitalize">
+                              {order.tracking.driver.vehicle_type.replace('_', ' ')}
+                            </Badge>
+                          </p>
+                        )}
+                        {order.tracking.driver.vehicle_plate_number && (
+                          <p className="text-sm">Plate Number: {order.tracking.driver.vehicle_plate_number}</p>
+                        )}
+                        {order.tracking.driver.vehicle_description && (
+                          <p className="text-sm text-muted-foreground">{order.tracking.driver.vehicle_description}</p>
                         )}
                       </div>
                     )}
 
-                    {/* Delivery Stops */}
-                    {order.tracking.stops && order.tracking.stops.length > 0 && (
+                    {/* Delivery Route - Pickup and Delivery Addresses */}
+                    {(order.tracking.pickup_address || order.tracking.delivery_address) && (
                       <div className="space-y-2">
                         <h5 className="font-medium">Delivery Route</h5>
-                        {order.tracking.stops.map((stop, index) => (
-                          <div key={stop.stopId || index} className="flex items-start gap-3 p-3 border rounded-lg">
+                        
+                        {/* Pickup Address */}
+                        {order.tracking.pickup_address && (
+                          <div className="flex items-start gap-3 p-3 border rounded-lg">
                             <div className={`w-2 h-2 rounded-full mt-2 ${
-                              stop.POD?.status === "DELIVERED" || stop.status === "COMPLETED" || stop.status === "DELIVERED" ? "bg-green-500" :
-                              stop.status === "IN_PROGRESS" || stop.status === "PICKED_UP" ? "bg-blue-500" :
+                              order.tracking.status === "picked_up" || order.tracking.status === "in_transit" || order.tracking.status === "delivered" ? "bg-green-500" :
+                              order.tracking.status === "assigned" ? "bg-yellow-500" :
                               "bg-gray-300"
                             }`} />
                             <div className="flex-1">
-                              <p className="text-sm font-medium">
-                                {index === 0 ? "Pickup Location" : `Delivery Location ${index > 1 ? index : ""}`}
+                              <p className="text-sm font-medium">Pickup Location</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {order.tracking.pickup_address.line1}, {order.tracking.pickup_address.city}
                               </p>
-                              {stop.name && (
-                                <p className="text-sm font-medium text-muted-foreground">{stop.name}</p>
-                              )}
-                              {stop.address && (
-                                <p className="text-xs text-muted-foreground">{stop.address}</p>
-                              )}
-                              {stop.phone && (
-                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                  <Phone className="h-3 w-3" />
-                                  {stop.phone}
-                                </p>
-                              )}
-                              {stop.coordinates && (
+                              {order.tracking.pickup_address.coordinates && (
                                 <p className="text-xs text-muted-foreground mt-1">
-                                  📍 {stop.coordinates.lat}, {stop.coordinates.lng}
+                                  📍 {order.tracking.pickup_address.coordinates.latitude.toFixed(6)}, {order.tracking.pickup_address.coordinates.longitude.toFixed(6)}
                                 </p>
                               )}
-                              <div className="flex gap-2 mt-2">
-                                {stop.status && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {stop.status}
-                                  </Badge>
-                                )}
-                                {stop.POD?.status && (
-                                  <Badge variant={stop.POD.status === "DELIVERED" ? "default" : "secondary"} className="text-xs">
-                                    POD: {stop.POD.status}
-                                  </Badge>
-                                )}
-                              </div>
-                              {stop.POD?.image && (
-                                <div className="mt-2">
-                                  <img 
-                                    src={stop.POD.image} 
-                                    alt="Proof of Delivery" 
-                                    className="w-full max-w-xs rounded-lg border"
-                                  />
-                                  {stop.POD.deliveredAt && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      Delivered: {formatDate(stop.POD.deliveredAt)}
-                                    </p>
-                                  )}
-                                </div>
+                              {order.tracking.picked_up_at && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Picked up: {formatDate(order.tracking.picked_up_at)}
+                                </p>
                               )}
                             </div>
                           </div>
-                        ))}
+                        )}
+
+                        {/* Delivery Address */}
+                        {order.tracking.delivery_address && (
+                          <div className="flex items-start gap-3 p-3 border rounded-lg">
+                            <div className={`w-2 h-2 rounded-full mt-2 ${
+                              order.tracking.status === "delivered" ? "bg-green-500" :
+                              order.tracking.status === "in_transit" ? "bg-blue-500" :
+                              "bg-gray-300"
+                            }`} />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">Delivery Location</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {order.tracking.delivery_address.line1}
+                                {order.tracking.delivery_address.line2 && `, ${order.tracking.delivery_address.line2}`}
+                                {`, ${order.tracking.delivery_address.city}, ${order.tracking.delivery_address.state} ${order.tracking.delivery_address.postal_code}`}
+                              </p>
+                              {order.tracking.delivery_address.coordinates && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  📍 {order.tracking.delivery_address.coordinates.latitude.toFixed(6)}, {order.tracking.delivery_address.coordinates.longitude.toFixed(6)}
+                                </p>
+                              )}
+                              {order.tracking.actual_delivery_time && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Delivered: {formatDate(order.tracking.actual_delivery_time)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Status Timeline */}
+                        <div className="p-3 border rounded-lg space-y-2">
+                          <h5 className="font-medium text-sm">Status Timeline</h5>
+                          <div className="space-y-1 text-xs">
+                            {order.tracking.created_at && (
+                              <p className="text-muted-foreground">
+                                • Created: {formatDate(order.tracking.created_at)}
+                              </p>
+                            )}
+                            {order.tracking.assigned_at && (
+                              <p className="text-muted-foreground">
+                                • Driver Assigned: {formatDate(order.tracking.assigned_at)}
+                              </p>
+                            )}
+                            {order.tracking.picked_up_at && (
+                              <p className="text-muted-foreground">
+                                • Picked Up: {formatDate(order.tracking.picked_up_at)}
+                              </p>
+                            )}
+                            {order.tracking.in_transit_at && (
+                              <p className="text-muted-foreground">
+                                • In Transit: {formatDate(order.tracking.in_transit_at)}
+                              </p>
+                            )}
+                            {order.tracking.actual_delivery_time && (
+                              <p className="text-green-600 font-medium">
+                                • Delivered: {formatDate(order.tracking.actual_delivery_time)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Proof of Delivery */}
+                        {order.tracking.proof_of_delivery && (
+                          <div className="p-4 border rounded-lg">
+                            <h5 className="font-medium mb-2">Proof of Delivery</h5>
+                            {order.tracking.proof_of_delivery.image_url && (
+                              <img 
+                                src={order.tracking.proof_of_delivery.image_url} 
+                                alt="Proof of Delivery" 
+                                className="w-full max-w-xs rounded-lg border mb-2"
+                              />
+                            )}
+                            {order.tracking.proof_of_delivery.received_by && (
+                              <p className="text-sm">Received by: {order.tracking.proof_of_delivery.received_by}</p>
+                            )}
+                            {order.tracking.proof_of_delivery.delivered_at && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Delivered: {formatDate(order.tracking.proof_of_delivery.delivered_at)}
+                              </p>
+                            )}
+                            {order.tracking.proof_of_delivery.notes && (
+                              <p className="text-sm text-muted-foreground mt-2">{order.tracking.proof_of_delivery.notes}</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
-
-                {/* Fallback to basic tracking URL */}
-                {!order.tracking && order.lalamove_tracking_url && (
-                  <div className="p-4 border rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Track your delivery on Lalamove
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open(order.lalamove_tracking_url, "_blank")}
-                      className="w-full"
-                    >
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Open Tracking Link
-                    </Button>
                   </div>
                 )}
               </div>

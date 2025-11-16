@@ -9,6 +9,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Lalamove integration has been removed - using custom delivery system instead
+  return jsonError("Lalamove integration disabled - using custom delivery system", 410);
+  
+  /* DISABLED
   const mm = requireMethod(req, ["GET"]);
   if (mm) return mm;
 
@@ -120,5 +124,6 @@ export async function GET(
     console.error("Get Lalamove order error:", error);
     return jsonError(error.message || "Failed to get order details", 500);
   }
+  */
 }
 

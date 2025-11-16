@@ -10,6 +10,10 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Lalamove integration has been removed - using custom delivery system instead
+  return jsonError("Lalamove integration disabled - using custom delivery system", 410);
+  
+  /* DISABLED
   const mm = requireMethod(req, ["PATCH"]);
   if (mm) return mm;
 
@@ -107,5 +111,6 @@ export async function PATCH(
     }
     return jsonError(error.message || "Failed to edit order", 500);
   }
+  */
 }
 
