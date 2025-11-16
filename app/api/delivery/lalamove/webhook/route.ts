@@ -3,15 +3,35 @@ import { jsonError, jsonOk } from "@/server/utils/api";
 import { connectToDatabase } from "@/server/lib/mongodb";
 import { Order } from "@/server/models/Product";
 import { Notification } from "@/server/models/Notification";
+import { verifyWebhookSignature, LALAMOVE_CONFIG } from "@/lib/lalamove";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    console.log('Received Lalamove webhook:', body);
+    // Get raw body as text (important for signature verification)
+    const body = await req.text();
+    
+    // Lalamove sends signature and timestamp in headers
+    const signature = req.headers.get('x-llm-signature') || req.headers.get('x-lalamove-signature') || '';
+    const timestamp = req.headers.get('x-llm-timestamp') || req.headers.get('x-lalamove-timestamp') || '';
+    
+    // Verify webhook signature if configured
+    if (LALAMOVE_CONFIG.secret && signature && timestamp) {
+      if (!verifyWebhookSignature(body, signature, timestamp)) {
+        console.error('Invalid Lalamove webhook signature');
+        return jsonError('Invalid signature', 401);
+      }
+      console.log('Lalamove webhook signature verified');
+    } else {
+      console.warn('Lalamove webhook signature verification skipped (not configured or missing headers)');
+    }
+
+    // Parse the webhook payload
+    const payload = JSON.parse(body);
+    console.log('Received Lalamove webhook:', payload);
 
     await connectToDatabase();
 
-    const { messageType, orderId, data } = body;
+    const { messageType, orderId, data } = payload;
 
     if (!orderId) {
       console.error('Lalamove webhook missing orderId');

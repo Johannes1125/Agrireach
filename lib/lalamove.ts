@@ -347,6 +347,40 @@ export async function getCityInfo(city: string) {
   }
 }
 
+/**
+ * Verify Lalamove webhook signature
+ * Lalamove uses HMAC SHA256 signature similar to their API authentication
+ */
+export function verifyWebhookSignature(
+  body: string,
+  signature: string,
+  timestamp: string
+): boolean {
+  if (!LALAMOVE_SECRET) {
+    console.error('Lalamove secret is not configured');
+    return false;
+  }
+
+  try {
+    const crypto = require('crypto');
+    // Lalamove webhook signature format: timestamp + body
+    const rawSignature = `${timestamp}\r\n${body}`;
+    const expectedSignature = crypto
+      .createHmac('sha256', LALAMOVE_SECRET)
+      .update(rawSignature)
+      .digest('hex');
+
+    // Compare signatures using constant-time comparison to prevent timing attacks
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    );
+  } catch (error) {
+    console.error('Error verifying webhook signature:', error);
+    return false;
+  }
+}
+
 export const LALAMOVE_CONFIG = {
   apiKey: LALAMOVE_API_KEY,
   secret: LALAMOVE_SECRET,
