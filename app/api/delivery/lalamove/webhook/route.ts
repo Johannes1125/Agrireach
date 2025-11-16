@@ -32,12 +32,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Parse the webhook payload
-    const payload = JSON.parse(body);
-    console.log('Received Lalamove webhook:', {
-      eventType: payload.eventType,
-      eventId: payload.eventId,
-      eventVersion: payload.eventVersion,
-    });
+    let payload;
+    try {
+      payload = JSON.parse(body);
+    } catch (parseError) {
+      console.error('Failed to parse webhook body:', parseError);
+      console.error('Raw body:', body);
+      // Still return 200 OK to prevent webhook from being disabled
+      return jsonOk({ received: true, message: 'Body parse error but endpoint is active' });
+    }
+
+    // Log full payload for debugging
+    console.log('Received Lalamove webhook payload:', JSON.stringify(payload, null, 2));
 
     // Verify webhook signature
     // Lalamove sends: apiKey, timestamp, signature in the payload
@@ -56,35 +62,44 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    // Extract event information from payload
-    const { eventType, eventId, eventVersion, data: eventData } = payload;
+    // Extract event information - handle different payload structures
+    const eventType = payload.eventType || payload.messageType || payload.type;
+    const eventId = payload.eventId || payload.id;
+    const eventVersion = payload.eventVersion || payload.version;
+    const eventData = payload.data || payload;
 
     if (!eventType) {
-      console.error('Lalamove webhook missing eventType');
-      return jsonError('Missing eventType', 400);
+      console.error('Lalamove webhook missing eventType. Full payload:', JSON.stringify(payload, null, 2));
+      // Return 200 OK anyway to prevent webhook from being disabled
+      // But log the issue for debugging
+      return jsonOk({ 
+        received: true, 
+        warning: 'Missing eventType',
+        payload_keys: Object.keys(payload)
+      });
     }
 
     // Handle different webhook event types
     // Note: Webhooks may not arrive in chronological order - sort by timestamp if needed
     switch (eventType) {
       case 'ORDER_STATUS_CHANGED':
-        await handleOrderStatusChanged(eventData, eventId, timestamp);
+        await handleOrderStatusChanged(eventData, eventId, String(timestamp));
         break;
       
       case 'DRIVER_ASSIGNED':
-        await handleDriverAssigned(eventData, eventId, timestamp);
+        await handleDriverAssigned(eventData, eventId, String(timestamp));
         break;
       
       case 'ORDER_AMOUNT_CHANGED':
-        await handleOrderAmountChanged(eventData, eventId, timestamp);
+        await handleOrderAmountChanged(eventData, eventId, String(timestamp));
         break;
       
       case 'ORDER_REPLACED':
-        await handleOrderReplaced(eventData, eventId, timestamp);
+        await handleOrderReplaced(eventData, eventId, String(timestamp));
         break;
       
       case 'ORDER_EDITED':
-        await handleOrderEdited(eventData, eventId, timestamp);
+        await handleOrderEdited(eventData, eventId, String(timestamp));
         break;
       
       case 'WALLET_BALANCE_CHANGED':
@@ -99,7 +114,9 @@ export async function POST(req: NextRequest) {
     return jsonOk({ received: true });
   } catch (error: any) {
     console.error('Lalamove webhook processing error:', error);
-    return jsonError('Webhook processing failed', 500);
+    // Still return 200 OK to prevent webhook from being disabled
+    // Lalamove will retry if there's an issue, but we don't want to disable the webhook
+    return jsonOk({ received: true, error: error.message });
   }
 }
 

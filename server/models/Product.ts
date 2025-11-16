@@ -160,7 +160,7 @@ export interface IOrderItem extends Document {
 
 const OrderItemSchema = new Schema<IOrderItem>(
   {
-    order_id: { type: Schema.Types.ObjectId, ref: "Order", required: true, index: true },
+    order_id: { type: Schema.Types.ObjectId, ref: "Order", required: true },
     product_id: { type: Schema.Types.ObjectId, ref: "Product", required: true },
     quantity: { type: Number, required: true, min: 1 },
     unit_price: { type: Number, required: true },
@@ -169,6 +169,7 @@ const OrderItemSchema = new Schema<IOrderItem>(
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
 
+// Single index definition (removed duplicate)
 OrderItemSchema.index({ order_id: 1 });
 
 export const OrderItem: Model<IOrderItem> = mongoose.models.OrderItem || mongoose.model<IOrderItem>("OrderItem", OrderItemSchema);
