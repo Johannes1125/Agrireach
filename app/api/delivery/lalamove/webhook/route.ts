@@ -7,22 +7,22 @@ import { verifyWebhookSignature, LALAMOVE_CONFIG } from "@/lib/lalamove";
 
 /**
  * GET handler for webhook verification
- * Lalamove may test the endpoint with a GET request to verify it's reachable
+ * Lalamove tests the endpoint with GET to verify it's reachable
+ * Must return 200 OK for webhook setup to succeed
  */
 export async function GET(req: NextRequest) {
   return jsonOk({
     message: "Lalamove webhook endpoint is active",
     endpoint: "/api/delivery/lalamove/webhook",
     methods: ["GET", "POST"],
+    status: "ready",
   });
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // Get raw body as text (important for signature verification)
     const body = await req.text();
     
-    // Lalamove sends signature and timestamp in headers
     const signature = req.headers.get('x-llm-signature') || req.headers.get('x-lalamove-signature') || '';
     const timestamp = req.headers.get('x-llm-timestamp') || req.headers.get('x-lalamove-timestamp') || '';
     

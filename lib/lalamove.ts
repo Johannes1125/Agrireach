@@ -348,6 +348,45 @@ export async function getCityInfo(city: string) {
 }
 
 /**
+ * Set webhook URL via API
+ * PATCH /v3/webhook
+ */
+export async function setWebhookUrl(webhookUrl: string) {
+  try {
+    if (!LALAMOVE_API_KEY || !LALAMOVE_SECRET) {
+      throw new LalamoveError('Lalamove API credentials are not configured');
+    }
+
+    const path = '/webhook';
+    const body = JSON.stringify({
+      data: {
+        url: webhookUrl,
+      },
+    });
+
+    const response = await fetch(`${LALAMOVE_BASE_URL}${path}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders('PATCH', path, body),
+      body,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      const errorMessage = error.errors?.[0]?.message || error.errors?.[0]?.detail || `HTTP ${response.status}`;
+      throw new LalamoveError(errorMessage, error.errors?.[0]?.id, error);
+    }
+
+    return await response.json();
+  } catch (error: any) {
+    console.error('Lalamove setWebhookUrl error:', error);
+    if (error instanceof LalamoveError) {
+      throw error;
+    }
+    throw new LalamoveError(error.message || 'Failed to set webhook URL');
+  }
+}
+
+/**
  * Verify Lalamove webhook signature
  * Lalamove uses HMAC SHA256 signature similar to their API authentication
  */
