@@ -1,0 +1,700 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator"
+import { Loader2, Truck, MapPin, User, Phone, Mail, Calendar, Package, CheckCircle, XCircle, Clock } from "lucide-react"
+import { authFetch } from "@/lib/auth-client"
+import { formatDate } from "@/lib/utils"
+import { toast } from "sonner"
+
+interface DeliveryManagementModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  orderId: string
+}
+
+interface DeliveryDetails {
+  _id: string
+  order_id: {
+    _id: string
+    status: string
+    total_price: number
+    product_id?: {
+      title: string
+      images?: string[]
+    }
+  }
+  buyer_id: {
+    _id: string
+    full_name: string
+    phone?: string
+  }
+  seller_id: {
+    _id: string
+    full_name: string
+  }
+  tracking_number: string
+  status: "pending" | "assigned" | "picked_up" | "in_transit" | "delivered" | "cancelled"
+  driver_name?: string
+  driver_phone?: string
+  driver_email?: string
+  vehicle_type?: "motorcycle" | "car" | "mini_truck" | "truck"
+  vehicle_plate_number?: string
+  vehicle_description?: string
+  pickup_address: {
+    line1: string
+    city: string
+    coordinates?: { latitude: number; longitude: number }
+  }
+  delivery_address: {
+    line1: string
+    line2?: string
+    city: string
+    state: string
+    postal_code: string
+    country: string
+    coordinates?: { latitude: number; longitude: number }
+  }
+  estimated_delivery_time?: string
+  actual_delivery_time?: string
+  delivery_notes?: string
+  seller_notes?: string
+  assigned_at?: string
+  picked_up_at?: string
+  in_transit_at?: string
+  created_at: string
+}
+
+export function DeliveryManagementModal({ open, onOpenChange, orderId }: DeliveryManagementModalProps) {
+  const [delivery, setDelivery] = useState<DeliveryDetails | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [assigningDriver, setAssigningDriver] = useState(false)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [showAssignForm, setShowAssignForm] = useState(false)
+
+  // Form state for driver assignment
+  const [driverForm, setDriverForm] = useState({
+    driver_name: "",
+    driver_phone: "",
+    driver_email: "",
+    vehicle_type: "" as "" | "motorcycle" | "car" | "mini_truck" | "truck",
+    vehicle_plate_number: "",
+    vehicle_description: "",
+    estimated_delivery_time: "",
+    seller_notes: "",
+  })
+
+  useEffect(() => {
+    if (open && orderId) {
+      fetchDeliveryDetails()
+    }
+  }, [open, orderId])
+
+  const fetchDeliveryDetails = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // First, get the order to find delivery_id
+      const orderRes = await authFetch(`/api/marketplace/orders/${orderId}`)
+      if (!orderRes.ok) {
+        throw new Error("Failed to fetch order details")
+      }
+
+      const orderData = await orderRes.json()
+      const deliveryId = orderData.order?.delivery_id
+
+      if (!deliveryId) {
+        // No delivery record yet - show message to confirm order first
+        setError("No delivery record found. Please confirm the order first to create a delivery record.")
+        setLoading(false)
+        return
+      }
+
+      // Fetch delivery details
+      const deliveryRes = await authFetch(`/api/delivery/${deliveryId}`)
+      if (!deliveryRes.ok) {
+        throw new Error("Failed to fetch delivery details")
+      }
+
+      const deliveryData = await deliveryRes.json()
+      setDelivery(deliveryData.delivery)
+
+      // Pre-fill form if driver already assigned
+      if (deliveryData.delivery.driver_name) {
+        setDriverForm({
+          driver_name: deliveryData.delivery.driver_name || "",
+          driver_phone: deliveryData.delivery.driver_phone || "",
+          driver_email: deliveryData.delivery.driver_email || "",
+          vehicle_type: deliveryData.delivery.vehicle_type || "",
+          vehicle_plate_number: deliveryData.delivery.vehicle_plate_number || "",
+          vehicle_description: deliveryData.delivery.vehicle_description || "",
+          estimated_delivery_time: deliveryData.delivery.estimated_delivery_time
+            ? new Date(deliveryData.delivery.estimated_delivery_time).toISOString().slice(0, 16)
+            : "",
+          seller_notes: deliveryData.delivery.seller_notes || "",
+        })
+        setShowAssignForm(false)
+      } else {
+        setShowAssignForm(true)
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load delivery details")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAssignDriver = async () => {
+    if (!delivery) return
+
+    if (!driverForm.driver_name || !driverForm.driver_phone || !driverForm.vehicle_type) {
+      toast.error("Please fill in all required fields (Driver Name, Phone, Vehicle Type)")
+      return
+    }
+
+    try {
+      setAssigningDriver(true)
+      const res = await authFetch(`/api/delivery/${delivery._id}/assign-driver`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(driverForm),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.message || "Failed to assign driver")
+      }
+
+      toast.success("Driver assigned successfully!")
+      setShowAssignForm(false)
+      await fetchDeliveryDetails() // Refresh delivery details
+    } catch (err: any) {
+      toast.error(err.message || "Failed to assign driver")
+    } finally {
+      setAssigningDriver(false)
+    }
+  }
+
+  const handleUpdateStatus = async (newStatus: "picked_up" | "in_transit" | "delivered" | "cancelled") => {
+    if (!delivery) return
+
+    try {
+      setUpdatingStatus(true)
+      const res = await authFetch(`/api/delivery/${delivery._id}/update-status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.message || "Failed to update status")
+      }
+
+      toast.success(`Delivery status updated to ${newStatus.replace("_", " ")}`)
+      await fetchDeliveryDetails() // Refresh delivery details
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update status")
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "delivered":
+        return "bg-green-500"
+      case "in_transit":
+      case "picked_up":
+        return "bg-blue-500"
+      case "assigned":
+        return "bg-yellow-500"
+      case "pending":
+        return "bg-gray-500"
+      case "cancelled":
+        return "bg-red-500"
+      default:
+        return "bg-gray-500"
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      pending: "Pending",
+      assigned: "Driver Assigned",
+      picked_up: "Picked Up",
+      in_transit: "In Transit",
+      delivered: "Delivered",
+      cancelled: "Cancelled",
+    }
+    return labels[status] || status
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Manage Delivery</DialogTitle>
+          <DialogDescription>
+            Assign drivers and update delivery status for this order
+          </DialogDescription>
+        </DialogHeader>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-destructive mb-4">{error}</p>
+            <Button onClick={fetchDeliveryDetails}>Retry</Button>
+          </div>
+        ) : !delivery ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">
+              No delivery record found. Please confirm the order first.
+            </p>
+            <Button onClick={() => onOpenChange(false)}>Close</Button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Order Summary */}
+            <div className="space-y-4">
+              <h4 className="font-semibold">Order Information</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">Product</p>
+                  <p className="font-medium">
+                    {delivery.order_id?.product_id?.title || "Unknown Product"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Buyer</p>
+                  <p className="font-medium">{delivery.buyer_id?.full_name || "Unknown"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Price</p>
+                  <p className="font-medium">₱{delivery.order_id?.total_price?.toLocaleString() || "0"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Tracking Number</p>
+                  <p className="font-medium font-mono">{delivery.tracking_number}</p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Current Status */}
+            <div className="space-y-4">
+              <h4 className="font-semibold">Delivery Status</h4>
+              <div className="flex items-center gap-3 p-4 border rounded-lg">
+                <div className={`w-3 h-3 rounded-full ${getStatusColor(delivery.status)}`} />
+                <div className="flex-1">
+                  <p className="font-medium">{getStatusLabel(delivery.status)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Created: {formatDate(delivery.created_at)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Driver Assignment */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold">Driver Information</h4>
+                {!delivery.driver_name && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAssignForm(!showAssignForm)}
+                  >
+                    {showAssignForm ? "Cancel" : "Assign Driver"}
+                  </Button>
+                )}
+              </div>
+
+              {delivery.driver_name ? (
+                <div className="p-4 border rounded-lg space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Driver Name</p>
+                      <p className="font-medium">{delivery.driver_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p className="font-medium">{delivery.driver_phone || "N/A"}</p>
+                    </div>
+                    {delivery.driver_email && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Email</p>
+                        <p className="font-medium">{delivery.driver_email}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm text-muted-foreground">Vehicle Type</p>
+                      <Badge variant="outline" className="capitalize">
+                        {delivery.vehicle_type?.replace("_", " ") || "N/A"}
+                      </Badge>
+                    </div>
+                    {delivery.vehicle_plate_number && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Plate Number</p>
+                        <p className="font-medium">{delivery.vehicle_plate_number}</p>
+                      </div>
+                    )}
+                    {delivery.vehicle_description && (
+                      <div className="md:col-span-2">
+                        <p className="text-sm text-muted-foreground">Vehicle Description</p>
+                        <p className="font-medium">{delivery.vehicle_description}</p>
+                      </div>
+                    )}
+                  </div>
+                  {delivery.assigned_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Assigned: {formatDate(delivery.assigned_at)}
+                    </p>
+                  )}
+                </div>
+              ) : showAssignForm ? (
+                <div className="p-4 border rounded-lg space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="driver_name">
+                        Driver Name <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="driver_name"
+                        value={driverForm.driver_name}
+                        onChange={(e) =>
+                          setDriverForm({ ...driverForm, driver_name: e.target.value })
+                        }
+                        placeholder="Enter driver name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="driver_phone">
+                        Driver Phone <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="driver_phone"
+                        value={driverForm.driver_phone}
+                        onChange={(e) =>
+                          setDriverForm({ ...driverForm, driver_phone: e.target.value })
+                        }
+                        placeholder="+63XXXXXXXXXX"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="driver_email">Driver Email</Label>
+                      <Input
+                        id="driver_email"
+                        type="email"
+                        value={driverForm.driver_email}
+                        onChange={(e) =>
+                          setDriverForm({ ...driverForm, driver_email: e.target.value })
+                        }
+                        placeholder="driver@example.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicle_type">
+                        Vehicle Type <span className="text-destructive">*</span>
+                      </Label>
+                      <Select
+                        value={driverForm.vehicle_type}
+                        onValueChange={(value: any) =>
+                          setDriverForm({ ...driverForm, vehicle_type: value })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select vehicle type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="motorcycle">Motorcycle</SelectItem>
+                          <SelectItem value="car">Car</SelectItem>
+                          <SelectItem value="mini_truck">Mini Truck</SelectItem>
+                          <SelectItem value="truck">Truck</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicle_plate_number">Plate Number</Label>
+                      <Input
+                        id="vehicle_plate_number"
+                        value={driverForm.vehicle_plate_number}
+                        onChange={(e) =>
+                          setDriverForm({ ...driverForm, vehicle_plate_number: e.target.value })
+                        }
+                        placeholder="ABC-1234"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="estimated_delivery_time">Estimated Delivery Time</Label>
+                      <Input
+                        id="estimated_delivery_time"
+                        type="datetime-local"
+                        value={driverForm.estimated_delivery_time}
+                        onChange={(e) =>
+                          setDriverForm({ ...driverForm, estimated_delivery_time: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <Label htmlFor="vehicle_description">Vehicle Description</Label>
+                      <Input
+                        id="vehicle_description"
+                        value={driverForm.vehicle_description}
+                        onChange={(e) =>
+                          setDriverForm({ ...driverForm, vehicle_description: e.target.value })
+                        }
+                        placeholder="e.g., Red Toyota Vios, White van"
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <Label htmlFor="seller_notes">Seller Notes (for driver)</Label>
+                      <Textarea
+                        id="seller_notes"
+                        value={driverForm.seller_notes}
+                        onChange={(e) =>
+                          setDriverForm({ ...driverForm, seller_notes: e.target.value })
+                        }
+                        placeholder="Special instructions for the driver..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleAssignDriver}
+                      disabled={assigningDriver}
+                      className="flex-1"
+                    >
+                      {assigningDriver ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Assigning...
+                        </>
+                      ) : (
+                        <>
+                          <User className="mr-2 h-4 w-4" />
+                          Assign Driver
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAssignForm(false)}
+                      disabled={assigningDriver}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 border rounded-lg text-center">
+                  <p className="text-muted-foreground mb-4">No driver assigned yet</p>
+                  <Button onClick={() => setShowAssignForm(true)}>
+                    <User className="mr-2 h-4 w-4" />
+                    Assign Driver
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Delivery Addresses */}
+            <div className="space-y-4">
+              <h4 className="font-semibold">Delivery Route</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <p className="font-medium">Pickup Address</p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {delivery.pickup_address.line1}, {delivery.pickup_address.city}
+                  </p>
+                  {delivery.pickup_address.coordinates && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      📍 {delivery.pickup_address.coordinates.latitude.toFixed(6)},{" "}
+                      {delivery.pickup_address.coordinates.longitude.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <p className="font-medium">Delivery Address</p>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {delivery.delivery_address.line1}
+                    {delivery.delivery_address.line2 && `, ${delivery.delivery_address.line2}`}
+                    {`, ${delivery.delivery_address.city}, ${delivery.delivery_address.state} ${delivery.delivery_address.postal_code}`}
+                  </p>
+                  {delivery.delivery_address.coordinates && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      📍 {delivery.delivery_address.coordinates.latitude.toFixed(6)},{" "}
+                      {delivery.delivery_address.coordinates.longitude.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Status Update Actions */}
+            {delivery.driver_name && (
+              <div className="space-y-4">
+                <h4 className="font-semibold">Update Delivery Status</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {delivery.status === "assigned" && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleUpdateStatus("picked_up")}
+                      disabled={updatingStatus}
+                      className="flex items-center gap-2"
+                    >
+                      <Package className="h-4 w-4" />
+                      Mark Picked Up
+                    </Button>
+                  )}
+                  {(delivery.status === "picked_up" || delivery.status === "assigned") && (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleUpdateStatus("in_transit")}
+                      disabled={updatingStatus}
+                      className="flex items-center gap-2"
+                    >
+                      <Truck className="h-4 w-4" />
+                      Mark In Transit
+                    </Button>
+                  )}
+                  {delivery.status !== "delivered" && delivery.status !== "cancelled" && (
+                    <Button
+                      variant="default"
+                      onClick={() => handleUpdateStatus("delivered")}
+                      disabled={updatingStatus}
+                      className="flex items-center gap-2"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Mark Delivered
+                    </Button>
+                  )}
+                  {delivery.status !== "cancelled" && delivery.status !== "delivered" && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleUpdateStatus("cancelled")}
+                      disabled={updatingStatus}
+                      className="flex items-center gap-2"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Cancel Delivery
+                    </Button>
+                  )}
+                </div>
+                {updatingStatus && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Updating status...
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Status Timeline */}
+            <div className="space-y-4">
+              <h4 className="font-semibold">Status Timeline</h4>
+              <div className="space-y-2 text-sm">
+                {delivery.created_at && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      Created: {formatDate(delivery.created_at)}
+                    </span>
+                  </div>
+                )}
+                {delivery.assigned_at && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      Driver Assigned: {formatDate(delivery.assigned_at)}
+                    </span>
+                  </div>
+                )}
+                {delivery.picked_up_at && (
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      Picked Up: {formatDate(delivery.picked_up_at)}
+                    </span>
+                  </div>
+                )}
+                {delivery.in_transit_at && (
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      In Transit: {formatDate(delivery.in_transit_at)}
+                    </span>
+                  </div>
+                )}
+                {delivery.actual_delivery_time && (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-green-600 font-medium">
+                      Delivered: {formatDate(delivery.actual_delivery_time)}
+                    </span>
+                  </div>
+                )}
+                {delivery.estimated_delivery_time && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      Estimated: {formatDate(delivery.estimated_delivery_time)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Notes */}
+            {(delivery.delivery_notes || delivery.seller_notes) && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Notes</h4>
+                  {delivery.seller_notes && (
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-sm font-medium mb-1">Seller Notes</p>
+                      <p className="text-sm text-muted-foreground">{delivery.seller_notes}</p>
+                    </div>
+                  )}
+                  {delivery.delivery_notes && (
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-sm font-medium mb-1">Delivery Notes</p>
+                      <p className="text-sm text-muted-foreground">{delivery.delivery_notes}</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+

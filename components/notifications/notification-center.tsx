@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Bell, Briefcase, ShoppingCart, MessageSquare, Star, Info, X } from "lucide-react"
+import { Bell, Briefcase, ShoppingCart, MessageSquare, Star, Info } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { authFetch } from "@/lib/auth-client"
 import { subscribeToNotificationChannel, unsubscribeFromNotificationChannel } from "@/lib/pusher"
@@ -67,7 +67,8 @@ export function NotificationCenter() {
   const fetchNotifications = async () => {
     try {
       setLoading(true)
-      const res = await authFetch("/api/notifications?limit=10")
+      // Fetch all notifications (read and unread) - increased limit to show more notifications
+      const res = await authFetch("/api/notifications?limit=100")
       if (res.ok) {
         const data = await res.json()
         const notificationsArray = Array.isArray(data?.notifications) ? data.notifications : []
@@ -77,7 +78,7 @@ export function NotificationCenter() {
           title: n.title,
           message: n.message,
           timestamp: new Date(n.created_at),
-          read: n.read,
+          read: n.read || false, // Preserve read status
           priority: n.priority,
           actionUrl: n.action_url,
         }))
@@ -140,11 +141,19 @@ export function NotificationCenter() {
   }
 
   const removeNotification = (id: string) => {
+    // Only remove from local state - notifications persist in database
+    // They will reappear on reload, which is the desired behavior
     setNotifications((prev) => prev.filter((n) => n.id !== id))
+    // Note: This only removes from UI temporarily. On page reload, all notifications will be fetched again.
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={(open) => {
+      // Refresh notifications when dropdown opens
+      if (open) {
+        fetchNotifications()
+      }
+    }}>
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
@@ -208,17 +217,7 @@ export function NotificationCenter() {
                         </div>
                         <div className="flex items-center gap-1">
                           {!notification.read && <div className="w-2 h-2 bg-primary rounded-full"></div>}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0 hover:bg-destructive/10"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              removeNotification(notification.id)
-                            }}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+                          {/* Delete button removed - notifications persist to maintain history */}
                         </div>
                       </div>
                     </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,9 +18,9 @@ import {
   Info,
   Search,
   Award as MarkAsRead,
-  Trash2,
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
+import { authFetch } from "@/lib/auth-client"
 
 interface Notification {
   id: string
@@ -42,31 +42,41 @@ export default function NotificationsPage() {
 }
 
 function NotificationsPageContent() {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      type: "job",
-      title: "New Job Application",
-      message: "Maria Rodriguez applied for Seasonal Harvest Workers position",
-      timestamp: new Date(Date.now() - 1000 * 60 * 15),
-      read: false,
-      priority: "high",
-      actionUrl: "/dashboard?tab=recruiter",
-    },
-    {
-      id: "2",
-      type: "order",
-      title: "Order Shipped",
-      message: "Your organic tomatoes order has been shipped and will arrive tomorrow",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-      read: false,
-      priority: "medium",
-      actionUrl: "/dashboard?tab=buyer",
-    },
-  ])
-
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<"all" | "unread" | "job" | "order" | "message" | "review" | "system">("all")
   const [searchTerm, setSearchTerm] = useState("")
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      // Fetch all notifications (read and unread) - increased limit to show more notifications
+      const res = await authFetch("/api/notifications?limit=100")
+      if (res.ok) {
+        const data = await res.json()
+        const notificationsArray = Array.isArray(data?.notifications) ? data.notifications : []
+        const formattedNotifications = notificationsArray.map((n: any) => ({
+          id: n._id,
+          type: n.type,
+          title: n.title,
+          message: n.message,
+          timestamp: new Date(n.created_at),
+          read: n.read || false,
+          priority: n.priority,
+          actionUrl: n.action_url,
+        }))
+        setNotifications(formattedNotifications)
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredNotifications = notifications.filter((notification) => {
     const matchesFilter = filter === "all" || (filter === "unread" ? !notification.read : notification.type === filter)
@@ -97,16 +107,26 @@ function NotificationsPageContent() {
     }
   }
 
-  const markAsRead = (id: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+  const markAsRead = async (id: string) => {
+    try {
+      const res = await authFetch(`/api/notifications/${id}/read`, { method: "PUT" })
+      if (res.ok) {
+        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+      }
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error)
+    }
   }
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  }
-
-  const deleteNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id))
+  const markAllAsRead = async () => {
+    try {
+      const res = await authFetch("/api/notifications/read-all", { method: "PUT" })
+      if (res.ok) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+      }
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error)
+    }
   }
 
   return (
@@ -165,7 +185,12 @@ function NotificationsPageContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {filteredNotifications.length === 0 ? (
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Bell className="h-12 w-12 text-muted-foreground mb-4 animate-pulse" />
+                    <p className="text-muted-foreground">Loading notifications...</p>
+                  </div>
+                ) : filteredNotifications.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Bell className="h-12 w-12 text-muted-foreground mb-4" />
                     <h3 className="font-heading text-lg font-semibold mb-2">No notifications found</h3>
@@ -221,14 +246,7 @@ function NotificationsPageContent() {
                                     Mark as read
                                   </Button>
                                 )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => deleteNotification(notification.id)}
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                {/* Delete button removed - notifications persist to maintain history */}
                               </div>
                             </div>
                             {notification.actionUrl && (

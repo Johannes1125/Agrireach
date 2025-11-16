@@ -15,6 +15,7 @@ import { useFeaturedProductsData } from "@/hooks/use-featured-products-data"
 import { ManageJobModal } from "@/components/dashboard/manage-job-modal"
 import { ManageProductModal } from "@/components/marketplace/manage-product-modal"
 import { OrderTrackingModal } from "@/components/marketplace/order-tracking-modal"
+import { DeliveryManagementModal } from "@/components/marketplace/delivery-management-modal"
 import { formatDate, formatRelativeTime, cn } from "@/lib/utils"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -56,6 +57,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
   const [manageModalOpen, setManageModalOpen] = useState(false)
   const [manageProductModalOpen, setManageProductModalOpen] = useState(false)
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null)
+  const [deliveryOrderId, setDeliveryOrderId] = useState<string | null>(null)
   const router = useRouter()
   const notifications = useNotifications()
   const { stats, activities, loading, error } = useDashboardData()
@@ -1108,35 +1110,50 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
                                     {order.payment_status}
                                   </Badge>
                                 </div>
-                                {/* Confirm Order button for sellers - only show for pending orders with paid status */}
-                                {order.status === "pending" && order.payment_status === "paid" && (
-                                  <Button
-                                    size="sm"
-                                    className="w-full sm:w-auto bg-primary hover:bg-primary/90"
-                                    onClick={async () => {
-                                      try {
-                                        const res = await authFetch(`/api/marketplace/orders/${order._id}`, {
-                                          method: "PUT",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({ status: "confirmed" }),
-                                        });
-                                        if (res.ok) {
-                                          notifications.showSuccess("Order Confirmed", "Order has been confirmed");
-                                          // Refresh orders
-                                          window.location.reload();
-                                        } else {
-                                          const errorData = await res.json().catch(() => ({}));
-                                          notifications.showError("Error", errorData.message || "Failed to confirm order");
+                                {/* Action buttons for sellers */}
+                                <div className="flex flex-col gap-2">
+                                  {/* Confirm Order button - only show for pending orders with paid status */}
+                                  {order.status === "pending" && order.payment_status === "paid" && (
+                                    <Button
+                                      size="sm"
+                                      className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+                                      onClick={async () => {
+                                        try {
+                                          const res = await authFetch(`/api/marketplace/orders/${order._id}`, {
+                                            method: "PUT",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ status: "confirmed" }),
+                                          });
+                                          if (res.ok) {
+                                            notifications.showSuccess("Order Confirmed", "Order has been confirmed");
+                                            // Refresh orders
+                                            window.location.reload();
+                                          } else {
+                                            const errorData = await res.json().catch(() => ({}));
+                                            notifications.showError("Error", errorData.message || "Failed to confirm order");
+                                          }
+                                        } catch (error: any) {
+                                          notifications.showError("Error", error.message || "Failed to confirm order");
                                         }
-                                      } catch (error: any) {
-                                        notifications.showError("Error", error.message || "Failed to confirm order");
-                                      }
-                                    }}
-                                  >
-                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                    Confirm Order
-                                  </Button>
-                                )}
+                                      }}
+                                    >
+                                      <CheckCircle className="mr-2 h-4 w-4" />
+                                      Confirm Order
+                                    </Button>
+                                  )}
+                                  {/* Manage Delivery button - show for confirmed/paid orders */}
+                                  {order.status !== "pending" && order.payment_status === "paid" && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="w-full sm:w-auto"
+                                      onClick={() => setDeliveryOrderId(order._id)}
+                                    >
+                                      <Truck className="mr-2 h-4 w-4" />
+                                      Manage Delivery
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </article>
@@ -1247,6 +1264,24 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
           onDelete={handleDeleteProduct}
         />
       )}
+
+      {/* Order Tracking Modal for Buyers */}
+      <OrderTrackingModal
+        open={!!trackingOrderId}
+        onOpenChange={(open) => !open && setTrackingOrderId(null)}
+        orderId={trackingOrderId || ""}
+      />
+
+      {/* Delivery Management Modal for Sellers */}
+      <DeliveryManagementModal
+        open={!!deliveryOrderId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeliveryOrderId(null)
+          }
+        }}
+        orderId={deliveryOrderId || ""}
+      />
     </div>
   )
 }

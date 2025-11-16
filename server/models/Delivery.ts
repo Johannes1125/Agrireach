@@ -114,7 +114,7 @@ const DeliverySchema = new Schema<IDelivery>(
     
     estimated_delivery_time: { type: Date },
     actual_delivery_time: { type: Date },
-    tracking_number: { type: String, required: true, unique: true },
+    tracking_number: { type: String, required: true },
     
     delivery_notes: { type: String },
     seller_notes: { type: String },
