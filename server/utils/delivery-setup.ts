@@ -48,6 +48,17 @@ export async function createDeliveryForOrder(orderId: string): Promise<DeliveryS
     const existingDelivery = await Delivery.findOne({ order_id: orderId });
     if (existingDelivery) {
       console.log(`[Delivery Setup] Delivery already exists for order ${orderId}: ${existingDelivery._id}`);
+      
+      // IMPORTANT: Ensure order.delivery_id is set even if delivery exists
+      // This fixes cases where delivery exists but order.delivery_id wasn't set
+      const currentOrder = await Order.findById(orderId).lean();
+      if (!currentOrder?.delivery_id || String(currentOrder.delivery_id) !== String(existingDelivery._id)) {
+        console.log(`[Delivery Setup] Setting delivery_id on order ${orderId} to ${existingDelivery._id}`);
+        await Order.findByIdAndUpdate(orderId, {
+          $set: { delivery_id: existingDelivery._id }
+        });
+      }
+      
       return { 
         success: true, 
         delivery_id: String(existingDelivery._id),

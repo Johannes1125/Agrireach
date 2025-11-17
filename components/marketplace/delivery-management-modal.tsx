@@ -103,7 +103,41 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
       setLoading(true)
       setError(null)
 
-      // First, get the order to find delivery_id
+      // FIRST: Try to find delivery directly by order_id (more reliable)
+      try {
+        const deliveryByOrderRes = await authFetch(`/api/delivery/by-order/${orderId}`)
+        if (deliveryByOrderRes.ok) {
+          const deliveryData = await deliveryByOrderRes.json()
+          setDelivery(deliveryData.delivery)
+          
+          // Pre-fill form if driver already assigned
+          if (deliveryData.delivery.driver_name) {
+            setDriverForm({
+              driver_name: deliveryData.delivery.driver_name || "",
+              driver_phone: deliveryData.delivery.driver_phone || "",
+              driver_email: deliveryData.delivery.driver_email || "",
+              vehicle_type: deliveryData.delivery.vehicle_type || "",
+              vehicle_plate_number: deliveryData.delivery.vehicle_plate_number || "",
+              vehicle_description: deliveryData.delivery.vehicle_description || "",
+              estimated_delivery_time: deliveryData.delivery.estimated_delivery_time
+                ? new Date(deliveryData.delivery.estimated_delivery_time).toISOString().slice(0, 16)
+                : "",
+              seller_notes: deliveryData.delivery.seller_notes || "",
+            })
+            setShowAssignForm(false)
+          } else {
+            setShowAssignForm(true)
+          }
+          
+          setLoading(false)
+          return // Success - exit early
+        }
+      } catch (err) {
+        // If endpoint fails, continue with fallback approach
+        console.log("[Delivery Modal] Direct delivery lookup failed, trying order-based approach");
+      }
+
+      // FALLBACK: Get order to find delivery_id (original approach)
       const orderRes = await authFetch(`/api/marketplace/orders/${orderId}`)
       if (!orderRes.ok) {
         throw new Error("Failed to fetch order details")
@@ -118,7 +152,6 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
         
         try {
           // Try to trigger delivery creation by confirming the order (if not already confirmed)
-          // Or directly create delivery
           const createRes = await authFetch(`/api/marketplace/orders/${orderId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -143,7 +176,7 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
         }
       }
 
-      // Fetch delivery details
+      // Fetch delivery details by delivery_id
       const deliveryRes = await authFetch(`/api/delivery/${deliveryId}`)
       if (!deliveryRes.ok) {
         throw new Error("Failed to fetch delivery details")
