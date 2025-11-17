@@ -13,6 +13,7 @@ import { Loader2, Truck, MapPin, User, Phone, Mail, Calendar, Package, CheckCirc
 import { authFetch } from "@/lib/auth-client"
 import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
+import { DEFAULT_DRIVERS, type DefaultDriver } from "@/lib/constants/default-drivers"
 
 interface DeliveryManagementModalProps {
   open: boolean
@@ -82,6 +83,7 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
 
   // Form state for driver assignment
   const [driverForm, setDriverForm] = useState({
+    selected_driver_id: "", // ID of selected default driver
     driver_name: "",
     driver_phone: "",
     driver_email: "",
@@ -91,6 +93,24 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
     estimated_delivery_time: "",
     seller_notes: "",
   })
+  
+  // Handle default driver selection
+  const handleSelectDefaultDriver = (driverId: string) => {
+    const driver = DEFAULT_DRIVERS.find(d => d.id === driverId)
+    if (driver) {
+      setDriverForm({
+        selected_driver_id: driver.id,
+        driver_name: driver.name,
+        driver_phone: driver.phone,
+        driver_email: driver.email || "",
+        vehicle_type: driver.vehicle_type,
+        vehicle_plate_number: driver.vehicle_plate_number || "",
+        vehicle_description: driver.vehicle_description || "",
+        estimated_delivery_time: driverForm.estimated_delivery_time, // Preserve existing time
+        seller_notes: driverForm.seller_notes, // Preserve existing notes
+      })
+    }
+  }
 
   useEffect(() => {
     if (open && orderId) {
@@ -108,10 +128,17 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
         const deliveryByOrderRes = await authFetch(`/api/delivery/by-order/${orderId}`)
         if (deliveryByOrderRes.ok) {
           const deliveryData = await deliveryByOrderRes.json()
+          
+          // Fix: Check if delivery exists before accessing properties
+          if (!deliveryData || !deliveryData.delivery) {
+            console.error("[Delivery Modal] Invalid delivery data structure:", deliveryData);
+            throw new Error("Invalid delivery data received");
+          }
+          
           setDelivery(deliveryData.delivery)
           
           // Pre-fill form if driver already assigned
-          if (deliveryData.delivery.driver_name) {
+          if (deliveryData.delivery?.driver_name) {
             setDriverForm({
               driver_name: deliveryData.delivery.driver_name || "",
               driver_phone: deliveryData.delivery.driver_phone || "",
@@ -198,8 +225,15 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
       setDelivery(deliveryData.delivery)
 
       // Pre-fill form if driver already assigned
-      if (deliveryData.delivery.driver_name) {
+      if (deliveryData.delivery?.driver_name) {
+        // Try to match with default drivers
+        const matchedDriver = DEFAULT_DRIVERS.find(
+          d => d.name === deliveryData.delivery.driver_name &&
+               d.phone === deliveryData.delivery.driver_phone
+        )
+        
         setDriverForm({
+          selected_driver_id: matchedDriver?.id || "",
           driver_name: deliveryData.delivery.driver_name || "",
           driver_phone: deliveryData.delivery.driver_phone || "",
           driver_email: deliveryData.delivery.driver_email || "",
@@ -225,17 +259,20 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
   const handleAssignDriver = async () => {
     if (!delivery) return
 
-    if (!driverForm.driver_name || !driverForm.driver_phone || !driverForm.vehicle_type) {
-      toast.error("Please fill in all required fields (Driver Name, Phone, Vehicle Type)")
+    // Validate that a driver is selected
+    if (!driverForm.selected_driver_id || !driverForm.driver_name || !driverForm.driver_phone || !driverForm.vehicle_type) {
+      toast.error("Please select a driver from the list")
       return
     }
 
     try {
       setAssigningDriver(true)
+      // Exclude selected_driver_id from API request (it's only for UI)
+      const { selected_driver_id, ...driverData } = driverForm
       const res = await authFetch(`/api/delivery/${delivery._id}/assign-driver`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(driverForm),
+        body: JSON.stringify(driverData),
       })
 
       if (!res.ok) {
@@ -438,77 +475,79 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
                 </div>
               ) : showAssignForm ? (
                 <div className="p-4 border rounded-lg space-y-4">
+                  {/* Driver Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="select_driver">
+                      Select Driver <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={driverForm.selected_driver_id}
+                      onValueChange={handleSelectDefaultDriver}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a driver from the list" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DEFAULT_DRIVERS.map((driver) => (
+                          <SelectItem key={driver.id} value={driver.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{driver.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {driver.phone} • {driver.vehicle_type.replace("_", " ")} • {driver.vehicle_plate_number}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Select one of the available drivers from the system
+                    </p>
+                  </div>
+
+                  {/* Display selected driver details (read-only) */}
+                  {driverForm.selected_driver_id && (
+                    <div className="p-4 bg-muted rounded-lg space-y-2">
+                      <h5 className="font-medium text-sm">Selected Driver Details</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Name:</span>{" "}
+                          <span className="font-medium">{driverForm.driver_name}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Phone:</span>{" "}
+                          <span className="font-medium">{driverForm.driver_phone}</span>
+                        </div>
+                        {driverForm.driver_email && (
+                          <div>
+                            <span className="text-muted-foreground">Email:</span>{" "}
+                            <span className="font-medium">{driverForm.driver_email}</span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-muted-foreground">Vehicle:</span>{" "}
+                          <span className="font-medium capitalize">
+                            {driverForm.vehicle_type?.replace("_", " ")}
+                          </span>
+                        </div>
+                        {driverForm.vehicle_plate_number && (
+                          <div>
+                            <span className="text-muted-foreground">Plate:</span>{" "}
+                            <span className="font-medium">{driverForm.vehicle_plate_number}</span>
+                          </div>
+                        )}
+                        {driverForm.vehicle_description && (
+                          <div className="md:col-span-2">
+                            <span className="text-muted-foreground">Description:</span>{" "}
+                            <span className="font-medium">{driverForm.vehicle_description}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Editable fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="driver_name">
-                        Driver Name <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="driver_name"
-                        value={driverForm.driver_name}
-                        onChange={(e) =>
-                          setDriverForm({ ...driverForm, driver_name: e.target.value })
-                        }
-                        placeholder="Enter driver name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="driver_phone">
-                        Driver Phone <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="driver_phone"
-                        value={driverForm.driver_phone}
-                        onChange={(e) =>
-                          setDriverForm({ ...driverForm, driver_phone: e.target.value })
-                        }
-                        placeholder="+63XXXXXXXXXX"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="driver_email">Driver Email</Label>
-                      <Input
-                        id="driver_email"
-                        type="email"
-                        value={driverForm.driver_email}
-                        onChange={(e) =>
-                          setDriverForm({ ...driverForm, driver_email: e.target.value })
-                        }
-                        placeholder="driver@example.com"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="vehicle_type">
-                        Vehicle Type <span className="text-destructive">*</span>
-                      </Label>
-                      <Select
-                        value={driverForm.vehicle_type}
-                        onValueChange={(value: any) =>
-                          setDriverForm({ ...driverForm, vehicle_type: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select vehicle type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="motorcycle">Motorcycle</SelectItem>
-                          <SelectItem value="car">Car</SelectItem>
-                          <SelectItem value="mini_truck">Mini Truck</SelectItem>
-                          <SelectItem value="truck">Truck</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="vehicle_plate_number">Plate Number</Label>
-                      <Input
-                        id="vehicle_plate_number"
-                        value={driverForm.vehicle_plate_number}
-                        onChange={(e) =>
-                          setDriverForm({ ...driverForm, vehicle_plate_number: e.target.value })
-                        }
-                        placeholder="ABC-1234"
-                      />
-                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="estimated_delivery_time">Estimated Delivery Time</Label>
                       <Input
@@ -521,17 +560,6 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
                       />
                     </div>
                     <div className="md:col-span-2 space-y-2">
-                      <Label htmlFor="vehicle_description">Vehicle Description</Label>
-                      <Input
-                        id="vehicle_description"
-                        value={driverForm.vehicle_description}
-                        onChange={(e) =>
-                          setDriverForm({ ...driverForm, vehicle_description: e.target.value })
-                        }
-                        placeholder="e.g., Red Toyota Vios, White van"
-                      />
-                    </div>
-                    <div className="md:col-span-2 space-y-2">
                       <Label htmlFor="seller_notes">Seller Notes (for driver)</Label>
                       <Textarea
                         id="seller_notes"
@@ -539,15 +567,16 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
                         onChange={(e) =>
                           setDriverForm({ ...driverForm, seller_notes: e.target.value })
                         }
-                        placeholder="Special instructions for the driver..."
+                        placeholder="Special instructions for the driver (e.g., 'Call buyer 15 mins before arrival', 'Handle with care')..."
                         rows={3}
                       />
                     </div>
                   </div>
+
                   <div className="flex gap-2">
                     <Button
                       onClick={handleAssignDriver}
-                      disabled={assigningDriver}
+                      disabled={assigningDriver || !driverForm.selected_driver_id}
                       className="flex-1"
                     >
                       {assigningDriver ? (
