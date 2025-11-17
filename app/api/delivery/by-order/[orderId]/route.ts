@@ -60,15 +60,16 @@ export async function GET(
   // DEBUG LOGGING:
   console.log(`[Delivery By Order API] Found delivery for order ${orderId}:`, delivery ? "Yes" : "No");
   if (delivery) {
-    console.log(`[Delivery By Order API] Order ID populated:`, delivery.order_id);
-    console.log(`[Delivery By Order API] Product ID in order:`, delivery.order_id?.product_id);
-    console.log(`[Delivery By Order API] Product ID type:`, typeof delivery.order_id?.product_id);
-    console.log(`[Delivery By Order API] Product populated:`, delivery.order_id?.product_id && typeof delivery.order_id?.product_id === 'object' ? "Yes" : "No");
-    if (delivery.order_id?.product_id && typeof delivery.order_id?.product_id === 'object') {
-      console.log(`[Delivery By Order API] Product title:`, (delivery.order_id.product_id as any)?.title);
-      console.log(`[Delivery By Order API] Full product object:`, JSON.stringify(delivery.order_id.product_id, null, 2));
+    const orderIdPopulated = delivery.order_id as any;
+    console.log(`[Delivery By Order API] Order ID populated:`, orderIdPopulated);
+    console.log(`[Delivery By Order API] Product ID in order:`, orderIdPopulated?.product_id);
+    console.log(`[Delivery By Order API] Product ID type:`, typeof orderIdPopulated?.product_id);
+    console.log(`[Delivery By Order API] Product populated:`, orderIdPopulated?.product_id && typeof orderIdPopulated?.product_id === 'object' ? "Yes" : "No");
+    if (orderIdPopulated?.product_id && typeof orderIdPopulated?.product_id === 'object') {
+      console.log(`[Delivery By Order API] Product title:`, (orderIdPopulated.product_id as any)?.title);
+      console.log(`[Delivery By Order API] Full product object:`, JSON.stringify(orderIdPopulated.product_id, null, 2));
     } else {
-      console.log(`[Delivery By Order API] Product ID is not populated - value:`, delivery.order_id?.product_id);
+      console.log(`[Delivery By Order API] Product ID is not populated - value:`, orderIdPopulated?.product_id);
     }
   }
 
@@ -87,9 +88,10 @@ export async function GET(
       // DEBUG LOGGING:
       console.log(`[Delivery By Order API] Retry with ObjectId - Found delivery:`, delivery ? "Yes" : "No");
       if (delivery) {
-        console.log(`[Delivery By Order API] Retry - Product populated:`, delivery.order_id?.product_id && typeof delivery.order_id?.product_id === 'object' ? "Yes" : "No");
-        if (delivery.order_id?.product_id && typeof delivery.order_id?.product_id === 'object') {
-          console.log(`[Delivery By Order API] Retry - Product title:`, (delivery.order_id.product_id as any)?.title);
+        const orderIdPopulated = delivery.order_id as any;
+        console.log(`[Delivery By Order API] Retry - Product populated:`, orderIdPopulated?.product_id && typeof orderIdPopulated?.product_id === 'object' ? "Yes" : "No");
+        if (orderIdPopulated?.product_id && typeof orderIdPopulated?.product_id === 'object') {
+          console.log(`[Delivery By Order API] Retry - Product title:`, (orderIdPopulated.product_id as any)?.title);
         }
       }
     } catch (err) {
@@ -111,10 +113,11 @@ export async function GET(
   }
 
   // DEBUG LOGGING - Before returning:
-  console.log(`[Delivery By Order API] Returning delivery with order_id:`, delivery?.order_id?._id || delivery?.order_id);
-  console.log(`[Delivery By Order API] Final product check:`, delivery?.order_id?.product_id);
-  if (delivery?.order_id?.product_id && typeof delivery.order_id.product_id === 'object') {
-    console.log(`[Delivery By Order API] Final product title:`, (delivery.order_id.product_id as any)?.title);
+  const orderIdFinal = delivery?.order_id as any;
+  console.log(`[Delivery By Order API] Returning delivery with order_id:`, orderIdFinal?._id || orderIdFinal);
+  console.log(`[Delivery By Order API] Final product check:`, orderIdFinal?.product_id);
+  if (orderIdFinal?.product_id && typeof orderIdFinal.product_id === 'object') {
+    console.log(`[Delivery By Order API] Final product title:`, (orderIdFinal.product_id as any)?.title);
   }
 
   return jsonOk({ delivery });

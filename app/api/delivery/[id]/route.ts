@@ -40,11 +40,12 @@ export async function GET(
   // DEBUG LOGGING:
   console.log(`[Delivery API] Found delivery ${id}:`, delivery ? "Yes" : "No");
   if (delivery) {
-    console.log(`[Delivery API] Order ID:`, delivery.order_id);
-    console.log(`[Delivery API] Product ID:`, delivery.order_id?.product_id);
-    console.log(`[Delivery API] Product populated:`, delivery.order_id?.product_id && typeof delivery.order_id?.product_id === 'object' ? "Yes" : "No");
-    if (delivery.order_id?.product_id && typeof delivery.order_id?.product_id === 'object') {
-      console.log(`[Delivery API] Product title:`, (delivery.order_id.product_id as any)?.title);
+    const orderId = delivery.order_id as any;
+    console.log(`[Delivery API] Order ID:`, orderId);
+    console.log(`[Delivery API] Product ID:`, orderId?.product_id);
+    console.log(`[Delivery API] Product populated:`, orderId?.product_id && typeof orderId?.product_id === 'object' ? "Yes" : "No");
+    if (orderId?.product_id && typeof orderId.product_id === 'object') {
+      console.log(`[Delivery API] Product title:`, (orderId.product_id as any)?.title);
     }
   }
 
@@ -62,9 +63,10 @@ export async function GET(
   }
 
   // DEBUG LOGGING - Before returning:
-  console.log(`[Delivery API] Returning delivery with product:`, delivery?.order_id?.product_id);
-  if (delivery?.order_id?.product_id && typeof delivery.order_id.product_id === 'object') {
-    console.log(`[Delivery API] Returning product title:`, (delivery.order_id.product_id as any)?.title);
+  const orderId = delivery?.order_id as any;
+  console.log(`[Delivery API] Returning delivery with product:`, orderId?.product_id);
+  if (orderId?.product_id && typeof orderId.product_id === 'object') {
+    console.log(`[Delivery API] Returning product title:`, (orderId.product_id as any)?.title);
   }
 
   return jsonOk({ delivery });

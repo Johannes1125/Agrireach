@@ -57,7 +57,9 @@ function NotificationsPageContent() {
       // Fetch all notifications (read and unread) - increased limit to show more notifications
       const res = await authFetch("/api/notifications?limit=100")
       if (res.ok) {
-        const data = await res.json()
+        const response = await res.json()
+        // jsonOk wraps response in { success: true, data: { notifications, total, unreadCount, ... } }
+        const data = response?.data || {}
         const notificationsArray = Array.isArray(data?.notifications) ? data.notifications : []
         const formattedNotifications = notificationsArray.map((n: any) => ({
           id: n._id,
