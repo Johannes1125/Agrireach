@@ -144,7 +144,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return jsonError("Only sellers can update payment status", 403);
   }
 
-  const updatedOrder = await Order.findByIdAndUpdate(
+  let updatedOrder = await Order.findByIdAndUpdate(
     id,
     { $set: result.data },
     { new: true }
@@ -156,25 +156,32 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (result.data.status === "confirmed" && isSeller && !order.delivery_id) {
     console.log(`[Order Confirmation] Creating delivery for order ${order._id}`);
     
-    // Import and trigger custom delivery setup (non-blocking)
+    // Import and trigger custom delivery setup (SYNCHRONOUS - wait for it to complete)
     try {
       const { createDeliveryForOrder } = await import("@/server/utils/delivery-setup");
       
-      // Run async but don't wait - we want to return success immediately
-      createDeliveryForOrder(String(order._id))
-        .then((result) => {
-          if (result.success) {
-            console.log(`[Order Confirmation] ✅ Delivery created for order ${order._id}: ${result.tracking_number}`);
-          } else {
-            console.error(`[Order Confirmation] ❌ Delivery creation failed for order ${order._id}: ${result.error}`);
-          }
-        })
-        .catch((error) => {
-          // Log error but don't fail the order confirmation
-          console.error(`[Order Confirmation] ❌ Failed to create delivery for order ${order._id}:`, error);
-        });
-    } catch (importError) {
-      console.error(`[Order Confirmation] ❌ Failed to import delivery setup:`, importError);
+      // WAIT for delivery creation to complete so delivery_id is set on order
+      const deliveryResult = await createDeliveryForOrder(String(order._id));
+      
+      if (deliveryResult.success) {
+        console.log(`[Order Confirmation] ✅ Delivery created for order ${order._id}: ${deliveryResult.tracking_number}`);
+        
+        // Refresh the order to include the newly set delivery_id
+        const refreshedOrder = await Order.findById(id)
+          .populate('buyer_id', 'full_name')
+          .populate('seller_id', 'full_name')
+          .populate('product_id', 'title');
+        
+        if (refreshedOrder) {
+          updatedOrder = refreshedOrder;
+        }
+      } else {
+        console.error(`[Order Confirmation] ❌ Delivery creation failed for order ${order._id}: ${deliveryResult.error}`);
+        // Still return success for order confirmation, but log the error
+      }
+    } catch (error) {
+      // Log error but don't fail the order confirmation
+      console.error(`[Order Confirmation] ❌ Failed to create delivery for order ${order._id}:`, error);
     }
   }
 

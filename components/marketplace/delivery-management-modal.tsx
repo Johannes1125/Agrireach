@@ -113,10 +113,34 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
       const deliveryId = orderData.order?.delivery_id
 
       if (!deliveryId) {
-        // No delivery record yet - show message to confirm order first
-        setError("No delivery record found. Please confirm the order first to create a delivery record.")
-        setLoading(false)
-        return
+        // No delivery record yet - try to create it automatically
+        console.log(`[Delivery Modal] No delivery_id found, attempting to create delivery for order ${orderId}`);
+        
+        try {
+          // Try to trigger delivery creation by confirming the order (if not already confirmed)
+          // Or directly create delivery
+          const createRes = await authFetch(`/api/marketplace/orders/${orderId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "confirmed" }),
+          });
+          
+          if (createRes.ok) {
+            // Wait a moment for delivery to be created, then retry
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            return fetchDeliveryDetails(); // Retry fetching
+          } else {
+            const errorData = await createRes.json().catch(() => ({}));
+            setError(errorData.message || "No delivery record found. Please confirm the order first to create a delivery record.");
+            setLoading(false);
+            return;
+          }
+        } catch (err: any) {
+          console.error("[Delivery Modal] Failed to create delivery:", err);
+          setError("No delivery record found. Please confirm the order first to create a delivery record.");
+          setLoading(false);
+          return;
+        }
       }
 
       // Fetch delivery details
