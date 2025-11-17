@@ -31,7 +31,8 @@ export async function GET(
   await connectToDatabase();
 
   const delivery = await Delivery.findById(id)
-    .populate('order_id', 'status payment_status total_price')
+    .populate('order_id', 'status payment_status total_price product_id')
+    .populate('order_id.product_id', 'title images unit')
     .populate('buyer_id', 'full_name phone email')
     .populate('seller_id', 'full_name phone email')
     .lean();

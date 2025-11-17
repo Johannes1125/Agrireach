@@ -110,8 +110,15 @@ export function OrderTrackingModal({ open, onOpenChange, orderId }: OrderTrackin
         throw new Error("Failed to fetch order details")
       }
       
-      const data = await res.json()
-      setOrder(data.order)
+      const response = await res.json()
+      // jsonOk wraps response in { success: true, data: { order: ... } }
+      const orderData = response?.data?.order
+      
+      if (!orderData) {
+        throw new Error("Invalid order data received")
+      }
+      
+      setOrder(orderData)
     } catch (err: any) {
       setError(err.message || "Failed to load order details")
     } finally {
