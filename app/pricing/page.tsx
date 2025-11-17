@@ -83,7 +83,7 @@ export default function PricingPage() {
               <div className="space-y-2">
                 <div className="flex items-baseline justify-center gap-2">
                   <span className="text-5xl font-bold">₱</span>
-                  <span className="text-5xl font-bold">2,750</span>
+                  <span className="text-5xl font-bold">199</span>
                   <span className="text-xl text-muted-foreground">/month</span>
                 </div>
                 <CardDescription className="text-base">

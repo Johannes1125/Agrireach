@@ -29,7 +29,7 @@ export default function PricingCheckoutPage() {
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">Plan</p>
                   <p className="font-semibold">Pro Plan</p>
-                  <p className="text-sm text-muted-foreground mt-2">₱2,750 /month</p>
+                  <p className="text-sm text-muted-foreground mt-2">₱199 /month</p>
                 </div>
                 <div className="pt-4 border-t">
                   <p className="text-sm text-muted-foreground">

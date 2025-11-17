@@ -127,36 +127,39 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
       try {
         const deliveryByOrderRes = await authFetch(`/api/delivery/by-order/${orderId}`)
         if (deliveryByOrderRes.ok) {
-          const deliveryData = await deliveryByOrderRes.json()
+          const response = await deliveryByOrderRes.json()
+          
+          // jsonOk wraps response in { success: true, data: { delivery: ... } }
+          const delivery = response?.data?.delivery
           
           // Fix: Check if delivery exists before accessing properties
-          if (!deliveryData || !deliveryData.delivery) {
-            console.error("[Delivery Modal] Invalid delivery data structure:", deliveryData);
+          if (!delivery) {
+            console.error("[Delivery Modal] Invalid delivery data structure:", response);
             throw new Error("Invalid delivery data received");
           }
           
-          setDelivery(deliveryData.delivery)
+          setDelivery(delivery)
           
           // Pre-fill form if driver already assigned
-          if (deliveryData.delivery?.driver_name) {
+          if (delivery?.driver_name) {
             // Try to match with default drivers
             const matchedDriver = DEFAULT_DRIVERS.find(
-              d => d.name === deliveryData.delivery.driver_name &&
-                   d.phone === deliveryData.delivery.driver_phone
+              d => d.name === delivery.driver_name &&
+                   d.phone === delivery.driver_phone
             )
             
             setDriverForm({
               selected_driver_id: matchedDriver?.id || "",
-              driver_name: deliveryData.delivery.driver_name || "",
-              driver_phone: deliveryData.delivery.driver_phone || "",
-              driver_email: deliveryData.delivery.driver_email || "",
-              vehicle_type: deliveryData.delivery.vehicle_type || "",
-              vehicle_plate_number: deliveryData.delivery.vehicle_plate_number || "",
-              vehicle_description: deliveryData.delivery.vehicle_description || "",
-              estimated_delivery_time: deliveryData.delivery.estimated_delivery_time
-                ? new Date(deliveryData.delivery.estimated_delivery_time).toISOString().slice(0, 16)
+              driver_name: delivery.driver_name || "",
+              driver_phone: delivery.driver_phone || "",
+              driver_email: delivery.driver_email || "",
+              vehicle_type: delivery.vehicle_type || "",
+              vehicle_plate_number: delivery.vehicle_plate_number || "",
+              vehicle_description: delivery.vehicle_description || "",
+              estimated_delivery_time: delivery.estimated_delivery_time
+                ? new Date(delivery.estimated_delivery_time).toISOString().slice(0, 16)
                 : "",
-              seller_notes: deliveryData.delivery.seller_notes || "",
+              seller_notes: delivery.seller_notes || "",
             })
             setShowAssignForm(false)
           } else {
@@ -228,29 +231,36 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
         throw new Error("Failed to fetch delivery details")
       }
 
-      const deliveryData = await deliveryRes.json()
-      setDelivery(deliveryData.delivery)
+      const response = await deliveryRes.json()
+      // jsonOk wraps response in { success: true, data: { delivery: ... } }
+      const delivery = response?.data?.delivery
+      
+      if (!delivery) {
+        throw new Error("Invalid delivery data received")
+      }
+      
+      setDelivery(delivery)
 
       // Pre-fill form if driver already assigned
-      if (deliveryData.delivery?.driver_name) {
+      if (delivery?.driver_name) {
         // Try to match with default drivers
         const matchedDriver = DEFAULT_DRIVERS.find(
-          d => d.name === deliveryData.delivery.driver_name &&
-               d.phone === deliveryData.delivery.driver_phone
+          d => d.name === delivery.driver_name &&
+               d.phone === delivery.driver_phone
         )
         
         setDriverForm({
           selected_driver_id: matchedDriver?.id || "",
-          driver_name: deliveryData.delivery.driver_name || "",
-          driver_phone: deliveryData.delivery.driver_phone || "",
-          driver_email: deliveryData.delivery.driver_email || "",
-          vehicle_type: deliveryData.delivery.vehicle_type || "",
-          vehicle_plate_number: deliveryData.delivery.vehicle_plate_number || "",
-          vehicle_description: deliveryData.delivery.vehicle_description || "",
-          estimated_delivery_time: deliveryData.delivery.estimated_delivery_time
-            ? new Date(deliveryData.delivery.estimated_delivery_time).toISOString().slice(0, 16)
+          driver_name: delivery.driver_name || "",
+          driver_phone: delivery.driver_phone || "",
+          driver_email: delivery.driver_email || "",
+          vehicle_type: delivery.vehicle_type || "",
+          vehicle_plate_number: delivery.vehicle_plate_number || "",
+          vehicle_description: delivery.vehicle_description || "",
+          estimated_delivery_time: delivery.estimated_delivery_time
+            ? new Date(delivery.estimated_delivery_time).toISOString().slice(0, 16)
             : "",
-          seller_notes: deliveryData.delivery.seller_notes || "",
+          seller_notes: delivery.seller_notes || "",
         })
         setShowAssignForm(false)
       } else {
