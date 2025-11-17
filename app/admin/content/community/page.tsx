@@ -8,7 +8,6 @@ import {
   Filter,
   MoreHorizontal,
   Eye,
-  Edit,
   Trash2,
   MessageSquare,
   Users,
@@ -18,17 +17,26 @@ import {
   Lock,
   Download,
   BarChart3,
+  Loader2,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { useAdminCommunity } from "@/hooks/use-admin-data"
 import { authFetch } from "@/lib/auth-client"
 import { toast } from "sonner"
 import { useEffect, useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Separator } from "@/components/ui/separator"
 
 export default function CommunityContentPage() {
   const { threads, stats, loading } = useAdminCommunity()
   const [categories, setCategories] = useState<any[]>([])
+  const [viewPostOpen, setViewPostOpen] = useState(false)
+  const [selectedPost, setSelectedPost] = useState<any>(null)
+  const [viewPostLoading, setViewPostLoading] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<{ open: boolean; postId: string; action: string; title: string }>({ open: false, postId: '', action: '', title: '' })
+  
   const posts = threads.map((t: any) => ({
     id: String(t._id),
     title: t.title,
@@ -44,19 +52,47 @@ export default function CommunityContentPage() {
     lastActivity: t.last_activity ? new Date(t.last_activity).toLocaleDateString() : '',
   }))
 
-  const doThreadAction = async (id: string, action: string) => {
+  const handleViewPost = async (postId: string) => {
+    setViewPostLoading(true)
+    setViewPostOpen(true)
     try {
-      const res = await authFetch(`/api/admin/community/threads/${id}`, {
+      const res = await authFetch(`/api/community/threads/${postId}`)
+      const json = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setSelectedPost(json?.data || json)
+      } else {
+        toast.error('Failed to load post details')
+        setViewPostOpen(false)
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to load post')
+      setViewPostOpen(false)
+    } finally {
+      setViewPostLoading(false)
+    }
+  }
+
+  const handleConfirmAction = async () => {
+    try {
+      const res = await authFetch(`/api/admin/community/threads/${confirmAction.postId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action })
+        body: JSON.stringify({ action: confirmAction.action })
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json?.message || 'Failed')
-      toast.success('Updated')
+      toast.success('Action completed successfully')
+      setConfirmAction({ open: false, postId: '', action: '', title: '' })
+      // Refresh the page to show updated data
+      window.location.reload()
     } catch (e: any) {
-      toast.error(e.message || 'Failed')
+      toast.error(e.message || 'Failed to perform action')
     }
+  }
+
+  const doThreadAction = async (id: string, action: string, title: string) => {
+    // Show confirmation modal instead of directly executing
+    setConfirmAction({ open: true, postId: id, action, title })
   }
 
   useEffect(() => {
@@ -279,31 +315,28 @@ export default function CommunityContentPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleViewPost(post.id)}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   View Post
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit Post
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => doThreadAction(post.id, post.pinned ? 'unpin' : 'pin')}>
+                                {/* Removed Edit Post - admins can view but not edit */}
+                                <DropdownMenuItem onClick={() => doThreadAction(post.id, post.pinned ? 'unpin' : 'pin', post.title)}>
                                   <Pin className="mr-2 h-4 w-4" />
                                   {post.pinned ? "Unpin" : "Pin"} Post
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => doThreadAction(post.id, 'lock')}>
+                                <DropdownMenuItem onClick={() => doThreadAction(post.id, 'lock', post.title)}>
                                   <Lock className="mr-2 h-4 w-4" />
                                   Lock Thread
                                 </DropdownMenuItem>
                                 {post.status === "pending" && (
-                                  <DropdownMenuItem onClick={() => doThreadAction(post.id, 'approve')}>
+                                  <DropdownMenuItem onClick={() => doThreadAction(post.id, 'approve', post.title)}>
                                     <CheckCircle className="mr-2 h-4 w-4" />
                                     Approve
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem 
                                   className="text-red-600 dark:text-red-400"
-                                  onClick={() => doThreadAction(post.id, 'delete')}
+                                  onClick={() => doThreadAction(post.id, 'delete', post.title)}
                                 >
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Delete
@@ -392,6 +425,95 @@ export default function CommunityContentPage() {
           </Card>
         </div>
       </div>
+
+      {/* View Post Modal */}
+      <Dialog open={viewPostOpen} onOpenChange={setViewPostOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>View Post Details</DialogTitle>
+            <DialogDescription>View complete post information</DialogDescription>
+          </DialogHeader>
+          {viewPostLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : selectedPost ? (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">{selectedPost.title || 'No title'}</h3>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                  <span>Author: {selectedPost.author?.name || selectedPost.author_id?.full_name || 'Unknown'}</span>
+                  <span>•</span>
+                  <span>Created: {selectedPost.created_at ? new Date(selectedPost.created_at).toLocaleString() : 'N/A'}</span>
+                </div>
+                <div className="prose dark:prose-invert max-w-none">
+                  <p className="whitespace-pre-wrap">{selectedPost.content || selectedPost.description || 'No content'}</p>
+                </div>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium mb-1">Status</p>
+                  <Badge variant="outline">{selectedPost.status || 'active'}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1">Category</p>
+                  <Badge variant="outline">{selectedPost.category || 'General'}</Badge>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1">Views</p>
+                  <p className="text-sm">{selectedPost.views || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1">Likes</p>
+                  <p className="text-sm">{selectedPost.likes_count || selectedPost.likes || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1">Replies</p>
+                  <p className="text-sm">{selectedPost.replies_count || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1">Pinned</p>
+                  <Badge variant={selectedPost.pinned ? "default" : "outline"}>
+                    {selectedPost.pinned ? "Yes" : "No"}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No post data available</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewPostOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Modal for Actions */}
+      <AlertDialog open={confirmAction.open} onOpenChange={(open) => !open && setConfirmAction({ open: false, postId: '', action: '', title: '' })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Action</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction.action === 'delete' && `Are you sure you want to delete "${confirmAction.title}"? This action cannot be undone.`}
+              {confirmAction.action === 'pin' && `Are you sure you want to pin "${confirmAction.title}"?`}
+              {confirmAction.action === 'unpin' && `Are you sure you want to unpin "${confirmAction.title}"?`}
+              {confirmAction.action === 'lock' && `Are you sure you want to lock "${confirmAction.title}"? Users will not be able to reply.`}
+              {confirmAction.action === 'approve' && `Are you sure you want to approve "${confirmAction.title}"?`}
+              {!['delete', 'pin', 'unpin', 'lock', 'approve'].includes(confirmAction.action) && `Are you sure you want to perform this action on "${confirmAction.title}"?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmAction}
+              className={confirmAction.action === 'delete' ? 'bg-red-600 hover:bg-red-700' : ''}
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

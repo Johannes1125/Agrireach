@@ -21,16 +21,10 @@ export async function GET(req: NextRequest) {
     const location = searchParams.get("location") || "";
     const category = searchParams.get("category") || "";
 
-    // Build filter for users with business profiles or products
-    const userFilter: any = {
-      status: "active",
-      $or: [
-        // Users with business profiles
-        { roles: { $in: ["buyer"] } }, // Buyers can be sellers/producers
-      ],
-    };
-
-    // Get users with business profiles or who have products
+    // First, get ALL users who have products or business profiles
+    // This way we don't miss any producers regardless of their role
+    
+    // Get users with business profiles
     const usersWithProfiles = await UserProfile.find({})
       .select("user_id company_name business_address services_offered industry business_logo")
       .lean();
@@ -53,8 +47,12 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Update filter to only include these users
-    userFilter._id = { $in: allProducerIds.map((id) => id) };
+    // NOW build filter - only require active status, not specific roles
+    // This ensures all users with products/profiles are included
+    const userFilter: any = {
+      _id: { $in: allProducerIds },
+      status: "active", // Only require active status, not specific roles
+    };
 
     // Apply search filter
     if (search) {
