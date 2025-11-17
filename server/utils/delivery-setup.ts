@@ -32,10 +32,11 @@ function generateTrackingNumber(): string {
  */
 export async function createDeliveryForOrder(orderId: string): Promise<DeliverySetupResult> {
   try {
-    // Find the order with populated user data
+    // Find the order with populated user data AND product data
     const order = await Order.findById(orderId)
       .populate('seller_id', 'full_name phone location location_coordinates')
       .populate('buyer_id', 'full_name phone')
+      .populate('product_id', 'location') // Populate product to get its location
       .lean();
 
     if (!order) {
@@ -63,17 +64,26 @@ export async function createDeliveryForOrder(orderId: string): Promise<DeliveryS
       return { success: false, error: "Missing seller or buyer data" };
     }
 
-    // Prepare pickup address (seller location)
+    // Prepare pickup address - PRIORITIZE product location over seller location
     let pickupAddress = order.pickup_address;
+    
+    // Get product location (where the product actually is stored)
+    const product = order.product_id as any;
+    const productLocation = product?.location || null;
+    
+    // Determine the best location source: product location > seller location
+    // Product location is more accurate since it's where the product is physically located
+    const bestLocation = productLocation || seller.location;
+    const bestLocationCoordinates = seller.location_coordinates; // Product doesn't store coordinates yet, use seller's
     
     // Validate and fix pickup address if needed
     if (pickupAddress) {
       // Ensure city is present - if missing, try to extract or use fallback
       if (!pickupAddress.city || pickupAddress.city.trim() === "") {
-        if (seller.location) {
+        if (bestLocation) {
           // Try to extract city from location string
-          const locationParts = seller.location.split(',');
-          pickupAddress.city = locationParts[0]?.trim() || seller.location || "Unknown";
+          const locationParts = bestLocation.split(',');
+          pickupAddress.city = locationParts[0]?.trim() || bestLocation || "Unknown";
         } else {
           pickupAddress.city = "Unknown";
         }
@@ -81,31 +91,33 @@ export async function createDeliveryForOrder(orderId: string): Promise<DeliveryS
       
       // Ensure line1 is present
       if (!pickupAddress.line1 || pickupAddress.line1.trim() === "") {
-        pickupAddress.line1 = seller.location || "Seller Location";
+        pickupAddress.line1 = bestLocation || "Seller Location";
       }
-    } else if (seller.location) {
-      // Create pickup address from seller location
-      const locationParts = seller.location.split(',');
+    } else if (bestLocation) {
+      // Create pickup address from product location (preferred) or seller location
+      const locationParts = bestLocation.split(',');
       pickupAddress = {
-        line1: seller.location,
-        city: locationParts[0]?.trim() || seller.location || "Unknown",
-        coordinates: seller.location_coordinates || undefined,
+        line1: bestLocation,
+        city: locationParts[0]?.trim() || bestLocation || "Unknown",
+        coordinates: bestLocationCoordinates || undefined,
       };
     }
 
     // Final validation - ensure city is never empty
     if (!pickupAddress || !pickupAddress.city || pickupAddress.city.trim() === "") {
-      // Last resort: use seller location or default
+      // Last resort: use best available location or default
       pickupAddress = {
-        line1: seller.location || "Seller Location",
-        city: seller.location ? seller.location.split(',')[0]?.trim() || seller.location : "Unknown",
-        coordinates: seller.location_coordinates || undefined,
+        line1: bestLocation || "Seller Location",
+        city: bestLocation ? bestLocation.split(',')[0]?.trim() || bestLocation : "Unknown",
+        coordinates: bestLocationCoordinates || undefined,
       };
     }
 
     if (!pickupAddress || !pickupAddress.city || pickupAddress.city.trim() === "") {
       console.error(`[Delivery Setup] No pickup address for order ${orderId}`);
-      return { success: false, error: "Seller location is required for delivery" };
+      console.error(`[Delivery Setup] Product location: ${productLocation}`);
+      console.error(`[Delivery Setup] Seller location: ${seller.location}`);
+      return { success: false, error: "Product or seller location is required for delivery" };
     }
 
     // Prepare delivery address (buyer location)
