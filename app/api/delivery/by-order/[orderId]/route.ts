@@ -49,14 +49,32 @@ export async function GET(
   }
 
   // Find delivery by order_id
-  const delivery = await Delivery.findOne({ order_id: orderId })
+  // Mongoose will automatically convert string to ObjectId, but we can also try both
+  let delivery = await Delivery.findOne({ order_id: orderId })
     .populate('order_id', 'status payment_status total_price product_id')
     .populate('order_id.product_id', 'title images unit')
     .populate('buyer_id', 'full_name phone email')
     .populate('seller_id', 'full_name phone email')
     .lean();
 
+  // If not found, try with explicit ObjectId conversion (in case of type mismatch)
   if (!delivery) {
+    try {
+      const mongoose = await import("mongoose");
+      const orderIdObjectId = new mongoose.Types.ObjectId(orderId);
+      delivery = await Delivery.findOne({ order_id: orderIdObjectId })
+        .populate('order_id', 'status payment_status total_price product_id')
+        .populate('order_id.product_id', 'title images unit')
+        .populate('buyer_id', 'full_name phone email')
+        .populate('seller_id', 'full_name phone email')
+        .lean();
+    } catch (err) {
+      // Invalid ObjectId format, continue with original query result (null)
+    }
+  }
+
+  if (!delivery) {
+    console.error(`[Delivery By Order] No delivery found for order ${orderId}`);
     return jsonError("Delivery not found for this order", 404);
   }
 

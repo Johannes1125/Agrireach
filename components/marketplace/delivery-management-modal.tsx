@@ -131,10 +131,22 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
           
           setLoading(false)
           return // Success - exit early
+        } else {
+          // Check error response for debugging
+          const errorData = await deliveryByOrderRes.json().catch(() => ({}));
+          console.log(`[Delivery Modal] Endpoint returned ${deliveryByOrderRes.status}:`, errorData.message || errorData);
+          // Continue to fallback if 404 (delivery not found)
+          if (deliveryByOrderRes.status !== 404) {
+            // For non-404 errors, show error and return
+            setError(errorData.message || "Failed to fetch delivery details");
+            setLoading(false);
+            return;
+          }
         }
-      } catch (err) {
-        // If endpoint fails, continue with fallback approach
-        console.log("[Delivery Modal] Direct delivery lookup failed, trying order-based approach");
+      } catch (err: any) {
+        // If endpoint fails completely, continue with fallback approach
+        console.error("[Delivery Modal] Direct delivery lookup error:", err);
+        console.log("[Delivery Modal] Continuing with fallback approach");
       }
 
       // FALLBACK: Get order to find delivery_id (original approach)
