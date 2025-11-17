@@ -139,7 +139,14 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
           
           // Pre-fill form if driver already assigned
           if (deliveryData.delivery?.driver_name) {
+            // Try to match with default drivers
+            const matchedDriver = DEFAULT_DRIVERS.find(
+              d => d.name === deliveryData.delivery.driver_name &&
+                   d.phone === deliveryData.delivery.driver_phone
+            )
+            
             setDriverForm({
+              selected_driver_id: matchedDriver?.id || "",
               driver_name: deliveryData.delivery.driver_name || "",
               driver_phone: deliveryData.delivery.driver_phone || "",
               driver_email: deliveryData.delivery.driver_email || "",
@@ -555,7 +562,7 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
                         type="datetime-local"
                         value={driverForm.estimated_delivery_time}
                         onChange={(e) =>
-                          setDriverForm({ ...driverForm, estimated_delivery_time: e.target.value })
+                          setDriverForm({ ...driverForm, estimated_delivery_time: e.target.value, selected_driver_id: driverForm.selected_driver_id })
                         }
                       />
                     </div>
