@@ -383,46 +383,6 @@ export default function CommunityContentPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Quick Actions */}
-          <Card className="border-2 border-border shadow-lg">
-            <CardHeader className="pb-4 border-b border-border/50">
-              <CardTitle className="text-foreground">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6 space-y-2">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start h-11 border-2 border-border hover:bg-muted/70 dark:hover:bg-muted/50 transition-colors"
-              >
-                <Pin className="mr-2 h-4 w-4" />
-                Manage Pinned Posts
-              </Button>
-
-              <Button 
-                variant="outline" 
-                className="w-full justify-start h-11 border-2 border-border hover:bg-muted/70 dark:hover:bg-muted/50 transition-colors"
-              >
-                <AlertTriangle className="mr-2 h-4 w-4" />
-                Review Flagged Content
-              </Button>
-
-              <Button 
-                variant="outline" 
-                className="w-full justify-start h-11 border-2 border-border hover:bg-muted/70 dark:hover:bg-muted/50 transition-colors"
-              >
-                <Users className="mr-2 h-4 w-4" />
-                Moderate Users
-              </Button>
-
-              <Button 
-                variant="outline" 
-                className="w-full justify-start h-11 border-2 border-border hover:bg-muted/70 dark:hover:bg-muted/50 transition-colors"
-              >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Community Guidelines
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
 

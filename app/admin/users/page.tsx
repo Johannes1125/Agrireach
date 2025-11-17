@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, Search, Shield, Ban, CheckCircle, AlertTriangle, Settings, XCircle, BadgeCheck, Clock3 } from "lucide-react"
+import { ArrowLeft, Search, Shield, Ban, CheckCircle, AlertTriangle, XCircle, BadgeCheck, Clock3, Loader2, Eye, Mail, Phone, MapPin, Calendar, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,10 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Separator } from "@/components/ui/separator"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useAdminUsers, adminUserAction } from "@/hooks/use-admin-data"
 import { useAdminUserStats } from "@/hooks/use-admin-user-stats"
+import { authFetch } from "@/lib/auth-client"
 
 const statusColors = {
   active: "bg-green-500",
@@ -25,6 +29,12 @@ export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [roleFilter, setRoleFilter] = useState("all")
+  const [viewUserOpen, setViewUserOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<any>(null)
+  const [viewUserLoading, setViewUserLoading] = useState(false)
+  const [verifyUserOpen, setVerifyUserOpen] = useState(false)
+  const [verifyUserLoading, setVerifyUserLoading] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<{ open: boolean; userId: string; action: string; userName: string }>({ open: false, userId: '', action: '', userName: '' })
 
   const { users, loading, error, refetch } = useAdminUsers({
     status: statusFilter,
@@ -35,32 +45,82 @@ export default function AdminUsersPage() {
 
   const filteredUsers = users
 
-  const handleUserAction = async (userId: string, action: string) => {
+  const handleViewUser = async (userId: string) => {
+    setViewUserLoading(true)
+    setViewUserOpen(true)
     try {
-      if (action === 'view') {
-        window.open(`/profile?user=${userId}`, '_blank')
+      const res = await authFetch(`/api/users/${userId}`)
+      const json = await res.json().catch(() => ({}))
+      if (res.ok) {
+        setSelectedUser(json?.data?.user || json?.user)
+      } else {
+        toast.error('Failed to load user details')
+        setViewUserOpen(false)
+      }
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to load user')
+      setViewUserOpen(false)
+    } finally {
+      setViewUserLoading(false)
+    }
+  }
+
+  const handleViewVerification = async (userId: string) => {
+    setVerifyUserLoading(true)
+    setVerifyUserOpen(true)
+    try {
+      // Get user details
+      const userRes = await authFetch(`/api/users/${userId}`)
+      const userJson = await userRes.json().catch(() => ({}))
+      if (userRes.ok) {
+        setSelectedUser(userJson?.data?.user || userJson?.user)
+      } else {
+        toast.error('Failed to load user details')
+        setVerifyUserOpen(false)
         return
       }
-      if (action === 'edit') {
-        // TODO: Navigate to edit user page or open edit modal
-        toast.info('Edit user functionality coming soon')
-        return
-      }
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to load user')
+      setVerifyUserOpen(false)
+    } finally {
+      setVerifyUserLoading(false)
+    }
+  }
+
+  const handleConfirmAction = async () => {
+    try {
       // Map 'activate' to 'unsuspend' for the API
       const actionMap: Record<string, string> = {
         'activate': 'unsuspend',
         'approve_verification': 'verify',
         'reject_verification': 'reject',
       }
-      const mappedAction = actionMap[action] || action
+      const mappedAction = actionMap[confirmAction.action] || confirmAction.action
       const mapped = mappedAction === 'verify' || mappedAction === 'unverify' || mappedAction === 'reject' || mappedAction === 'suspend' || mappedAction === 'unsuspend' || mappedAction === 'ban' ? mappedAction : null
-      if (!mapped) return toast.info('Unsupported action')
-      await adminUserAction(userId, mapped as "verify" | "unverify" | "reject" | "suspend" | "unsuspend" | "ban" | "role")
-      toast.success('Updated')
+      if (!mapped) {
+        toast.error('Unsupported action')
+        return
+      }
+      await adminUserAction(confirmAction.userId, mapped as "verify" | "unverify" | "reject" | "suspend" | "unsuspend" | "ban" | "role")
+      toast.success('Action completed successfully')
+      setConfirmAction({ open: false, userId: '', action: '', userName: '' })
       refetch()
     } catch (e: any) {
-      toast.error(e.message || 'Failed')
+      toast.error(e.message || 'Failed to perform action')
     }
+  }
+
+  const handleUserAction = (userId: string, action: string, userName: string) => {
+    if (action === 'view') {
+      handleViewUser(userId)
+      return
+    }
+    if (action === 'view_verification') {
+      handleViewVerification(userId)
+      return
+    }
+    // Show confirmation modal for all other actions
+    setConfirmAction({ open: true, userId, action, userName })
   }
 
   return (
@@ -343,40 +403,23 @@ export default function AdminUsersPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleUserAction(user._id, "view")}
+                            onClick={() => handleUserAction(user._id, "view", user.full_name || "User")}
                             className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center"
                           >
-                            <Search className="h-4 w-4" />
-                            <span className="sr-only">View Profile</span>
+                            <Eye className="h-4 w-4" />
+                            <span className="sr-only">View User</span>
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleUserAction(user._id, "edit")}
-                            className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center"
-                          >
-                            <Settings className="h-4 w-4" />
-                            <span className="sr-only">Edit User</span>
-                          </Button>
+                          {/* Removed Edit User - admins can view but not edit */}
                           {(user.verification_status === "pending") && (
                             <>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleUserAction(user._id, "approve_verification")}
-                                className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+                                onClick={() => handleUserAction(user._id, "view_verification", user.full_name || "User")}
+                                className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
                               >
-                                <CheckCircle className="h-4 w-4" />
-                                <span className="sr-only">Approve Verification</span>
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleUserAction(user._id, "reject_verification")}
-                                className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                              >
-                                <XCircle className="h-4 w-4" />
-                                <span className="sr-only">Reject Verification</span>
+                                <BadgeCheck className="h-4 w-4" />
+                                <span className="sr-only">Review Verification</span>
                               </Button>
                             </>
                           )}
@@ -384,7 +427,7 @@ export default function AdminUsersPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleUserAction(user._id, "suspend")}
+                              onClick={() => handleUserAction(user._id, "suspend", user.full_name || "User")}
                               className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                             >
                               <Ban className="h-4 w-4" />
@@ -394,7 +437,7 @@ export default function AdminUsersPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleUserAction(user._id, "activate")}
+                              onClick={() => handleUserAction(user._id, "activate", user.full_name || "User")}
                               className="h-9 w-9 sm:h-8 sm:w-8 p-0 flex items-center justify-center text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
                             >
                               <CheckCircle className="h-4 w-4" />
@@ -413,6 +456,242 @@ export default function AdminUsersPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* View User Modal */}
+      <Dialog open={viewUserOpen} onOpenChange={setViewUserOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>View User Details</DialogTitle>
+            <DialogDescription>Complete user information</DialogDescription>
+          </DialogHeader>
+          {viewUserLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : selectedUser ? (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={selectedUser.avatar_url || "/placeholder.svg"} />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-xl">
+                    {selectedUser.full_name ? selectedUser.full_name.split(" ").map((n: string) => n[0]).join("") : "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-semibold">{selectedUser.full_name || "User"}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    {selectedUser.verified ? (
+                      <Badge variant="outline" className="bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Verified
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">Not Verified</Badge>
+                    )}
+                    <Badge variant="outline" className="capitalize">{selectedUser.status || "active"}</Badge>
+                    <Badge variant="outline" className="capitalize">{selectedUser.role || "member"}</Badge>
+                  </div>
+                </div>
+              </div>
+              <Separator />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm font-medium mb-1 flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.email || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1 flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Phone
+                  </p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.phone || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1 flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Location
+                  </p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.location || "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Member Since
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedUser.created_at ? new Date(selectedUser.created_at).toLocaleDateString() : "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1 flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Trust Score
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedUser.trust_score > 0 ? `${selectedUser.trust_score}/5` : "New User"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium mb-1">Last Active</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedUser.last_login ? new Date(selectedUser.last_login).toLocaleString() : "Never"}
+                  </p>
+                </div>
+              </div>
+              {selectedUser.bio && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-sm font-medium mb-2">Bio</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedUser.bio}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No user data available</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewUserOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Verification Review Modal */}
+      <Dialog open={verifyUserOpen} onOpenChange={setVerifyUserOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Review Verification Request</DialogTitle>
+            <DialogDescription>Review user verification documents and details</DialogDescription>
+          </DialogHeader>
+          {verifyUserLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : selectedUser ? (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={selectedUser.avatar_url || "/placeholder.svg"} />
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                    {selectedUser.full_name ? selectedUser.full_name.split(" ").map((n: string) => n[0]).join("") : "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-lg font-semibold">{selectedUser.full_name || "User"}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  <Badge variant="outline" className="mt-2 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                    <Clock3 className="h-3 w-3 mr-1" />
+                    Pending Review
+                  </Badge>
+                </div>
+              </div>
+              <Separator />
+              {selectedUser.verification_message && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Verification Message</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap p-3 bg-muted rounded-lg">
+                    {selectedUser.verification_message}
+                  </p>
+                </div>
+              )}
+              {selectedUser.verification_documents && selectedUser.verification_documents.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium mb-2">Verification Documents</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedUser.verification_documents.map((doc: string, idx: number) => (
+                      <a
+                        key={idx}
+                        href={doc}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-3 border rounded-lg hover:bg-muted transition-colors"
+                      >
+                        <p className="text-sm font-medium truncate">Document {idx + 1}</p>
+                        <p className="text-xs text-muted-foreground truncate">{doc}</p>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {selectedUser.verification_requested_at && (
+                <div>
+                  <p className="text-sm font-medium mb-1">Requested At</p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(selectedUser.verification_requested_at).toLocaleString()}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No user data available</p>
+          )}
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (selectedUser) {
+                  handleUserAction(selectedUser._id, "reject_verification", selectedUser.full_name || "User")
+                }
+                setVerifyUserOpen(false)
+              }}
+              className="text-red-600 hover:text-red-700"
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              Reject
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedUser) {
+                  handleUserAction(selectedUser._id, "approve_verification", selectedUser.full_name || "User")
+                }
+                setVerifyUserOpen(false)
+              }}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Approve Verification
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Modal for Actions */}
+      <AlertDialog open={confirmAction.open} onOpenChange={(open) => !open && setConfirmAction({ open: false, userId: '', action: '', userName: '' })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Action</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction.action === 'suspend' && `Are you sure you want to suspend "${confirmAction.userName}"? They will not be able to access their account.`}
+              {confirmAction.action === 'activate' && `Are you sure you want to activate "${confirmAction.userName}"?`}
+              {confirmAction.action === 'ban' && `Are you sure you want to ban "${confirmAction.userName}"? This action is permanent.`}
+              {confirmAction.action === 'approve_verification' && `Are you sure you want to approve verification for "${confirmAction.userName}"?`}
+              {confirmAction.action === 'reject_verification' && `Are you sure you want to reject verification for "${confirmAction.userName}"?`}
+              {confirmAction.action === 'verify' && `Are you sure you want to verify "${confirmAction.userName}"?`}
+              {confirmAction.action === 'unverify' && `Are you sure you want to unverify "${confirmAction.userName}"?`}
+              {!['suspend', 'activate', 'ban', 'approve_verification', 'reject_verification', 'verify', 'unverify'].includes(confirmAction.action) && 
+                `Are you sure you want to perform this action on "${confirmAction.userName}"?`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmAction}
+              className={
+                confirmAction.action === 'suspend' || confirmAction.action === 'ban' || confirmAction.action === 'reject_verification'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : ''
+              }
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
