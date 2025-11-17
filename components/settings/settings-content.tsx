@@ -1045,37 +1045,6 @@ export function SettingsContent({ user }: SettingsContentProps) {
                     className="flex-shrink-0"
                   />
                 </div>
-
-                <div className="flex items-center justify-between p-4 rounded-lg border-2 border-border bg-card hover:bg-muted/30 dark:hover:bg-card/50 transition-colors">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0">
-                      <Smartphone className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <Label htmlFor="sms-notifications" className="text-base font-medium text-foreground cursor-pointer">SMS Notifications</Label>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        Receive text message alerts
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    id="sms-notifications"
-                    checked={formData.preferences.notifications.sms}
-                    onCheckedChange={(checked) =>
-                      setFormData({
-                        ...formData,
-                        preferences: {
-                          ...formData.preferences,
-                          notifications: {
-                            ...formData.preferences.notifications,
-                            sms: checked,
-                          },
-                        },
-                      })
-                    }
-                    className="flex-shrink-0"
-                  />
-                </div>
               </div>
             </div>
 

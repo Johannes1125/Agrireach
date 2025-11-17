@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Paperclip, Image as ImageIcon, ArrowLeft } from "lucide-react";
+import { Send, ArrowLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface ChatWindowProps {
@@ -240,24 +240,8 @@ export function ChatWindow({ onBackToConversations }: ChatWindowProps = {} as Ch
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               disabled={isSending}
-              className="pr-16 sm:pr-20 h-10 sm:h-11 text-sm bg-background border-border"
+              className="h-10 sm:h-11 text-sm bg-background border-border"
             />
-            <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex gap-0.5 sm:gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 sm:h-7 sm:w-7 p-0 hidden sm:flex"
-              >
-                <Paperclip className="h-3 w-3 sm:h-4 sm:w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 sm:h-7 sm:w-7 p-0 hidden sm:flex"
-              >
-                <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-              </Button>
-            </div>
           </div>
           <Button
             onClick={handleSendMessage}

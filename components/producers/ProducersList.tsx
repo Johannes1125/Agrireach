@@ -104,7 +104,7 @@ export default function ProducersList() {
         const response = await fetch(`/api/producers?${params.toString()}`);
         const data = await response.json();
 
-        if (data.ok && data.data) {
+        if (data.success && data.data) {
           let items = data.data.items || [];
 
           // Apply client-side sorting
@@ -134,6 +134,10 @@ export default function ProducersList() {
           ).sort();
           setAllLocations(locations);
           setAllCategories(categories);
+        } else {
+          // Handle API error response
+          console.error("API error:", data.message || "Failed to fetch producers");
+          setProducers([]);
         }
       } catch (error) {
         console.error("Error fetching producers:", error);
