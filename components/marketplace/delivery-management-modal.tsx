@@ -132,6 +132,15 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
           // jsonOk wraps response in { success: true, data: { delivery: ... } }
           const delivery = response?.data?.delivery
           
+          // DEBUG LOGGING:
+          console.log("[Delivery Modal] Full API response:", JSON.stringify(response, null, 2));
+          console.log("[Delivery Modal] Delivery data:", JSON.stringify(delivery, null, 2));
+          console.log("[Delivery Modal] Order ID from delivery:", delivery?.order_id);
+          console.log("[Delivery Modal] Product ID from order:", delivery?.order_id?.product_id);
+          console.log("[Delivery Modal] Product title:", delivery?.order_id?.product_id?.title);
+          console.log("[Delivery Modal] Product data type:", typeof delivery?.order_id?.product_id);
+          console.log("[Delivery Modal] Is product_id populated?", delivery?.order_id?.product_id && typeof delivery?.order_id?.product_id === 'object');
+          
           // Fix: Check if delivery exists before accessing properties
           if (!delivery) {
             console.error("[Delivery Modal] Invalid delivery data structure:", response);

@@ -57,6 +57,21 @@ export async function GET(
     .populate('seller_id', 'full_name phone email')
     .lean();
 
+  // DEBUG LOGGING:
+  console.log(`[Delivery By Order API] Found delivery for order ${orderId}:`, delivery ? "Yes" : "No");
+  if (delivery) {
+    console.log(`[Delivery By Order API] Order ID populated:`, delivery.order_id);
+    console.log(`[Delivery By Order API] Product ID in order:`, delivery.order_id?.product_id);
+    console.log(`[Delivery By Order API] Product ID type:`, typeof delivery.order_id?.product_id);
+    console.log(`[Delivery By Order API] Product populated:`, delivery.order_id?.product_id && typeof delivery.order_id?.product_id === 'object' ? "Yes" : "No");
+    if (delivery.order_id?.product_id && typeof delivery.order_id?.product_id === 'object') {
+      console.log(`[Delivery By Order API] Product title:`, (delivery.order_id.product_id as any)?.title);
+      console.log(`[Delivery By Order API] Full product object:`, JSON.stringify(delivery.order_id.product_id, null, 2));
+    } else {
+      console.log(`[Delivery By Order API] Product ID is not populated - value:`, delivery.order_id?.product_id);
+    }
+  }
+
   // If not found, try with explicit ObjectId conversion (in case of type mismatch)
   if (!delivery) {
     try {
@@ -68,8 +83,18 @@ export async function GET(
         .populate('buyer_id', 'full_name phone email')
         .populate('seller_id', 'full_name phone email')
         .lean();
+      
+      // DEBUG LOGGING:
+      console.log(`[Delivery By Order API] Retry with ObjectId - Found delivery:`, delivery ? "Yes" : "No");
+      if (delivery) {
+        console.log(`[Delivery By Order API] Retry - Product populated:`, delivery.order_id?.product_id && typeof delivery.order_id?.product_id === 'object' ? "Yes" : "No");
+        if (delivery.order_id?.product_id && typeof delivery.order_id?.product_id === 'object') {
+          console.log(`[Delivery By Order API] Retry - Product title:`, (delivery.order_id.product_id as any)?.title);
+        }
+      }
     } catch (err) {
       // Invalid ObjectId format, continue with original query result (null)
+      console.error(`[Delivery By Order API] ObjectId conversion error:`, err);
     }
   }
 
@@ -83,6 +108,13 @@ export async function GET(
     await Order.findByIdAndUpdate(orderId, {
       $set: { delivery_id: delivery._id }
     });
+  }
+
+  // DEBUG LOGGING - Before returning:
+  console.log(`[Delivery By Order API] Returning delivery with order_id:`, delivery?.order_id?._id || delivery?.order_id);
+  console.log(`[Delivery By Order API] Final product check:`, delivery?.order_id?.product_id);
+  if (delivery?.order_id?.product_id && typeof delivery.order_id.product_id === 'object') {
+    console.log(`[Delivery By Order API] Final product title:`, (delivery.order_id.product_id as any)?.title);
   }
 
   return jsonOk({ delivery });
