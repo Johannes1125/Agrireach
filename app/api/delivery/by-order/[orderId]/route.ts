@@ -52,10 +52,22 @@ export async function GET(
   // Mongoose will automatically convert string to ObjectId, but we can also try both
   let delivery = await Delivery.findOne({ order_id: orderId })
     .populate('order_id', 'status payment_status total_price product_id')
-    .populate('order_id.product_id', 'title images unit')
     .populate('buyer_id', 'full_name phone email')
     .populate('seller_id', 'full_name phone email')
     .lean();
+  
+  // Manually populate product_id if delivery exists
+  if (delivery && delivery.order_id && (delivery.order_id as any).product_id) {
+    const { Product } = await import("@/server/models/Product");
+    const mongoose = await import("mongoose");
+    const productId = (delivery.order_id as any).product_id;
+    if (typeof productId === 'string' || productId instanceof mongoose.Types.ObjectId) {
+      const product = await Product.findById(productId).select('title images unit').lean();
+      if (product) {
+        (delivery.order_id as any).product_id = product;
+      }
+    }
+  }
 
   // DEBUG LOGGING:
   console.log(`[Delivery By Order API] Found delivery for order ${orderId}:`, delivery ? "Yes" : "No");
@@ -80,10 +92,22 @@ export async function GET(
       const orderIdObjectId = new mongoose.Types.ObjectId(orderId);
       delivery = await Delivery.findOne({ order_id: orderIdObjectId })
         .populate('order_id', 'status payment_status total_price product_id')
-        .populate('order_id.product_id', 'title images unit')
         .populate('buyer_id', 'full_name phone email')
         .populate('seller_id', 'full_name phone email')
         .lean();
+      
+      // Manually populate product_id if delivery exists
+      if (delivery && delivery.order_id && (delivery.order_id as any).product_id) {
+        const { Product } = await import("@/server/models/Product");
+        const mongoose = await import("mongoose");
+        const productId = (delivery.order_id as any).product_id;
+        if (typeof productId === 'string' || productId instanceof mongoose.Types.ObjectId) {
+          const product = await Product.findById(productId).select('title images unit').lean();
+          if (product) {
+            (delivery.order_id as any).product_id = product;
+          }
+        }
+      }
       
       // DEBUG LOGGING:
       console.log(`[Delivery By Order API] Retry with ObjectId - Found delivery:`, delivery ? "Yes" : "No");

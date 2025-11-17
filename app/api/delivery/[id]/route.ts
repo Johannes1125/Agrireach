@@ -32,10 +32,22 @@ export async function GET(
 
   const delivery = await Delivery.findById(id)
     .populate('order_id', 'status payment_status total_price product_id')
-    .populate('order_id.product_id', 'title images unit')
     .populate('buyer_id', 'full_name phone email')
     .populate('seller_id', 'full_name phone email')
     .lean();
+  
+  // Manually populate product_id if delivery exists
+  if (delivery && delivery.order_id && (delivery.order_id as any).product_id) {
+    const { Product } = await import("@/server/models/Product");
+    const mongoose = await import("mongoose");
+    const productId = (delivery.order_id as any).product_id;
+    if (typeof productId === 'string' || productId instanceof mongoose.Types.ObjectId) {
+      const product = await Product.findById(productId).select('title images unit').lean();
+      if (product) {
+        (delivery.order_id as any).product_id = product;
+      }
+    }
+  }
 
   // DEBUG LOGGING:
   console.log(`[Delivery API] Found delivery ${id}:`, delivery ? "Yes" : "No");
