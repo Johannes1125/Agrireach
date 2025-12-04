@@ -1,6 +1,6 @@
 import mongoose, { Schema, Model, Document, Types } from "mongoose";
 
-export type OtpCodeType = "registration" | "password_reset";
+export type OtpCodeType = "registration" | "password_reset" | "checkout";
 
 export interface IOtpCode extends Document {
   user_id?: Types.ObjectId | null;
@@ -17,7 +17,7 @@ const OtpCodeSchema = new Schema<IOtpCode>(
     user_id: { type: Schema.Types.ObjectId, ref: "User", required: false, default: null },
     email: { type: String, required: true },
     code: { type: String, required: true },
-    type: { type: String, required: true, enum: ["registration", "password_reset"] },
+    type: { type: String, required: true, enum: ["registration", "password_reset", "checkout"] },
     expires_at: { type: Date, required: true },
     used: { type: Boolean, default: false },
   },

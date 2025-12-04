@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { authFetch } from "@/lib/auth-client"
 import { PhilippineAddressSelector, PhilippineAddress, formatPhilippineAddress } from "@/components/ui/philippine-address-selector"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { 
   ShoppingCart, 
   CreditCard, 
@@ -23,7 +24,10 @@ import {
   AlertCircle,
   Banknote,
   Truck,
-  MapPin
+  MapPin,
+  Mail,
+  ShieldCheck,
+  RefreshCw
 } from "lucide-react"
 
 interface ShippingInfo {
@@ -71,7 +75,16 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
   const [billingEmail, setBillingEmail] = useState("")
   const [billingPhone, setBillingPhone] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
-  const [step, setStep] = useState<"select" | "details" | "payment">("select")
+  const [step, setStep] = useState<"select" | "details" | "payment" | "otp">("select")
+  
+  // OTP verification state
+  const [otp, setOtp] = useState("")
+  const [isSendingOtp, setIsSendingOtp] = useState(false)
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpExpiresAt, setOtpExpiresAt] = useState<Date | null>(null)
+  const [checkoutToken, setCheckoutToken] = useState<string | null>(null)
+  const [resendCooldown, setResendCooldown] = useState(0)
   const [userData, setUserData] = useState<{
     full_name?: string
     email?: string
@@ -201,6 +214,98 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
     } catch (error) {
       console.error("Error fetching user data:", error)
     }
+  }
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [resendCooldown])
+
+  // Send OTP for checkout verification
+  const sendOtp = async () => {
+    if (!billingEmail.trim()) {
+      toast.error("Please enter your email address first")
+      return
+    }
+
+    setIsSendingOtp(true)
+    try {
+      const res = await authFetch("/api/marketplace/checkout/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: billingEmail,
+          amount: total,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to send verification code")
+      }
+
+      setOtpSent(true)
+      setOtpExpiresAt(new Date(data.data?.expiresAt || data.expiresAt))
+      setResendCooldown(60) // 60 second cooldown
+      toast.success("Verification code sent to " + billingEmail)
+    } catch (error: any) {
+      console.error("Send OTP error:", error)
+      toast.error(error.message || "Failed to send verification code")
+    } finally {
+      setIsSendingOtp(false)
+    }
+  }
+
+  // Verify OTP
+  const verifyOtp = async () => {
+    if (otp.length !== 6) {
+      toast.error("Please enter the 6-digit verification code")
+      return
+    }
+
+    setIsVerifyingOtp(true)
+    try {
+      const res = await authFetch("/api/marketplace/checkout/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: billingEmail,
+          code: otp,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || "Invalid verification code")
+      }
+
+      setCheckoutToken(data.data?.checkoutToken || data.checkoutToken)
+      toast.success("Verification successful! Processing payment...")
+      
+      // Proceed with checkout after successful verification
+      await handleCheckout()
+    } catch (error: any) {
+      console.error("Verify OTP error:", error)
+      toast.error(error.message || "Verification failed")
+      setOtp("")
+    } finally {
+      setIsVerifyingOtp(false)
+    }
+  }
+
+  // Proceed to OTP step (from payment step)
+  const handleProceedToOtp = () => {
+    setStep("otp")
+    setOtp("")
+    setOtpSent(false)
+    setCheckoutToken(null)
+    // Automatically send OTP when entering the step
+    sendOtp()
   }
 
   const selectedCartItems = cartItems.filter(item => selectedItems.has(item._id))
@@ -501,6 +606,7 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
             {step === "select" && "Select items to purchase"}
             {step === "details" && "Enter delivery and billing details"}
             {step === "payment" && "Choose your payment method"}
+            {step === "otp" && "Verify your email to complete payment"}
           </DialogDescription>
         </DialogHeader>
 
@@ -718,6 +824,96 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
             </div>
           )}
 
+          {/* Step 4: OTP Verification */}
+          {step === "otp" && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <ShieldCheck className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="font-semibold text-xl mb-2">Verify Your Email</h3>
+                <p className="text-muted-foreground text-sm">
+                  For your security, we've sent a 6-digit code to
+                </p>
+                <p className="font-medium text-primary mt-1">{billingEmail}</p>
+              </div>
+
+              {!otpSent ? (
+                <div className="text-center">
+                  <Button onClick={sendOtp} disabled={isSendingOtp} className="gap-2">
+                    {isSendingOtp ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="h-4 w-4" />
+                        Send Verification Code
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col items-center gap-4">
+                    <InputOTP
+                      value={otp}
+                      onChange={setOtp}
+                      maxLength={6}
+                      disabled={isVerifyingOtp}
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                    
+                    {otpExpiresAt && (
+                      <p className="text-xs text-muted-foreground">
+                        Code expires at {otpExpiresAt.toLocaleTimeString()}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={sendOtp}
+                      disabled={isSendingOtp || resendCooldown > 0}
+                      className="gap-2 text-muted-foreground"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isSendingOtp ? 'animate-spin' : ''}`} />
+                      {resendCooldown > 0 
+                        ? `Resend in ${resendCooldown}s` 
+                        : 'Resend Code'
+                      }
+                    </Button>
+                  </div>
+
+                  <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                    <div className="flex gap-2">
+                      <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                          Didn't receive the code?
+                        </p>
+                        <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                          Check your spam folder or click "Resend Code" above.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Order Summary */}
           <Card className="bg-muted/50">
             <CardContent className="p-4 space-y-2">
@@ -771,8 +967,12 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
             {step !== "select" && (
               <Button
                 variant="outline"
-                onClick={() => setStep(step === "payment" ? "details" : "select")}
-                disabled={isProcessing}
+                onClick={() => {
+                  if (step === "otp") setStep("payment")
+                  else if (step === "payment") setStep("details")
+                  else setStep("select")
+                }}
+                disabled={isProcessing || isVerifyingOtp}
               >
                 Back
               </Button>
@@ -807,7 +1007,7 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
             {step === "payment" && (
               <Button
                 className="flex-1"
-                onClick={handleCheckout}
+                onClick={paymentMethod === "cod" ? handleCheckout : handleProceedToOtp}
                 disabled={isProcessing || selectedItems.size === 0}
               >
                 {isProcessing ? (
@@ -815,9 +1015,33 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
                   </>
+                ) : paymentMethod === "cod" ? (
+                  <>
+                    Place Order ₱{total.toFixed(2)}
+                  </>
                 ) : (
                   <>
-                    Pay ₱{total.toFixed(2)}
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    Verify & Pay ₱{total.toFixed(2)}
+                  </>
+                )}
+              </Button>
+            )}
+            {step === "otp" && otpSent && (
+              <Button
+                className="flex-1"
+                onClick={verifyOtp}
+                disabled={isVerifyingOtp || otp.length !== 6}
+              >
+                {isVerifyingOtp ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Verify & Complete Payment
                   </>
                 )}
               </Button>

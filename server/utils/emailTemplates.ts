@@ -689,3 +689,165 @@ export function passwordResetEmailHtml(params: {
 </body>
 </html>`;
 }
+
+// ============================================
+// CHECKOUT OTP EMAIL TEMPLATES
+// ============================================
+
+export function checkoutOtpEmailSubject(appName = "AgriReach") {
+  return `${appName} - Checkout Verification Code`;
+}
+
+export function checkoutOtpEmailText(params: {
+  code: string;
+  amount: number;
+  appName?: string;
+  expireMinutes?: number;
+}) {
+  const appName = params.appName || "AgriReach";
+  const expireMinutes = params.expireMinutes ?? 10;
+  const code = (params.code || "").replace(/\D/g, "").slice(0, 6);
+  const amount = params.amount.toFixed(2);
+  
+  return `Your ${appName} checkout verification code is: ${code}
+
+Use this code to complete your purchase of ₱${amount}.
+This code will expire in ${expireMinutes} minutes.
+
+If you did not initiate this checkout, please ignore this email and do not share this code with anyone.`;
+}
+
+export function checkoutOtpEmailHtml(params: {
+  code: string;
+  amount: number;
+  email?: string;
+  appName?: string;
+  expireMinutes?: number;
+}) {
+  const appName = params.appName || "AgriReach";
+  const expireMinutes = params.expireMinutes ?? 10;
+  const code = (params.code || "").replace(/\D/g, "").slice(0, 6).padEnd(6, "0");
+  const codeChars = code.split("");
+  const amount = params.amount.toFixed(2);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${appName} - Checkout Verification</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background: linear-gradient(135deg, #f0f9ff 0%, #ecfeff 50%, #f0fdf4 100%); 
+      color: #1f2937; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+    }
+    .container { 
+      width: 100%; 
+      padding: 40px 20px; 
+      background: linear-gradient(135deg, #f0f9ff 0%, #ecfeff 50%, #f0fdf4 100%);
+    }
+    .card { 
+      max-width: 500px; 
+      margin: 0 auto; 
+      background: #ffffff; 
+      border-radius: 16px; 
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .header { 
+      padding: 24px; 
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      text-align: center;
+    }
+    .header h1 { color: #ffffff; font-size: 24px; font-weight: 700; }
+    .content { padding: 32px 24px; text-align: center; }
+    .amount-box {
+      background: #f0fdf4;
+      border: 2px solid #22c55e;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+    .amount-label { color: #6b7280; font-size: 14px; margin-bottom: 4px; }
+    .amount-value { color: #16a34a; font-size: 28px; font-weight: 700; }
+    .code-container { 
+      display: flex; 
+      justify-content: center; 
+      gap: 8px; 
+      margin: 24px 0; 
+    }
+    .code-digit { 
+      width: 48px; 
+      height: 56px; 
+      background: #f9fafb; 
+      border: 2px solid #e5e7eb; 
+      border-radius: 10px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 24px; 
+      font-weight: 700; 
+      color: #22c55e; 
+    }
+    .expire-text { color: #6b7280; font-size: 14px; margin-top: 16px; }
+    .warning { 
+      background: #fef3c7; 
+      border-left: 4px solid #f59e0b; 
+      padding: 12px 16px; 
+      margin: 20px 0; 
+      text-align: left;
+      font-size: 13px;
+      color: #92400e;
+    }
+    .footer { 
+      padding: 20px; 
+      background: #f9fafb; 
+      text-align: center; 
+      font-size: 12px; 
+      color: #6b7280; 
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <h1>🛒 Checkout Verification</h1>
+      </div>
+      <div class="content">
+        <p style="color: #4b5563; margin-bottom: 16px;">
+          You're about to complete a purchase on <strong>${appName}</strong>
+        </p>
+        
+        <div class="amount-box">
+          <div class="amount-label">Order Total</div>
+          <div class="amount-value">₱${amount}</div>
+        </div>
+        
+        <p style="color: #4b5563; margin-bottom: 8px;">Enter this code to proceed:</p>
+        
+        <div class="code-container">
+          ${codeChars.map(c => `<div class="code-digit">${c}</div>`).join('')}
+        </div>
+        
+        <p class="expire-text">
+          ⏱️ This code expires in <strong>${expireMinutes} minutes</strong>
+        </p>
+        
+        <div class="warning">
+          ⚠️ <strong>Security Notice:</strong> If you didn't initiate this checkout, do not share this code and ignore this email.
+        </div>
+      </div>
+      <div class="footer">
+        © ${new Date().getFullYear()} ${appName}. All rights reserved.
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
