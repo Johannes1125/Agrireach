@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -33,16 +33,27 @@ import {
   BookOpen,
   Users,
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { userHasAnyRole } from "@/lib/role-utils";
+import { UserRole } from "@/server/models/User";
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Opportunities", href: "/opportunities", icon: Briefcase },
-  { name: "Producers", href: "/producers", icon: Users },
-  { name: "Marketplace", href: "/marketplace", icon: ShoppingBag },
-  { name: "Community", href: "/community", icon: MessageSquare },
-  { name: "Learning", href: "/learning", icon: BookOpen },
-  { name: "Reviews", href: "/reviews", icon: Star },
-  { name: "Profile", href: "/profile", icon: User },
+// Navigation items with role-based visibility
+// roles: null = visible to all authenticated users
+// roles: ["worker", "recruiter"] = only visible to users with worker OR recruiter role
+const navigation: {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  roles: UserRole[] | null;
+}[] = [
+  { name: "Dashboard", href: "/dashboard", icon: Home, roles: null },
+  { name: "Opportunities", href: "/opportunities", icon: Briefcase, roles: ["worker", "recruiter"] },
+  { name: "Producers", href: "/producers", icon: Users, roles: null },
+  { name: "Marketplace", href: "/marketplace", icon: ShoppingBag, roles: ["buyer"] },
+  { name: "Community", href: "/community", icon: MessageSquare, roles: null },
+  { name: "Learning", href: "/learning", icon: BookOpen, roles: null },
+  { name: "Reviews", href: "/reviews", icon: Star, roles: null },
+  { name: "Profile", href: "/profile", icon: User, roles: null },
 ];
 
 interface AppSidebarProps {
@@ -53,6 +64,17 @@ export function AppSidebar({ className }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  // Filter navigation items based on user's roles
+  const filteredNavigation = useMemo(() => {
+    return navigation.filter((item) => {
+      // If roles is null, show to everyone
+      if (!item.roles) return true;
+      // Otherwise, check if user has any of the required roles
+      return userHasAnyRole(user, item.roles);
+    });
+  }, [user]);
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border">
@@ -106,7 +128,7 @@ export function AppSidebar({ className }: AppSidebarProps) {
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4 sidebar-scroll">
         <nav aria-label="Main navigation" className="space-y-2">
-          {navigation.map((item) => {
+          {filteredNavigation.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
             return (
