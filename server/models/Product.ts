@@ -1,6 +1,7 @@
 import mongoose, { Schema, Model, Document, Types } from "mongoose";
 
 export type ProductStatus = "active" | "sold" | "pending_approval";
+export type PackageSize = "small" | "medium" | "large" | "bulk";
 
 export interface IProduct extends Document {
   seller_id: Types.ObjectId;
@@ -15,6 +16,14 @@ export interface IProduct extends Document {
   organic: boolean;
   status: ProductStatus;
   views: number;
+  // Package/shipping info
+  package_size?: PackageSize; // small, medium, large, bulk
+  weight_per_unit?: number; // Weight in kg per unit
+  dimensions?: {
+    length?: number; // cm
+    width?: number;  // cm
+    height?: number; // cm
+  };
   created_at: Date;
   updated_at: Date;
 }
@@ -33,6 +42,14 @@ const ProductSchema = new Schema<IProduct>(
     organic: { type: Boolean, default: false },
     status: { type: String, default: "pending_approval", enum: ["active", "sold", "pending_approval"] },
     views: { type: Number, default: 0 },
+    // Package/shipping info
+    package_size: { type: String, enum: ["small", "medium", "large", "bulk"], default: "small" },
+    weight_per_unit: { type: Number, default: 1 }, // kg
+    dimensions: {
+      length: { type: Number }, // cm
+      width: { type: Number },
+      height: { type: Number },
+    },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
