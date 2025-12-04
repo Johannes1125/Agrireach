@@ -34,12 +34,20 @@ import {
   BarChart3,
   Menu,
   X,
+  Lock, 
+  Eye, 
+  FileCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { useFeaturedProductsData } from "@/hooks/use-featured-products-data";
 import { useCommunityData } from "@/hooks/use-community-data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 interface Opportunity {
   _id: string;
@@ -80,13 +88,17 @@ export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Enhanced smooth scroll handler with easing
-  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+  const handleSmoothScroll = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    targetId: string
+  ) => {
     e.preventDefault();
     const element = document.getElementById(targetId);
     if (element) {
       const headerOffset = 80; // Height of sticky header
       const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      const offsetPosition =
+        elementPosition + window.pageYOffset - headerOffset;
 
       // Use requestAnimationFrame for smoother animation
       const startPosition = window.pageYOffset;
@@ -95,9 +107,7 @@ export default function HomePage() {
       let start: number | null = null;
 
       const easeInOutCubic = (t: number): number => {
-        return t < 0.5
-          ? 4 * t * t * t
-          : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
       };
 
       const animation = (currentTime: number) => {
@@ -162,7 +172,10 @@ export default function HomePage() {
   }, [communityStats]);
 
   return (
-    <div className="min-h-screen bg-background" style={{ scrollBehavior: 'smooth' }}>
+    <div
+      className="min-h-screen bg-background"
+      style={{ scrollBehavior: "smooth" }}
+    >
       {/* 1. Header / Navigation Bar */}
       <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
@@ -171,11 +184,11 @@ export default function HomePage() {
               <Sprout className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               <Link href="/">
                 <span className="font-heading text-lg sm:text-xl md:text-2xl font-bold text-primary">
-              AgriReach
-            </span>
+                  AgriReach
+                </span>
               </Link>
             </div>
-            
+
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-4 xl:gap-6">
               <a
@@ -183,45 +196,61 @@ export default function HomePage() {
                 onClick={(e) => handleSmoothScroll(e, "opportunities")}
                 className="transition-opacity hover:opacity-80"
               >
-                <Button variant="ghost" size="sm" className="text-sm">Opportunities</Button>
+                <Button variant="ghost" size="sm" className="text-sm">
+                  Opportunities
+                </Button>
               </a>
               <a
                 href="#marketplace"
                 onClick={(e) => handleSmoothScroll(e, "marketplace")}
                 className="transition-opacity hover:opacity-80"
               >
-                <Button variant="ghost" size="sm" className="text-sm">Marketplace</Button>
+                <Button variant="ghost" size="sm" className="text-sm">
+                  Marketplace
+                </Button>
               </a>
               <a
                 href="#community"
                 onClick={(e) => handleSmoothScroll(e, "community")}
                 className="transition-opacity hover:opacity-80"
               >
-                <Button variant="ghost" size="sm" className="text-sm">Community</Button>
+                <Button variant="ghost" size="sm" className="text-sm">
+                  Community
+                </Button>
               </a>
               <a
                 href="#reviews"
                 onClick={(e) => handleSmoothScroll(e, "reviews")}
                 className="transition-opacity hover:opacity-80"
               >
-                <Button variant="ghost" size="sm" className="text-sm">Reviews</Button>
+                <Button variant="ghost" size="sm" className="text-sm">
+                  Reviews
+                </Button>
               </a>
-          </div>
+            </div>
 
             {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center gap-2 lg:gap-4">
-            <Link href="/auth/login">
-                <Button variant="ghost" size="sm" className="text-sm">Sign In</Button>
-            </Link>
-            <Link href="/auth/register">
-                <Button size="sm" className="text-sm">Get Started</Button>
+              <Link href="/auth/login">
+                <Button variant="ghost" size="sm" className="text-sm">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/auth/register">
+                <Button size="sm" className="text-sm">
+                  Get Started
+                </Button>
               </Link>
             </div>
 
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="md:hidden h-9 w-9 p-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="md:hidden h-9 w-9 p-0"
+                >
                   <Menu className="h-5 w-5" />
                   <span className="sr-only">Open menu</span>
                 </Button>
@@ -231,12 +260,12 @@ export default function HomePage() {
                 <div className="flex flex-col h-full" aria-hidden="true">
                   {/* Header */}
                   <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b">
-          <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                       <Sprout className="h-6 w-6 text-primary" />
                       <span className="font-heading text-xl font-bold text-primary">
-              AgriReach
-            </span>
-          </div>
+                        AgriReach
+                      </span>
+                    </div>
                   </div>
 
                   {/* Navigation Links */}
@@ -285,16 +314,24 @@ export default function HomePage() {
 
                   {/* Action Buttons */}
                   <div className="px-4 pb-6 pt-4 border-t space-y-3">
-                    <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)} className="block">
+                    <Link
+                      href="/auth/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block"
+                    >
                       <Button variant="outline" className="w-full" size="lg">
-                Sign In
-              </Button>
-            </Link>
-                    <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)} className="block">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link
+                      href="/auth/register"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block"
+                    >
                       <Button className="w-full" size="lg">
                         Get Started
                       </Button>
-            </Link>
+                    </Link>
                   </div>
                 </div>
               </SheetContent>
@@ -311,12 +348,12 @@ export default function HomePage() {
               variant="secondary"
               className="mb-4 sm:mb-6 text-xs sm:text-sm font-medium px-3 sm:px-4 py-1"
             >
-            Supporting UN Sustainable Development Goals
-          </Badge>
+              Supporting UN Sustainable Development Goals
+            </Badge>
             <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-black leading-tight text-balance mb-4 sm:mb-6 px-2">
-            Connecting Rural Workers with{" "}
-            <span className="text-primary">Opportunities</span>
-          </h1>
+              Connecting Rural Workers with{" "}
+              <span className="text-primary">Opportunities</span>
+            </h1>
             <p className="mx-auto max-w-2xl text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground leading-relaxed mb-6 sm:mb-8 px-4">
               Empowering farmers, fishers, and artisans in Central Luzon,
               Philippines to build sustainable livelihoods while preserving
@@ -324,19 +361,22 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
               <Link href="/auth/register" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6">
+                <Button
+                  size="lg"
+                  className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6"
+                >
                   Get Started Free
-              </Button>
-            </Link>
+                </Button>
+              </Link>
               <Link href="/marketplace" className="w-full sm:w-auto">
-              <Button
-                variant="outline"
-                size="lg"
+                <Button
+                  variant="outline"
+                  size="lg"
                   className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 bg-transparent"
-              >
+                >
                   Explore Marketplace
-              </Button>
-            </Link>
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -376,8 +416,8 @@ export default function HomePage() {
                   Marketplace
                 </CardTitle>
                 <CardDescription className="text-sm sm:text-base leading-relaxed">
-                  Buy and sell agricultural products directly. No middlemen, fair
-                  prices, secure transactions with PayMongo integration.
+                  Buy and sell agricultural products directly. No middlemen,
+                  fair prices, secure transactions with PayMongo integration.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -420,10 +460,10 @@ export default function HomePage() {
                 Empowering Rural Communities in Central Luzon
               </h2>
               <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-3 sm:mb-4 leading-relaxed">
-                AgriReach is a comprehensive platform designed to bridge the
-                gap between rural agricultural workers and opportunities. We
-                focus on Region III (Central Luzon), supporting farmers,
-                fishers, and artisans across 7 provinces.
+                AgriReach is a comprehensive platform designed to bridge the gap
+                between rural agricultural workers and opportunities. We focus
+                on Region III (Central Luzon), supporting farmers, fishers, and
+                artisans across 7 provinces.
               </p>
               <p className="text-sm sm:text-base md:text-lg text-muted-foreground mb-4 sm:mb-6 leading-relaxed">
                 Our mission is to create sustainable connections that benefit
@@ -451,7 +491,9 @@ export default function HomePage() {
                   <div className="text-2xl sm:text-3xl font-bold text-primary">
                     {stats?.totalUsers.toLocaleString() || "1,000+"}
                   </div>
-                  <CardDescription className="text-xs sm:text-sm">Active Members</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">
+                    Active Members
+                  </CardDescription>
                 </CardHeader>
               </Card>
               <Card>
@@ -459,7 +501,9 @@ export default function HomePage() {
                   <div className="text-2xl sm:text-3xl font-bold text-primary">
                     {opportunities.length}+
                   </div>
-                  <CardDescription className="text-xs sm:text-sm">Job Opportunities</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">
+                    Job Opportunities
+                  </CardDescription>
                 </CardHeader>
               </Card>
               <Card>
@@ -467,7 +511,9 @@ export default function HomePage() {
                   <div className="text-2xl sm:text-3xl font-bold text-primary">
                     {featuredProducts.length}+
                   </div>
-                  <CardDescription className="text-xs sm:text-sm">Products Listed</CardDescription>
+                  <CardDescription className="text-xs sm:text-sm">
+                    Products Listed
+                  </CardDescription>
                 </CardHeader>
               </Card>
               <Card>
@@ -489,7 +535,10 @@ export default function HomePage() {
       </section>
 
       {/* Opportunities Section */}
-      <section id="opportunities" className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24 bg-muted/30 scroll-mt-20">
+      <section
+        id="opportunities"
+        className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24 bg-muted/30 scroll-mt-20"
+      >
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
             <div>
@@ -512,7 +561,9 @@ export default function HomePage() {
                 <Link key={job._id} href={`/opportunities/${job._id}`}>
                   <Card className="hover:border-primary transition-colors cursor-pointer h-full">
                     <CardHeader>
-                      <CardTitle className="line-clamp-2">{job.title}</CardTitle>
+                      <CardTitle className="line-clamp-2">
+                        {job.title}
+                      </CardTitle>
                       <CardDescription className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
                         {job.location}
@@ -547,7 +598,10 @@ export default function HomePage() {
       </section>
 
       {/* Marketplace Section */}
-      <section id="marketplace" className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24 scroll-mt-20">
+      <section
+        id="marketplace"
+        className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24 scroll-mt-20"
+      >
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
             <div>
@@ -612,7 +666,9 @@ export default function HomePage() {
                       </CardTitle>
                       <CardDescription className="flex items-center gap-2 text-xs sm:text-sm">
                         <MapPin className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                        <span className="truncate">{product.seller_id?.location || "Central Luzon"}</span>
+                        <span className="truncate">
+                          {product.seller_id?.location || "Central Luzon"}
+                        </span>
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
@@ -653,14 +709,18 @@ export default function HomePage() {
       </section>
 
       {/* Community Section */}
-      <section id="community" className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24 bg-muted/30 scroll-mt-20">
+      <section
+        id="community"
+        className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24 bg-muted/30 scroll-mt-20"
+      >
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-8 sm:mb-10 md:mb-12">
             <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
               Join Our Community
             </h2>
             <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
-              Connect with fellow farmers, share knowledge, and learn from experienced agricultural professionals in Central Luzon
+              Connect with fellow farmers, share knowledge, and learn from
+              experienced agricultural professionals in Central Luzon
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -671,7 +731,8 @@ export default function HomePage() {
                   Active Discussions
                 </CardTitle>
                 <CardDescription className="text-sm sm:text-base leading-relaxed">
-                  Join conversations about farming techniques, crop management, and agricultural best practices.
+                  Join conversations about farming techniques, crop management,
+                  and agricultural best practices.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -682,7 +743,8 @@ export default function HomePage() {
                   Growing Network
                 </CardTitle>
                 <CardDescription className="text-sm sm:text-base leading-relaxed">
-                  {communityStats?.totalMembers || "1,000+"} active members sharing knowledge and supporting each other.
+                  {communityStats?.totalMembers || "1,000+"} active members
+                  sharing knowledge and supporting each other.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -693,23 +755,30 @@ export default function HomePage() {
                   Latest Topics
                 </CardTitle>
                 <CardDescription className="text-sm sm:text-base leading-relaxed">
-                  Stay updated with trending discussions and popular topics in the agricultural community.
+                  Stay updated with trending discussions and popular topics in
+                  the agricultural community.
                 </CardDescription>
               </CardHeader>
             </Card>
           </div>
           <div className="text-center mt-6 sm:mt-8">
             <Link href="/community">
-              <Button size="lg" className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8">
+              <Button
+                size="lg"
+                className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8"
+              >
                 Explore Community <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
+              </Button>
+            </Link>
           </div>
+        </div>
       </section>
 
       {/* Reviews Section */}
-      <section id="reviews" className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24 scroll-mt-20">
+      <section
+        id="reviews"
+        className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24 scroll-mt-20"
+      >
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-8 sm:mb-10 md:mb-12">
             <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
@@ -773,6 +842,151 @@ export default function HomePage() {
           )}
         </div>
       </section>
+      
+      {/* Data & Privacy Protection Section */}
+      <section className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24 bg-muted/30">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-8 sm:mb-10 md:mb-12">
+            <Badge
+              variant="secondary"
+              className="mb-4 text-xs sm:text-sm font-medium px-3 sm:px-4 py-1"
+            >
+              Your Data, Your Rights
+            </Badge>
+            <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
+              Data & Privacy Protection
+            </h2>
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+              We take your privacy seriously. Learn how we protect your personal
+              information and respect your data rights.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
+            <Card className="border-2 hover:border-primary/20 transition-colors">
+              <CardHeader className="p-4 sm:p-6">
+                <Lock className="h-10 w-10 sm:h-12 sm:w-12 text-primary mb-3 sm:mb-4" />
+                <CardTitle className="font-heading text-lg sm:text-xl mb-2">
+                  Data Encryption
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base leading-relaxed">
+                  All your personal data is encrypted using industry-standard
+                  SSL/TLS protocols. Your information is secure both in transit
+                  and at rest.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/20 transition-colors">
+              <CardHeader className="p-4 sm:p-6">
+                <Eye className="h-10 w-10 sm:h-12 sm:w-12 text-primary mb-3 sm:mb-4" />
+                <CardTitle className="font-heading text-lg sm:text-xl mb-2">
+                  Transparency
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base leading-relaxed">
+                  We're transparent about what data we collect and how it's
+                  used. You have full visibility and control over your
+                  information.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-2 hover:border-primary/20 transition-colors">
+              <CardHeader className="p-4 sm:p-6">
+                <FileCheck className="h-10 w-10 sm:h-12 sm:w-12 text-primary mb-3 sm:mb-4" />
+                <CardTitle className="font-heading text-lg sm:text-xl mb-2">
+                  Data Rights
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base leading-relaxed">
+                  You can access, modify, or delete your data anytime. We comply
+                  with Data Privacy Act of 2012 (Republic Act No. 10173).
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-4 sm:p-6 md:p-8">
+              <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+                <div>
+                  <h3 className="font-heading text-lg sm:text-xl font-bold mb-3 sm:mb-4">
+                    What We Collect
+                  </h3>
+                  <ul className="space-y-2 text-sm sm:text-base text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>
+                        Basic profile information (name, email, location)
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>
+                        Transaction and payment data (securely processed)
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>Usage analytics to improve your experience</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>Communication preferences and notifications</span>
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-heading text-lg sm:text-xl font-bold mb-3 sm:mb-4">
+                    Your Rights
+                  </h3>
+                  <ul className="space-y-2 text-sm sm:text-base text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>Right to access your personal data</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>Right to correct inaccurate information</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>Right to delete your account and data</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>Right to opt-out of marketing communications</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-6 sm:mt-8 pt-6 border-t text-center">
+                <p className="text-sm sm:text-base text-muted-foreground mb-4">
+                  Read our full privacy policy to understand how we protect your
+                  data
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/privacy-policy">View Privacy Policy</Link>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/terms">Terms of Service</Link>
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/settings">Manage Privacy Settings</Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="mt-6 sm:mt-8 text-center">
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              🇵🇭 Compliant with the Data Privacy Act of 2012 (Republic Act No.
+              10173) and international data protection standards
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* 8. Newsletter Signup */}
       <section className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24">
@@ -821,66 +1035,96 @@ export default function HomePage() {
               <div className="flex items-center gap-2 mb-3 sm:mb-4">
                 <Sprout className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 <span className="font-heading text-base sm:text-lg font-bold text-primary">
-                AgriReach
-              </span>
-            </div>
+                  AgriReach
+                </span>
+              </div>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 Empowering rural communities in Central Luzon, Philippines
                 through sustainable agricultural connections.
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Quick Links</h3>
+              <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">
+                Quick Links
+              </h3>
               <ul className="space-y-2 text-xs sm:text-sm">
                 <li>
-                  <Link href="/opportunities" className="text-muted-foreground hover:text-primary">
+                  <Link
+                    href="/opportunities"
+                    className="text-muted-foreground hover:text-primary"
+                  >
                     Opportunities
                   </Link>
                 </li>
                 <li>
-                  <Link href="/marketplace" className="text-muted-foreground hover:text-primary">
+                  <Link
+                    href="/marketplace"
+                    className="text-muted-foreground hover:text-primary"
+                  >
                     Marketplace
                   </Link>
                 </li>
                 <li>
-                  <Link href="/community" className="text-muted-foreground hover:text-primary">
+                  <Link
+                    href="/community"
+                    className="text-muted-foreground hover:text-primary"
+                  >
                     Community
                   </Link>
                 </li>
                 <li>
-                  <Link href="/reviews" className="text-muted-foreground hover:text-primary">
+                  <Link
+                    href="/reviews"
+                    className="text-muted-foreground hover:text-primary"
+                  >
                     Reviews
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Support</h3>
+              <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">
+                Support
+              </h3>
               <ul className="space-y-2 text-xs sm:text-sm">
                 <li>
-                  <Link href="/settings" className="text-muted-foreground hover:text-primary">
+                  <Link
+                    href="/settings"
+                    className="text-muted-foreground hover:text-primary"
+                  >
                     Help Center
                   </Link>
                 </li>
                 <li>
-                  <Link href="/accessibility" className="text-muted-foreground hover:text-primary">
+                  <Link
+                    href="/accessibility"
+                    className="text-muted-foreground hover:text-primary"
+                  >
                     Accessibility
                   </Link>
                 </li>
                 <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary">
+                  <Link
+                    href="/privacy-policy"
+                    className="text-muted-foreground hover:text-primary"
+                  >
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="text-muted-foreground hover:text-primary">
+                  <Link
+                    href="/terms"
+                    className="text-muted-foreground hover:text-primary"
+                  >
                     Terms of Service
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Contact</h3>
+              <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">
+                Contact
+              </h3>
               <ul className="space-y-2 text-xs sm:text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <Mail className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -906,8 +1150,8 @@ export default function HomePage() {
           </div>
           <div className="border-t pt-6 sm:pt-8 text-center text-xs sm:text-sm text-muted-foreground px-4">
             <p>
-              © 2024 AgriReach. All rights reserved. Empowering rural communities
-              in Central Luzon, Philippines.
+              © 2024 AgriReach. All rights reserved. Empowering rural
+              communities in Central Luzon, Philippines.
             </p>
           </div>
         </div>
@@ -915,4 +1159,3 @@ export default function HomePage() {
     </div>
   );
 }
-
