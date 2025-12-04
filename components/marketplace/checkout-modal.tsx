@@ -314,8 +314,8 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
     (sum, item) => sum + item.product_id.price * item.quantity,
     0
   )
-  // Dynamic delivery fee based on location
-  const deliveryFee = shippingInfo?.fee || 50
+  // Dynamic delivery fee based on location - only show if items are selected
+  const deliveryFee = selectedItems.size > 0 ? (shippingInfo?.fee || 50) : 0
   const total = subtotal + deliveryFee
   const meetsMinimumOrder = shippingInfo?.meetsMinimum ?? true
 
