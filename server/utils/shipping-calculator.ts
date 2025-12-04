@@ -1,7 +1,7 @@
 /**
  * Shipping Fee Calculator
  * Calculates shipping fees based on seller and buyer locations
- * with minimum order requirements per zone
+ * Realistic Philippine shipping rates (similar to J&T, LBC, JRS)
  */
 
 export interface ShippingRate {
@@ -21,12 +21,12 @@ export interface ShippingCalculation {
   zoneName: string;
 }
 
-// Shipping rates by zone - Central Luzon focused
+// Realistic Philippine shipping rates (no minimum order required)
 const SHIPPING_RATES: Record<string, ShippingRate> = {
   // Same city/municipality - cheapest, fastest
   same_city: {
-    fee: 50,
-    minimumOrder: 100,
+    fee: 39,
+    minimumOrder: 0, // No minimum
     estimatedDays: "1-2 days",
     zone: "same_city",
     zoneName: "Same City",
@@ -34,8 +34,8 @@ const SHIPPING_RATES: Record<string, ShippingRate> = {
 
   // Same province - moderate pricing
   same_province: {
-    fee: 80,
-    minimumOrder: 200,
+    fee: 49,
+    minimumOrder: 0, // No minimum
     estimatedDays: "2-3 days",
     zone: "same_province",
     zoneName: "Same Province",
@@ -43,45 +43,45 @@ const SHIPPING_RATES: Record<string, ShippingRate> = {
 
   // Within Central Luzon (Region III)
   central_luzon: {
-    fee: 120,
-    minimumOrder: 300,
-    estimatedDays: "3-5 days",
+    fee: 58,
+    minimumOrder: 0, // No minimum
+    estimatedDays: "2-4 days",
     zone: "central_luzon",
     zoneName: "Central Luzon",
   },
 
   // Metro Manila / NCR
   metro_manila: {
-    fee: 150,
-    minimumOrder: 400,
-    estimatedDays: "3-5 days",
+    fee: 58,
+    minimumOrder: 0, // No minimum
+    estimatedDays: "2-4 days",
     zone: "metro_manila",
     zoneName: "Metro Manila",
   },
 
   // Other Luzon provinces
   other_luzon: {
-    fee: 200,
-    minimumOrder: 500,
-    estimatedDays: "5-7 days",
+    fee: 85,
+    minimumOrder: 0, // No minimum
+    estimatedDays: "3-5 days",
     zone: "other_luzon",
     zoneName: "Other Luzon",
   },
 
   // Visayas region
   visayas: {
-    fee: 300,
-    minimumOrder: 700,
-    estimatedDays: "7-10 days",
+    fee: 120,
+    minimumOrder: 0, // No minimum
+    estimatedDays: "5-7 days",
     zone: "visayas",
     zoneName: "Visayas",
   },
 
   // Mindanao region
   mindanao: {
-    fee: 350,
-    minimumOrder: 800,
-    estimatedDays: "10-14 days",
+    fee: 150,
+    minimumOrder: 0, // No minimum
+    estimatedDays: "5-7 days",
     zone: "mindanao",
     zoneName: "Mindanao",
   },

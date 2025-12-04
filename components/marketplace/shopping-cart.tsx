@@ -157,7 +157,7 @@ export function ShoppingCartComponent({ items, onUpdateQuantity, onRemoveItem, o
                   <span className="text-sm text-muted-foreground italic">Calculated at checkout</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Shipping varies by location (₱50 - ₱350)
+                  Shipping varies by location (₱39 - ₱150)
                 </p>
                 <Separator className="my-4" />
                 <div className="flex justify-between text-lg font-semibold">
