@@ -11,7 +11,10 @@ export interface IPayment extends Document {
   order_id?: Types.ObjectId
   
   // Payment details
-  amount: number // Amount in centavos (e.g., 10000 = ₱100.00)
+  amount: number // Total amount in centavos (e.g., 10000 = ₱100.00)
+  subtotal?: number // Product subtotal in pesos (before shipping)
+  shipping_fee?: number // Shipping fee in pesos
+  shipping_zone?: string // Zone used for shipping calculation
   currency: string // 'PHP'
   description: string
   payment_method: PaymentMethod
@@ -86,6 +89,9 @@ const PaymentSchema = new Schema<IPayment>({
   
   // Payment details
   amount: { type: Number, required: true, min: 1 },
+  subtotal: { type: Number }, // Product subtotal in pesos
+  shipping_fee: { type: Number }, // Shipping fee in pesos
+  shipping_zone: { type: String }, // Zone used for calculation
   currency: { type: String, default: 'PHP', enum: ['PHP'] },
   description: { type: String, required: true },
   payment_method: { 

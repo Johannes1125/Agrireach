@@ -6,6 +6,7 @@ import { validateUserRole } from "@/server/utils/role-validation";
 import { Product, CartItem, Order } from "@/server/models/Product";
 import { Payment } from "@/server/models/Payment";
 import { CheckoutRequestSchema, convertToCentavos, PAYMENT_ERRORS } from "@/server/validators/payment";
+import { calculateShippingFee } from "@/server/utils/shipping-calculator";
 import { 
   createPaymentIntent, 
   createPaymentMethod,
@@ -114,11 +115,19 @@ export async function POST(req: NextRequest) {
     const { User } = await import("@/server/models/User");
     const { geocodeAddress } = await import("@/server/utils/geocoding");
 
+    // Get the primary seller location for shipping calculation
+    let primarySellerLocation = "";
+    
     for (const item of orderItems) {
       const seller = await User.findById(item.seller_id).select('location location_coordinates').lean();
       
       if (!seller?.location) {
         return jsonError(`Seller for product has no location set. Please contact the seller.`, 400);
+      }
+
+      // Store the first seller's location as primary
+      if (!primarySellerLocation) {
+        primarySellerLocation = seller.location;
       }
       
       // If seller doesn't have coordinates, try to geocode
@@ -139,6 +148,34 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Calculate shipping fee based on seller and buyer locations
+    const buyerLocation = delivery_address_structured?.city 
+      ? `${delivery_address_structured.city}, ${delivery_address_structured.state || 'Philippines'}`
+      : (typeof delivery_address === 'string' ? delivery_address : '');
+    
+    const shippingInfo = calculateShippingFee(primarySellerLocation, buyerLocation, totalAmount);
+    
+    console.log(`[Checkout] Shipping calculation:`, {
+      sellerLocation: primarySellerLocation,
+      buyerLocation,
+      subtotal: totalAmount,
+      shippingFee: shippingInfo.fee,
+      zone: shippingInfo.zone,
+      meetsMinimum: shippingInfo.meetsMinimum,
+    });
+
+    // Validate minimum order requirement
+    if (!shippingInfo.meetsMinimum) {
+      return jsonError(
+        `Minimum order of ₱${shippingInfo.minimumOrder.toFixed(2)} required for delivery to ${shippingInfo.zoneName}. Your current subtotal is ₱${totalAmount.toFixed(2)}.`,
+        400
+      );
+    }
+
+    // Calculate grand total (products + shipping)
+    const shippingFee = shippingInfo.fee;
+    const grandTotal = totalAmount + shippingFee;
+
     // Always prefer delivery_address_structured as it contains coordinates
     const deliveryAddressToSave = delivery_address_structured || (typeof delivery_address === 'object' ? delivery_address : undefined);
 
@@ -154,12 +191,15 @@ export async function POST(req: NextRequest) {
       console.log("✅ Coordinates validated and present in delivery_address_structured");
     }
 
-    // Create payment record
+    // Create payment record with shipping fee included
     const payment = new Payment({
       buyer_id: userId,
-      amount: convertToCentavos(totalAmount),
+      amount: convertToCentavos(grandTotal), // Grand total (products + shipping)
+      subtotal: totalAmount, // Product subtotal in pesos
+      shipping_fee: shippingFee, // Shipping fee in pesos
+      shipping_zone: shippingInfo.zone, // Zone for reference
       currency: 'PHP',
-      description: `AgriReach order - ${orderItems.length} item(s)`,
+      description: `AgriReach order - ${orderItems.length} item(s) + ₱${shippingFee.toFixed(2)} shipping`,
       payment_method: payment_method,
       payment_type: 'one_time',
       status: 'pending',
@@ -168,7 +208,13 @@ export async function POST(req: NextRequest) {
       delivery_address: deliveryAddressToSave,
       metadata: {
         order_items: orderItems,
-        cart_item_ids: cartItemIds
+        cart_item_ids: cartItemIds,
+        shipping_info: {
+          fee: shippingFee,
+          zone: shippingInfo.zone,
+          zoneName: shippingInfo.zoneName,
+          estimatedDays: shippingInfo.estimatedDays,
+        }
       },
       expires_at: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes
     });
@@ -219,7 +265,10 @@ export async function POST(req: NextRequest) {
         payment_type: "cod",
         payment_id: payment._id,
         order_ids: createdOrders,
-        amount: totalAmount,
+        amount: grandTotal,
+        subtotal: totalAmount,
+        shipping_fee: shippingFee,
+        shipping_zone: shippingInfo.zoneName,
         currency: "PHP",
         status: "paid",
         message: "Order successfully placed! Payment will be collected upon delivery.",
@@ -230,9 +279,9 @@ export async function POST(req: NextRequest) {
       });
     } 
     else if (payment_method === "gcash" || payment_method === "grab_pay" || payment_method === "paymaya" || payment_method === "card") {
-      // For PayMongo payments
+      // For PayMongo payments - use grand total (products + shipping)
       try {
-        const amountInCentavos = convertToCentavos(totalAmount);
+        const amountInCentavos = convertToCentavos(grandTotal);
         const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
         
         if (payment_method === "card") {
@@ -241,12 +290,15 @@ export async function POST(req: NextRequest) {
           const paymentIntent = await createPaymentIntent({
             amount: amountInCentavos,
             currency: 'PHP',
-            description: `AgriReach order - ${orderItems.length} item(s)`,
+            description: `AgriReach order - ${orderItems.length} item(s) + ₱${shippingFee.toFixed(2)} shipping`,
             statement_descriptor: 'AgriReach',
             payment_method_allowed: ['card'],
             metadata: {
               payment_id: String(payment._id),
               buyer_id: userId,
+              subtotal: String(totalAmount),
+              shipping_fee: String(shippingFee),
+              shipping_zone: shippingInfo.zone,
             },
           });
 
@@ -296,7 +348,10 @@ export async function POST(req: NextRequest) {
             client_key: paymentIntent.attributes.client_key,
             checkout_url: checkoutUrl, // For 3DS redirect
             requires_3ds: requires3DS,
-            amount: totalAmount,
+            amount: grandTotal,
+            subtotal: totalAmount,
+            shipping_fee: shippingFee,
+            shipping_zone: shippingInfo.zoneName,
             currency: "PHP",
             status: "processing",
             message: requires3DS 
@@ -312,12 +367,15 @@ export async function POST(req: NextRequest) {
           const paymentIntent = await createPaymentIntent({
             amount: amountInCentavos,
             currency: 'PHP',
-            description: `AgriReach order - ${orderItems.length} item(s)`,
+            description: `AgriReach order - ${orderItems.length} item(s) + ₱${shippingFee.toFixed(2)} shipping`,
             statement_descriptor: 'AgriReach',
             payment_method_allowed: [payment_method],
             metadata: {
               payment_id: String(payment._id),
               buyer_id: userId,
+              subtotal: String(totalAmount),
+              shipping_fee: String(shippingFee),
+              shipping_zone: shippingInfo.zone,
             },
           });
 
@@ -371,7 +429,10 @@ export async function POST(req: NextRequest) {
             payment_intent_id: paymentIntent.id,
             payment_method_id: paymentMethod.id,
             checkout_url: checkoutUrl,
-            amount: totalAmount,
+            amount: grandTotal,
+            subtotal: totalAmount,
+            shipping_fee: shippingFee,
+            shipping_zone: shippingInfo.zoneName,
             currency: "PHP",
             status: "processing",
             message: "Redirecting to payment...",

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ShoppingCart, Plus, Minus, Trash2, X } from "lucide-react"
+import { ShoppingCart, Plus, Minus, Trash2, X, Truck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -149,14 +149,20 @@ export function ShoppingCartComponent({ items, onUpdateQuantity, onRemoveItem, o
                   <span className="text-muted-foreground">Subtotal ({totalItems} items)</span>
                   <span className="font-medium">₱{totalPrice.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-base">
-                  <span className="text-muted-foreground">Delivery fee</span>
-                  <span className="font-medium">₱50.00</span>
+                <div className="flex justify-between text-base items-center">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Truck className="h-4 w-4" />
+                    Delivery fee
+                  </span>
+                  <span className="text-sm text-muted-foreground italic">Calculated at checkout</span>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Shipping varies by location (₱50 - ₱350)
+                </p>
                 <Separator className="my-4" />
                 <div className="flex justify-between text-lg font-semibold">
-                  <span>Total</span>
-                  <span className="text-primary">₱{(totalPrice + 50).toFixed(2)}</span>
+                  <span>Subtotal</span>
+                  <span className="text-primary">₱{totalPrice.toFixed(2)}</span>
                 </div>
               </div>
 

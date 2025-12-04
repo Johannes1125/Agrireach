@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -21,8 +21,19 @@ import {
   CheckCircle2, 
   Loader2,
   AlertCircle,
-  Banknote
+  Banknote,
+  Truck,
+  MapPin
 } from "lucide-react"
+
+interface ShippingInfo {
+  fee: number
+  minimumOrder: number
+  meetsMinimum: boolean
+  estimatedDays: string
+  zone: string
+  zoneName: string
+}
 
 interface CartItem {
   _id: string
@@ -66,6 +77,81 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
     email?: string
     phone?: string
   } | null>(null)
+  const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null)
+  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false)
+
+  // Get primary seller location from selected items
+  const getPrimarySellerLocation = useCallback(() => {
+    const selectedCartItems = cartItems.filter(item => selectedItems.has(item._id))
+    if (selectedCartItems.length === 0) return ""
+    // Use the first seller's location as the origin
+    return selectedCartItems[0]?.product_id?.seller_id?.location || ""
+  }, [cartItems, selectedItems])
+
+  // Calculate shipping when delivery address or selected items change
+  const calculateShipping = useCallback(async () => {
+    const sellerLocation = getPrimarySellerLocation()
+    const buyerLocation = deliveryAddress.formattedAddress || ""
+    
+    if (!sellerLocation || !buyerLocation) {
+      setShippingInfo(null)
+      return
+    }
+
+    const selectedCartItems = cartItems.filter(item => selectedItems.has(item._id))
+    const currentSubtotal = selectedCartItems.reduce(
+      (sum, item) => sum + item.product_id.price * item.quantity,
+      0
+    )
+
+    setIsCalculatingShipping(true)
+    try {
+      const res = await authFetch("/api/marketplace/shipping/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          seller_location: sellerLocation,
+          buyer_location: buyerLocation,
+          subtotal: currentSubtotal,
+        }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setShippingInfo(data.data?.shipping || data.shipping)
+      } else {
+        // Fallback to default shipping if API fails
+        setShippingInfo({
+          fee: 50,
+          minimumOrder: 100,
+          meetsMinimum: currentSubtotal >= 100,
+          estimatedDays: "3-5 days",
+          zone: "default",
+          zoneName: "Standard",
+        })
+      }
+    } catch (error) {
+      console.error("Error calculating shipping:", error)
+      // Fallback to default
+      setShippingInfo({
+        fee: 50,
+        minimumOrder: 100,
+        meetsMinimum: true,
+        estimatedDays: "3-5 days",
+        zone: "default",
+        zoneName: "Standard",
+      })
+    } finally {
+      setIsCalculatingShipping(false)
+    }
+  }, [cartItems, selectedItems, deliveryAddress.formattedAddress, getPrimarySellerLocation])
+
+  // Recalculate shipping when address or items change
+  useEffect(() => {
+    if (deliveryAddress.formattedAddress && selectedItems.size > 0) {
+      calculateShipping()
+    }
+  }, [deliveryAddress.formattedAddress, selectedItems, calculateShipping])
 
   // Fetch user data when modal opens
   useEffect(() => {
@@ -123,8 +209,10 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
     (sum, item) => sum + item.product_id.price * item.quantity,
     0
   )
-  const deliveryFee = 50 // Fixed delivery fee
+  // Dynamic delivery fee based on location
+  const deliveryFee = shippingInfo?.fee || 50
   const total = subtotal + deliveryFee
+  const meetsMinimumOrder = shippingInfo?.meetsMinimum ?? true
 
   const toggleItem = (itemId: string) => {
     const newSelected = new Set(selectedItems)
@@ -163,6 +251,11 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
     }
     if (!billingEmail.trim()) {
       toast.error("Please enter your email")
+      return
+    }
+    // Check minimum order requirement
+    if (shippingInfo && !shippingInfo.meetsMinimum) {
+      toast.error(`Minimum order of ₱${shippingInfo.minimumOrder.toFixed(2)} required for delivery to ${shippingInfo.zoneName}`)
       return
     }
     setStep("payment")
@@ -634,9 +727,37 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
                 <span>₱{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Delivery Fee</span>
-                <span>₱{deliveryFee.toFixed(2)}</span>
+                <div className="flex items-center gap-1">
+                  <Truck className="h-4 w-4 text-muted-foreground" />
+                  <span>Delivery Fee</span>
+                  {shippingInfo && (
+                    <Badge variant="outline" className="ml-1 text-xs">
+                      {shippingInfo.zoneName}
+                    </Badge>
+                  )}
+                </div>
+                {isCalculatingShipping ? (
+                  <span className="text-muted-foreground">Calculating...</span>
+                ) : (
+                  <span>₱{deliveryFee.toFixed(2)}</span>
+                )}
               </div>
+              {shippingInfo && (
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    Estimated delivery: {shippingInfo.estimatedDays}
+                  </span>
+                </div>
+              )}
+              {shippingInfo && !shippingInfo.meetsMinimum && (
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-2 mt-2">
+                  <p className="text-xs text-amber-800 dark:text-amber-200 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Minimum order ₱{shippingInfo.minimumOrder.toFixed(2)} required. Add ₱{(shippingInfo.minimumOrder - subtotal).toFixed(2)} more.
+                  </p>
+                </div>
+              )}
               <Separator />
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>
@@ -669,9 +790,18 @@ export function CheckoutModal({ open, onClose, cartItems, onSuccess }: CheckoutM
               <Button
                 className="flex-1"
                 onClick={handleProceedToPayment}
-                disabled={!deliveryAddress.coordinates || !billingName.trim() || !billingEmail.trim()}
+                disabled={!deliveryAddress.coordinates || !billingName.trim() || !billingEmail.trim() || !meetsMinimumOrder || isCalculatingShipping}
               >
-                Proceed to Payment
+                {isCalculatingShipping ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Calculating...
+                  </>
+                ) : !meetsMinimumOrder ? (
+                  `Add ₱${(shippingInfo?.minimumOrder || 0 - subtotal).toFixed(2)} more`
+                ) : (
+                  "Proceed to Payment"
+                )}
               </Button>
             )}
             {step === "payment" && (
