@@ -179,7 +179,7 @@ function SellProductPageContent() {
               className="inline-flex items-center text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Marketplace
+              Back to E-Commerce
             </Link>
           </div>
         </div>

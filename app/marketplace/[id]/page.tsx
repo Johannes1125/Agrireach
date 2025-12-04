@@ -274,7 +274,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="flex items-center justify-between">
             <Link href="/marketplace" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Marketplace
+              Back to E-Commerce
             </Link>
             <Link href="/marketplace">
               <Button variant="outline" size="sm" className="border-2 hover:bg-muted/70 dark:hover:bg-muted/50 dark:border-border dark:text-foreground">

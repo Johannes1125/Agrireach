@@ -139,7 +139,7 @@ export default function PaymentSuccessPage() {
             <div className="flex gap-2">
               <Link href="/marketplace" className="flex-1">
                 <Button variant="outline" className="w-full">
-                  Back to Marketplace
+                  Back to E-Commerce
                 </Button>
               </Link>
               <Link href="/marketplace" className="flex-1">

@@ -28,8 +28,8 @@
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "Marketplace",
-      "short_name": "Market",
+      "name": "E-Commerce",
+      "short_name": "E-Commerce",
       "description": "Browse agricultural products",
       "url": "/marketplace"
     },

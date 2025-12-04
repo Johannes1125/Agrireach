@@ -53,7 +53,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             Opportunities
           </Link>
           <Link href="/marketplace" className="text-muted-foreground hover:text-primary transition-colors">
-            Marketplace
+            E-Commerce
           </Link>
           <Link href="/community" className="text-muted-foreground hover:text-primary transition-colors">
             Community

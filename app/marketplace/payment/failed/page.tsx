@@ -155,7 +155,7 @@ export default function PaymentFailedPage() {
               className="w-full"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Marketplace
+              Back to E-Commerce
             </Button>
           </div>
 

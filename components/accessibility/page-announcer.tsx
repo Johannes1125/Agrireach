@@ -7,7 +7,7 @@ import { useAccessibility } from "./accessibility-provider";
 const pathToPageName: Record<string, string> = {
   "/": "Home page",
   "/dashboard": "Dashboard",
-  "/marketplace": "Marketplace",
+  "/marketplace": "E-Commerce",
   "/opportunities": "Opportunities",
   "/community": "Community",
   "/profile": "Profile",
@@ -31,7 +31,7 @@ export const PageAnnouncer: React.FC<PageAnnouncerProps> = ({ children }) => {
 
     if (pathSegments.length > 1) {
       if (pathSegments[0] === "marketplace" && pathSegments[1] === "sell") {
-        pageName = "Sell on Marketplace";
+        pageName = "Sell on E-Commerce";
       } else if (pathSegments[0] === "marketplace" && pathSegments[1]) {
         pageName = "Product details";
       } else if (

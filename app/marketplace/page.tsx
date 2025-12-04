@@ -175,7 +175,7 @@ export default function MarketplacePage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
               <div>
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground font-sans">
-                  AgriReach Marketplace
+                  AgriReach E-Commerce
                 </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Fresh products directly from farmers, fishers, and artisans

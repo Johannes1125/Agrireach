@@ -206,7 +206,7 @@ export default function HomePage() {
                 className="transition-opacity hover:opacity-80"
               >
                 <Button variant="ghost" size="sm" className="text-sm">
-                  Marketplace
+                  E-Commerce
                 </Button>
               </a>
               <a
@@ -288,7 +288,7 @@ export default function HomePage() {
                       }}
                       className="block px-4 py-3 rounded-lg text-base font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
                     >
-                      Marketplace
+                      E-Commerce
                     </a>
                     <a
                       href="#community"
@@ -374,7 +374,7 @@ export default function HomePage() {
                   size="lg"
                   className="w-full sm:w-auto text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-6 bg-transparent"
                 >
-                  Explore Marketplace
+                  Explore E-Commerce
                 </Button>
               </Link>
             </div>
@@ -413,7 +413,7 @@ export default function HomePage() {
               <CardHeader>
                 <ShoppingCart className="h-10 w-10 sm:h-12 sm:w-12 text-primary mb-3 sm:mb-4" />
                 <CardTitle className="font-heading text-lg sm:text-xl">
-                  Marketplace
+                  E-Commerce
                 </CardTitle>
                 <CardDescription className="text-sm sm:text-base leading-relaxed">
                   Buy and sell agricultural products directly. No middlemen,
@@ -597,7 +597,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Marketplace Section */}
+      {/* E-Commerce Section */}
       <section
         id="marketplace"
         className="px-3 sm:px-4 md:px-6 py-12 sm:py-16 md:py-20 lg:py-24 scroll-mt-20"
@@ -1061,7 +1061,7 @@ export default function HomePage() {
                     href="/marketplace"
                     className="text-muted-foreground hover:text-primary"
                   >
-                    Marketplace
+                    E-Commerce
                   </Link>
                 </li>
                 <li>

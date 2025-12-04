@@ -52,7 +52,7 @@ const navigation = [
     badgeKey: "badge:community",
   },
   {
-    name: "Marketplace Content",
+    name: "E-Commerce Content",
     href: "/admin/content/marketplace",
     icon: Package,
     badge: 5,

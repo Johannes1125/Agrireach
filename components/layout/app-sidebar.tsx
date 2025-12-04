@@ -49,7 +49,7 @@ const navigation: {
   { name: "Dashboard", href: "/dashboard", icon: Home, roles: null },
   { name: "Opportunities", href: "/opportunities", icon: Briefcase, roles: ["worker", "recruiter"] },
   { name: "Producers", href: "/producers", icon: Users, roles: null },
-  { name: "Marketplace", href: "/marketplace", icon: ShoppingBag, roles: ["buyer"] },
+  { name: "E-Commerce", href: "/marketplace", icon: ShoppingBag, roles: ["buyer"] },
   { name: "Community", href: "/community", icon: MessageSquare, roles: null },
   { name: "Learning", href: "/learning", icon: BookOpen, roles: null },
   { name: "Reviews", href: "/reviews", icon: Star, roles: null },

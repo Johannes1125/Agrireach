@@ -165,7 +165,7 @@ function AdminDashboardContent() {
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-purple-200 dark:text-purple-300">Total Listings</p>
                     <p className="text-3xl font-bold text-purple-100 dark:text-purple-200">{(stats?.totalListings || 0).toLocaleString()}</p>
-                    <p className="text-xs text-purple-200/80 dark:text-purple-300/80">Marketplace + Jobs</p>
+                    <p className="text-xs text-purple-200/80 dark:text-purple-300/80">E-Commerce + Jobs</p>
                   </div>
                   <div className="p-3 bg-purple-500/30 dark:bg-purple-500/20 rounded-lg border border-purple-400/30 dark:border-purple-400/20 shadow-lg flex-shrink-0">
                     <Package className="h-8 w-8 text-purple-200 dark:text-purple-300" />

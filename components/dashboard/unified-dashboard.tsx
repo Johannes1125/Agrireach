@@ -199,7 +199,7 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
         return {
           title: "Trader Dashboard",
           subtitle: "Discover and purchase from local farmers",
-          primaryAction: "Browse Marketplace",
+          primaryAction: "Browse E-Commerce",
           primaryIcon: ShoppingCart,
         }
       default:
