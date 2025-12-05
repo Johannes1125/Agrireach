@@ -14,11 +14,59 @@ import { authFetch } from "@/lib/auth-client"
 import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
 import { DEFAULT_DRIVERS, type DefaultDriver } from "@/lib/constants/default-drivers"
+import { addMinutes } from "date-fns"
 
 interface DeliveryManagementModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   orderId: string
+}
+
+type DeliveryStatus =
+  | "pending"
+  | "pickup_assigned"
+  | "pickup_in_progress"
+  | "picked_up"
+  | "at_origin_hub"
+  | "sorted"
+  | "line_haul_in_transit"
+  | "at_destination_hub"
+  | "delivery_assigned"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled"
+  | "returned"
+
+const STATUS_TRANSITIONS: Record<DeliveryStatus, DeliveryStatus[]> = {
+  pending: ["pickup_assigned", "cancelled"],
+  pickup_assigned: ["pickup_in_progress", "cancelled"],
+  pickup_in_progress: ["picked_up", "cancelled"],
+  picked_up: ["at_origin_hub", "cancelled"],
+  at_origin_hub: ["sorted", "cancelled"],
+  sorted: ["line_haul_in_transit", "out_for_delivery", "cancelled"],
+  line_haul_in_transit: ["at_destination_hub", "cancelled"],
+  at_destination_hub: ["delivery_assigned", "cancelled"],
+  delivery_assigned: ["out_for_delivery", "cancelled"],
+  out_for_delivery: ["delivered", "returned", "cancelled"],
+  delivered: [],
+  cancelled: [],
+  returned: [],
+}
+
+const STATUS_LABELS: Record<DeliveryStatus, string> = {
+  pending: "Pending",
+  pickup_assigned: "Pickup Assigned",
+  pickup_in_progress: "Pickup In Progress",
+  picked_up: "Picked Up",
+  at_origin_hub: "At Origin Hub",
+  sorted: "Sorted",
+  line_haul_in_transit: "Line Haul In Transit",
+  at_destination_hub: "At Destination Hub",
+  delivery_assigned: "Delivery Assigned",
+  out_for_delivery: "Out For Delivery",
+  delivered: "Delivered",
+  cancelled: "Cancelled",
+  returned: "Returned",
 }
 
 interface DeliveryDetails {
@@ -42,7 +90,7 @@ interface DeliveryDetails {
     full_name: string
   }
   tracking_number: string
-  status: "pending" | "assigned" | "picked_up" | "in_transit" | "delivered" | "cancelled"
+  status: DeliveryStatus
   driver_name?: string
   driver_phone?: string
   driver_email?: string
@@ -284,6 +332,14 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
 
   const handleAssignDriver = async () => {
     if (!delivery) return
+    // Prevent past ETD selection
+    if (driverForm.estimated_delivery_time) {
+      const selected = new Date(driverForm.estimated_delivery_time)
+      if (Number.isFinite(selected.getTime()) && selected.getTime() < Date.now()) {
+        toast.error("Estimated delivery time cannot be in the past")
+        return
+      }
+    }
 
     // Validate that a driver is selected
     if (!driverForm.selected_driver_id || !driverForm.driver_name || !driverForm.driver_phone || !driverForm.vehicle_type) {
@@ -316,7 +372,7 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
     }
   }
 
-  const handleUpdateStatus = async (newStatus: "picked_up" | "in_transit" | "delivered" | "cancelled") => {
+  const handleUpdateStatus = async (newStatus: DeliveryStatus) => {
     if (!delivery) return
 
     try {
@@ -345,14 +401,18 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
     switch (status) {
       case "delivered":
         return "bg-green-500"
-      case "in_transit":
+      case "pickup_assigned":
+      case "pickup_in_progress":
       case "picked_up":
+      case "line_haul_in_transit":
+      case "out_for_delivery":
         return "bg-blue-500"
-      case "assigned":
+      case "delivery_assigned":
         return "bg-yellow-500"
       case "pending":
         return "bg-gray-500"
       case "cancelled":
+      case "returned":
         return "bg-red-500"
       default:
         return "bg-gray-500"
@@ -360,15 +420,7 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
   }
 
   const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      pending: "Pending",
-      assigned: "Driver Assigned",
-      picked_up: "Picked Up",
-      in_transit: "In Transit",
-      delivered: "Delivered",
-      cancelled: "Cancelled",
-    }
-    return labels[status] || status
+    return STATUS_LABELS[status as DeliveryStatus] || status
   }
 
   return (
@@ -579,6 +631,7 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
                       <Input
                         id="estimated_delivery_time"
                         type="datetime-local"
+                      min={addMinutes(new Date(), 1).toISOString().slice(0, 16)}
                         value={driverForm.estimated_delivery_time}
                         onChange={(e) =>
                           setDriverForm({ ...driverForm, estimated_delivery_time: e.target.value, selected_driver_id: driverForm.selected_driver_id })
@@ -685,50 +738,26 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
               <div className="space-y-4">
                 <h4 className="font-semibold">Update Delivery Status</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {delivery.status === "assigned" && (
+                  {(STATUS_TRANSITIONS[delivery.status] || []).map((nextStatus) => (
                     <Button
-                      variant="outline"
-                      onClick={() => handleUpdateStatus("picked_up")}
+                      key={nextStatus}
+                      variant={nextStatus === "cancelled" ? "destructive" : nextStatus === "delivered" ? "default" : "outline"}
+                      onClick={() => handleUpdateStatus(nextStatus)}
                       disabled={updatingStatus}
                       className="flex items-center gap-2"
                     >
-                      <Package className="h-4 w-4" />
-                      Mark Picked Up
+                      {nextStatus === "picked_up" ? <Package className="h-4 w-4" /> : null}
+                      {["pickup_in_progress", "line_haul_in_transit", "out_for_delivery"].includes(nextStatus) ? (
+                        <Truck className="h-4 w-4" />
+                      ) : null}
+                      {nextStatus === "delivered" ? <CheckCircle className="h-4 w-4" /> : null}
+                      {nextStatus === "cancelled" ? <XCircle className="h-4 w-4" /> : null}
+                      {["at_origin_hub", "sorted", "at_destination_hub", "delivery_assigned", "returned"].includes(nextStatus) ? (
+                        <Clock className="h-4 w-4" />
+                      ) : null}
+                      {STATUS_LABELS[nextStatus]}
                     </Button>
-                  )}
-                  {(delivery.status === "picked_up" || delivery.status === "assigned") && (
-                    <Button
-                      variant="outline"
-                      onClick={() => handleUpdateStatus("in_transit")}
-                      disabled={updatingStatus}
-                      className="flex items-center gap-2"
-                    >
-                      <Truck className="h-4 w-4" />
-                      Mark In Transit
-                    </Button>
-                  )}
-                  {delivery.status !== "delivered" && delivery.status !== "cancelled" && (
-                    <Button
-                      variant="default"
-                      onClick={() => handleUpdateStatus("delivered")}
-                      disabled={updatingStatus}
-                      className="flex items-center gap-2"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      Mark Delivered
-                    </Button>
-                  )}
-                  {delivery.status !== "cancelled" && delivery.status !== "delivered" && (
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleUpdateStatus("cancelled")}
-                      disabled={updatingStatus}
-                      className="flex items-center gap-2"
-                    >
-                      <XCircle className="h-4 w-4" />
-                      Cancel Delivery
-                    </Button>
-                  )}
+                  ))}
                 </div>
                 {updatingStatus && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">

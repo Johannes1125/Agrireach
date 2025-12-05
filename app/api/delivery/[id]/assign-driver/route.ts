@@ -87,7 +87,8 @@ export async function POST(
     vehicle_plate_number,
     vehicle_description,
     seller_notes,
-    status: "assigned",
+    // Align with DeliveryStatus progression (pending -> pickup_assigned)
+    status: "pickup_assigned",
     assigned_at: new Date(),
   };
 
