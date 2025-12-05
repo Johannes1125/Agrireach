@@ -14,7 +14,7 @@ import { authFetch } from "@/lib/auth-client"
 import { formatDate } from "@/lib/utils"
 import { toast } from "sonner"
 import { DEFAULT_DRIVERS, type DefaultDriver } from "@/lib/constants/default-drivers"
-import { addMinutes } from "date-fns"
+import { addMinutes, format } from "date-fns"
 
 interface DeliveryManagementModalProps {
   open: boolean
@@ -631,10 +631,15 @@ export function DeliveryManagementModal({ open, onOpenChange, orderId }: Deliver
                       <Input
                         id="estimated_delivery_time"
                         type="datetime-local"
-                      min={addMinutes(new Date(), 1).toISOString().slice(0, 16)}
+                        // Use local timezone so past dates/times can't be selected
+                        min={format(addMinutes(new Date(), 1), "yyyy-MM-dd'T'HH:mm")}
                         value={driverForm.estimated_delivery_time}
                         onChange={(e) =>
-                          setDriverForm({ ...driverForm, estimated_delivery_time: e.target.value, selected_driver_id: driverForm.selected_driver_id })
+                          setDriverForm({
+                            ...driverForm,
+                            estimated_delivery_time: e.target.value,
+                            selected_driver_id: driverForm.selected_driver_id
+                          })
                         }
                       />
                     </div>
