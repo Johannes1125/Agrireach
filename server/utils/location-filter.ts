@@ -5,8 +5,8 @@
 
 import { determineShippingZone } from "./shipping-calculator";
 
-// Zones considered "near" for filtering - excludes Visayas and Mindanao for Luzon users
-const NEAR_ZONES = ["same_city", "same_province", "central_luzon", "metro_manila", "other_luzon"];
+// Zones considered "near" for filtering - includes direct same-city delivery
+const NEAR_ZONES = ["direct", "same_city", "same_province", "central_luzon", "metro_manila", "other_luzon"];
 
 /**
  * Check if seller location is "near" buyer location
@@ -19,14 +19,19 @@ export function isNearby(sellerLocation: string, buyerLocation: string): boolean
 
   const zone = determineShippingZone(sellerLocation, buyerLocation);
   
+  // Always consider direct (same-city) as nearby for any region
+  if (zone === "direct") {
+    return true;
+  }
+
   // For Visayas buyers, consider Visayas as near
   if (isInVisayas(buyerLocation)) {
-    return zone === "same_city" || zone === "same_province" || zone === "visayas";
+    return zone === "direct" || zone === "same_city" || zone === "same_province" || zone === "visayas";
   }
   
   // For Mindanao buyers, consider Mindanao as near
   if (isInMindanao(buyerLocation)) {
-    return zone === "same_city" || zone === "same_province" || zone === "mindanao";
+    return zone === "direct" || zone === "same_city" || zone === "same_province" || zone === "mindanao";
   }
   
   // For Luzon buyers (default)
