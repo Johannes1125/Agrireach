@@ -8,7 +8,41 @@ import { User } from "@/server/models/User";
 import { notifyAllUsersNewProduct } from "@/server/utils/notifications";
 import { validateUserRole } from "@/server/utils/role-validation";
 import { isNearby } from "@/server/utils/location-filter";
+import { determineShippingZone } from "@/server/utils/shipping-calculator";
 import { z } from "zod";
+import { Types } from "mongoose";
+
+// Priority map to order products from nearest to farthest
+const ZONE_PRIORITY: Record<string, number> = {
+  direct: 0,
+  same_city: 1,
+  same_province: 2,
+  metro_manila: 3,
+  central_luzon: 4,
+  other_luzon: 5,
+  visayas: 6,
+  mindanao: 7,
+  default: 99,
+};
+
+const sortByProximity = (items: any[], buyerLocation?: string) => {
+  if (!buyerLocation) return items;
+
+  return items
+    .map((product) => {
+      const sellerLocation = product.seller_id?.location || product.location || "";
+      const zone = determineShippingZone(sellerLocation, buyerLocation);
+      return { product, zone };
+    })
+    .sort((a, b) => {
+      const pa = ZONE_PRIORITY[a.zone] ?? ZONE_PRIORITY.default;
+      const pb = ZONE_PRIORITY[b.zone] ?? ZONE_PRIORITY.default;
+      if (pa !== pb) return pa - pb;
+      // Tie-breaker: newest first
+      return new Date(b.product.created_at).getTime() - new Date(a.product.created_at).getTime();
+    })
+    .map(({ product }) => product);
+};
 
 const CreateProductSchema = z.object({
   title: z.string().min(1),
@@ -75,17 +109,21 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  const userObjectId = decoded?.sub && Types.ObjectId.isValid(decoded.sub)
+    ? new Types.ObjectId(decoded.sub)
+    : decoded?.sub;
+
   // If status filter is explicitly provided (e.g., admin filtering), use it
   // Otherwise: show active products to everyone, plus seller's own products (any status)
   if (!status) {
-    if (decoded?.sub) {
+    if (userObjectId) {
       if (excludeOwn) {
         // Exclude user's own products from the listing
         filter.status = "active";
-        filter.seller_id = { $ne: decoded.sub };
+        filter.seller_id = { $ne: userObjectId };
       } else {
         // Include user's own products regardless of status
-        filter.$or = [ { status: "active" }, { seller_id: decoded.sub } ];
+        filter.$or = [ { status: "active" }, { seller_id: userObjectId } ];
       }
     } else {
       filter.status = "active";
@@ -133,10 +171,14 @@ export async function GET(req: NextRequest) {
       const sellerLocation = product.seller_id?.location || product.location;
       return isNearby(sellerLocation, buyerLocation);
     });
+    products = sortByProximity(products, buyerLocation);
     total = products.length;
     
     // Apply pagination after nearMe filter
     products = products.slice(skip, skip + limit);
+  } else if (buyerLocation) {
+    // If we know buyer's location, prefer nearer items even without explicit nearMe filter
+    products = sortByProximity(products, buyerLocation);
   }
 
   return jsonOk({ 
