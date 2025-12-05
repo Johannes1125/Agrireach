@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Grid, List, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Grid, List, ShoppingCart, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useMarketplaceData } from "@/hooks/use-marketplace-data";
 import { useAuth } from "@/hooks/use-auth";
 import { authFetch } from "@/lib/auth-client";
@@ -40,6 +42,7 @@ export default function MarketplacePage() {
   const [cartLoading, setCartLoading] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showNearbyOnly, setShowNearbyOnly] = useState(true); // Default to showing nearby products
 
   // Use debouncedSearch to avoid firing a request on every keystroke
   useEffect(() => {
@@ -50,7 +53,7 @@ export default function MarketplacePage() {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, selectedCategory, sortBy]);
+  }, [debouncedSearch, selectedCategory, sortBy, showNearbyOnly]);
 
   // Scroll to top when page changes
   useEffect(() => {
@@ -63,6 +66,9 @@ export default function MarketplacePage() {
     sortBy,
     page: currentPage,
     limit: 20,
+    excludeOwn: true,                           // Hide user's own products
+    nearMe: showNearbyOnly,                     // Only show nearby products when enabled
+    buyerLocation: user?.location || "",        // Pass user's location for nearMe filter
   });
 
   // Fetch cart items
@@ -291,6 +297,19 @@ export default function MarketplacePage() {
                 >
                   <List className="h-4 w-4" />
                 </Button>
+              </div>
+
+              {/* Near Me Toggle */}
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-card border rounded-md">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <Switch
+                  checked={showNearbyOnly}
+                  onCheckedChange={setShowNearbyOnly}
+                  id="near-me"
+                />
+                <Label htmlFor="near-me" className="text-sm cursor-pointer">
+                  Near Me
+                </Label>
               </div>
             </div>
           </div>

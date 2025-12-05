@@ -190,6 +190,11 @@ export function OpportunityBoard() {
   useEffect(() => {
     let filtered = allJobs;
 
+    // Hide current user's own job postings
+    if (user?.id) {
+      filtered = filtered.filter((job) => String(job.recruiterId) !== String(user.id));
+    }
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -280,7 +285,7 @@ export function OpportunityBoard() {
 
     setJobs(sortedJobs);
     setTotal(sortedJobs.length);
-  }, [searchQuery, location, allJobs, sortBy, filterPayRange, filterSelectedFilters]);
+  }, [searchQuery, location, allJobs, sortBy, filterPayRange, filterSelectedFilters, user]);
 
   const toggleSaveJob = (jobId: string) => {
     setSavedJobs((prev) =>

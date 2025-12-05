@@ -1,7 +1,7 @@
 /**
  * Shipping Fee Calculator
  * Calculates shipping fees based on seller and buyer locations
- * Realistic Philippine shipping rates (similar to J&T, LBC, JRS)
+ * Optimized Philippine shipping rates for local agricultural commerce
  */
 
 export interface ShippingRate {
@@ -10,6 +10,7 @@ export interface ShippingRate {
   estimatedDays: string;
   zone: string;
   zoneName: string;
+  isDirectDelivery?: boolean; // True if no hub routing needed
 }
 
 export interface ShippingCalculation {
@@ -19,71 +20,92 @@ export interface ShippingCalculation {
   estimatedDays: string;
   zone: string;
   zoneName: string;
+  isDirectDelivery: boolean;
 }
 
-// Realistic Philippine shipping rates (no minimum order required)
+// Delivery type for routing decisions
+export type DeliveryType = "direct" | "single_hub" | "hub_to_hub";
+
+// Optimized Philippine shipping rates (lower prices for local commerce)
 const SHIPPING_RATES: Record<string, ShippingRate> = {
-  // Same city/municipality - cheapest, fastest
-  same_city: {
-    fee: 39,
-    minimumOrder: 0, // No minimum
-    estimatedDays: "1-2 days",
-    zone: "same_city",
-    zoneName: "Same City",
+  // DIRECT DELIVERY - Same city, no hub needed, rider goes directly
+  direct: {
+    fee: 15,
+    minimumOrder: 0,
+    estimatedDays: "Same day - 1 day",
+    zone: "direct",
+    zoneName: "Direct Delivery (Same City)",
+    isDirectDelivery: true,
   },
 
-  // Same province - moderate pricing
+  // Same city but different area (fallback if direct not available)
+  same_city: {
+    fee: 20,
+    minimumOrder: 0,
+    estimatedDays: "1 day",
+    zone: "same_city",
+    zoneName: "Same City",
+    isDirectDelivery: true,
+  },
+
+  // Same province, different city - single hub routing
   same_province: {
-    fee: 49,
-    minimumOrder: 0, // No minimum
-    estimatedDays: "2-3 days",
+    fee: 29,
+    minimumOrder: 0,
+    estimatedDays: "1-2 days",
     zone: "same_province",
     zoneName: "Same Province",
+    isDirectDelivery: false,
   },
 
   // Within Central Luzon (Region III)
   central_luzon: {
-    fee: 58,
-    minimumOrder: 0, // No minimum
-    estimatedDays: "2-4 days",
+    fee: 39,
+    minimumOrder: 0,
+    estimatedDays: "2-3 days",
     zone: "central_luzon",
     zoneName: "Central Luzon",
+    isDirectDelivery: false,
   },
 
   // Metro Manila / NCR
   metro_manila: {
-    fee: 58,
-    minimumOrder: 0, // No minimum
-    estimatedDays: "2-4 days",
+    fee: 39,
+    minimumOrder: 0,
+    estimatedDays: "2-3 days",
     zone: "metro_manila",
     zoneName: "Metro Manila",
+    isDirectDelivery: false,
   },
 
   // Other Luzon provinces
   other_luzon: {
-    fee: 85,
-    minimumOrder: 0, // No minimum
-    estimatedDays: "3-5 days",
+    fee: 49,
+    minimumOrder: 0,
+    estimatedDays: "3-4 days",
     zone: "other_luzon",
     zoneName: "Other Luzon",
+    isDirectDelivery: false,
   },
 
   // Visayas region
   visayas: {
-    fee: 120,
-    minimumOrder: 0, // No minimum
-    estimatedDays: "5-7 days",
+    fee: 79,
+    minimumOrder: 0,
+    estimatedDays: "4-6 days",
     zone: "visayas",
     zoneName: "Visayas",
+    isDirectDelivery: false,
   },
 
   // Mindanao region
   mindanao: {
-    fee: 150,
-    minimumOrder: 0, // No minimum
+    fee: 99,
+    minimumOrder: 0,
     estimatedDays: "5-7 days",
     zone: "mindanao",
     zoneName: "Mindanao",
+    isDirectDelivery: false,
   },
 };
 
@@ -221,6 +243,7 @@ function matchesAny(location: string, list: string[]): boolean {
 
 /**
  * Determine the shipping zone based on seller and buyer locations
+ * Now includes "direct" zone for same-city deliveries (cheapest, fastest)
  */
 export function determineShippingZone(
   sellerLocation: string,
@@ -233,45 +256,70 @@ export function determineShippingZone(
   const sellerLower = sellerLocation.toLowerCase().trim();
   const buyerLower = buyerLocation.toLowerCase().trim();
 
-  // Same city check
+  // Extract city and province
   const sellerCity = extractCity(sellerLower);
   const buyerCity = extractCity(buyerLower);
-  if (sellerCity && buyerCity && sellerCity === buyerCity) {
-    return "same_city";
-  }
-
-  // Same province check
   const sellerProvince = extractProvince(sellerLower);
   const buyerProvince = extractProvince(buyerLower);
+
+  // DIRECT DELIVERY: Same city = ₱15, no hub needed!
+  if (sellerCity && buyerCity && sellerCity === buyerCity) {
+    return "direct";
+  }
+
+  // Same province but different city = ₱29
   if (sellerProvince && buyerProvince && sellerProvince === buyerProvince) {
     return "same_province";
   }
 
   // Check buyer location for region
-  // Metro Manila
+  // Metro Manila = ₱39
   if (matchesAny(buyerLower, METRO_MANILA_AREAS)) {
     return "metro_manila";
   }
 
-  // Central Luzon - both seller and buyer
+  // Central Luzon - both seller and buyer = ₱39
   const sellerInCL = matchesAny(sellerLower, CENTRAL_LUZON_PROVINCES);
   const buyerInCL = matchesAny(buyerLower, CENTRAL_LUZON_PROVINCES);
   if (sellerInCL && buyerInCL) {
     return "central_luzon";
   }
 
-  // Visayas
+  // Visayas = ₱79
   if (matchesAny(buyerLower, VISAYAS_PROVINCES)) {
     return "visayas";
   }
 
-  // Mindanao
+  // Mindanao = ₱99
   if (matchesAny(buyerLower, MINDANAO_PROVINCES)) {
     return "mindanao";
   }
 
-  // Default to other Luzon
+  // Default to other Luzon = ₱49
   return "other_luzon";
+}
+
+/**
+ * Determine the delivery type for logistics routing
+ */
+export function determineDeliveryType(
+  sellerLocation: string,
+  buyerLocation: string
+): DeliveryType {
+  const zone = determineShippingZone(sellerLocation, buyerLocation);
+  
+  // Direct delivery - same city, no hub needed
+  if (zone === "direct" || zone === "same_city") {
+    return "direct";
+  }
+  
+  // Single hub - same province
+  if (zone === "same_province") {
+    return "single_hub";
+  }
+  
+  // Hub to hub - different regions
+  return "hub_to_hub";
 }
 
 /**
@@ -292,6 +340,7 @@ export function calculateShippingFee(
     estimatedDays: rate.estimatedDays,
     zone: rate.zone,
     zoneName: rate.zoneName,
+    isDirectDelivery: rate.isDirectDelivery || false,
   };
 }
 

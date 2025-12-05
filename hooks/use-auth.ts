@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { usePathname } from "next/navigation"
 import { authFetch } from "@/lib/auth-client"
 
@@ -18,6 +18,7 @@ export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
   const pathname = usePathname()
+  const hasFetched = useRef(false)
 
   useEffect(() => {
     // Skip auth check on homepage and auth pages to avoid unnecessary API calls
@@ -26,6 +27,11 @@ export function useAuth() {
     
     if (isAuthPage || isLandingPage) {
       setLoading(false)
+      return
+    }
+
+    // If we've already fetched user data, don't refetch on navigation
+    if (hasFetched.current) {
       return
     }
 
@@ -51,6 +57,7 @@ export function useAuth() {
             avatar: u.avatar_url || u.avatar || "",
             location: u.location || "",
           })
+          hasFetched.current = true
         }
       } catch (_err) {
         if (isMounted) setUser(null)

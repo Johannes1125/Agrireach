@@ -31,6 +31,9 @@ export interface MarketplaceFilters {
   sortBy?: string
   page?: number
   limit?: number
+  excludeOwn?: boolean      // Hide user's own products
+  nearMe?: boolean          // Only show nearby products
+  buyerLocation?: string    // User's location for nearMe filter
 }
 
 export function useMarketplaceData(filters: MarketplaceFilters = {}) {
@@ -57,6 +60,11 @@ export function useMarketplaceData(filters: MarketplaceFilters = {}) {
         if (filters.sortBy) params.append('sortBy', filters.sortBy)
         params.append('page', (filters.page || 1).toString())
         params.append('limit', (filters.limit || 20).toString())
+        
+        // Add new filters for hiding own products and near me
+        if (filters.excludeOwn) params.append('excludeOwn', 'true')
+        if (filters.nearMe) params.append('nearMe', 'true')
+        if (filters.buyerLocation) params.append('buyerLocation', filters.buyerLocation)
 
         const [productsRes, categoriesRes] = await Promise.all([
           authFetch(`/api/marketplace/products?${params.toString()}`),
@@ -94,7 +102,10 @@ export function useMarketplaceData(filters: MarketplaceFilters = {}) {
     filters.maxPrice,
     filters.sortBy,
     filters.page,
-    filters.limit
+    filters.limit,
+    filters.excludeOwn,
+    filters.nearMe,
+    filters.buyerLocation
   ])
 
   return { 

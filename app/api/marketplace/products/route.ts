@@ -7,6 +7,7 @@ import { Product } from "@/server/models/Product";
 import { User } from "@/server/models/User";
 import { notifyAllUsersNewProduct } from "@/server/utils/notifications";
 import { validateUserRole } from "@/server/utils/role-validation";
+import { isNearby } from "@/server/utils/location-filter";
 import { z } from "zod";
 
 const CreateProductSchema = z.object({
@@ -40,6 +41,11 @@ export async function GET(req: NextRequest) {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
   const skip = (page - 1) * limit;
+  
+  // New filters for hiding own products and near me
+  const excludeOwn = searchParams.get("excludeOwn") === "true";
+  const nearMe = searchParams.get("nearMe") === "true";
+  const buyerLocation = searchParams.get("buyerLocation");
 
   const filter: any = {};
   if (category) filter.category = category;
@@ -73,7 +79,14 @@ export async function GET(req: NextRequest) {
   // Otherwise: show active products to everyone, plus seller's own products (any status)
   if (!status) {
     if (decoded?.sub) {
-      filter.$or = [ { status: "active" }, { seller_id: decoded.sub } ];
+      if (excludeOwn) {
+        // Exclude user's own products from the listing
+        filter.status = "active";
+        filter.seller_id = { $ne: decoded.sub };
+      } else {
+        // Include user's own products regardless of status
+        filter.$or = [ { status: "active" }, { seller_id: decoded.sub } ];
+      }
     } else {
       filter.status = "active";
     }
@@ -101,15 +114,30 @@ export async function GET(req: NextRequest) {
       sort = { created_at: -1 };
   }
 
-  const [products, total] = await Promise.all([
+  // If nearMe filter is active, fetch more products to filter client-side
+  const fetchLimit = nearMe && buyerLocation ? limit * 3 : limit;
+  
+  let [products, total] = await Promise.all([
     Product.find(filter)
       .populate('seller_id', 'full_name location verified trust_score')
       .sort(sort)
-      .skip(skip)
-      .limit(limit)
+      .skip(nearMe && buyerLocation ? 0 : skip) // Skip handled after filtering for nearMe
+      .limit(nearMe && buyerLocation ? 500 : fetchLimit) // Fetch more for nearMe filtering
       .lean(),
     Product.countDocuments(filter)
   ]);
+
+  // Apply "near me" filter if requested
+  if (nearMe && buyerLocation) {
+    products = products.filter((product: any) => {
+      const sellerLocation = product.seller_id?.location || product.location;
+      return isNearby(sellerLocation, buyerLocation);
+    });
+    total = products.length;
+    
+    // Apply pagination after nearMe filter
+    products = products.slice(skip, skip + limit);
+  }
 
   return jsonOk({ 
     products, 

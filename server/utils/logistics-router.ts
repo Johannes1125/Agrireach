@@ -1,18 +1,22 @@
 /**
  * Logistics Router
  * Routes packages through regional hubs and manages driver assignment
+ * Now supports direct delivery for same-city orders (no hub needed)
  */
 
 import { Types } from "mongoose";
 import { Warehouse, IWarehouse } from "@/server/models/Warehouse";
 import { Driver, IDriver, VehicleType, PACKAGE_SIZE_VEHICLES } from "@/server/models/Driver";
 import { IDelivery, IDeliveryLeg, PackageSize, LegType } from "@/server/models/Delivery";
+import { determineDeliveryType, DeliveryType } from "./shipping-calculator";
 
 export interface RouteResult {
   success: boolean;
   origin_hub: IWarehouse | null;
   destination_hub: IWarehouse | null;
   is_same_hub: boolean;
+  is_direct_delivery: boolean;  // True if no hub routing needed (same city)
+  delivery_type: DeliveryType;  // "direct" | "single_hub" | "hub_to_hub"
   legs: IDeliveryLeg[];
   estimated_days: number;
   error?: string;
@@ -76,6 +80,10 @@ export async function findHubForLocation(
 
 /**
  * Calculate route for a delivery through hubs
+ * Supports 3 delivery types:
+ * - DIRECT: Same city, 1 leg (Seller → Buyer directly), no hub
+ * - SINGLE_HUB: Same province, 2 legs (Seller → Hub → Buyer)
+ * - HUB_TO_HUB: Different regions, 3 legs (Seller → Hub A → Hub B → Buyer)
  */
 export async function calculateRoute(
   pickupCity: string,
@@ -88,6 +96,111 @@ export async function calculateRoute(
   buyerName?: string
 ): Promise<RouteResult> {
   try {
+    // Determine delivery type based on locations
+    const sellerLocation = `${pickupCity}, ${pickupProvince}`;
+    const buyerLocation = `${deliveryCity}, ${deliveryProvince}`;
+    const deliveryType = determineDeliveryType(sellerLocation, buyerLocation);
+    
+    const legs: IDeliveryLeg[] = [];
+    
+    // ===== DIRECT DELIVERY: Same city, no hub needed =====
+    if (deliveryType === "direct") {
+      // Single leg: Seller directly to Buyer
+      legs.push({
+        leg_number: 1,
+        type: "delivery", // Combined pickup + delivery
+        from_location: {
+          name: sellerName || "Seller",
+          address: `${pickupCity}, ${pickupProvince}`,
+          coordinates: pickupCoordinates,
+        },
+        to_location: {
+          name: buyerName || "Buyer",
+          address: `${deliveryCity}, ${deliveryProvince}`,
+          coordinates: deliveryCoordinates,
+        },
+        status: "pending",
+      });
+      
+      return {
+        success: true,
+        origin_hub: null,      // No hub needed!
+        destination_hub: null,
+        is_same_hub: true,
+        is_direct_delivery: true,
+        delivery_type: "direct",
+        legs,
+        estimated_days: 1,     // Same day to 1 day
+      };
+    }
+    
+    // ===== SINGLE HUB: Same province, different city =====
+    if (deliveryType === "single_hub") {
+      // Find the nearest hub for both
+      const nearestHub = await findHubForLocation(pickupCity, pickupProvince);
+      if (!nearestHub) {
+        return {
+          success: false,
+          origin_hub: null,
+          destination_hub: null,
+          is_same_hub: false,
+          is_direct_delivery: false,
+          delivery_type: "single_hub",
+          legs: [],
+          estimated_days: 0,
+          error: "No hub found for location",
+        };
+      }
+      
+      // Leg 1: Pickup (Seller → Hub)
+      legs.push({
+        leg_number: 1,
+        type: "pickup",
+        from_location: {
+          name: sellerName || "Seller",
+          address: `${pickupCity}, ${pickupProvince}`,
+          coordinates: pickupCoordinates,
+        },
+        to_location: {
+          name: nearestHub.name,
+          address: `${nearestHub.address.city}, ${nearestHub.address.province}`,
+          hub_id: nearestHub._id as Types.ObjectId,
+          coordinates: nearestHub.address.coordinates,
+        },
+        status: "pending",
+      });
+      
+      // Leg 2: Delivery (Hub → Buyer)
+      legs.push({
+        leg_number: 2,
+        type: "delivery",
+        from_location: {
+          name: nearestHub.name,
+          address: `${nearestHub.address.city}, ${nearestHub.address.province}`,
+          hub_id: nearestHub._id as Types.ObjectId,
+          coordinates: nearestHub.address.coordinates,
+        },
+        to_location: {
+          name: buyerName || "Buyer",
+          address: `${deliveryCity}, ${deliveryProvince}`,
+          coordinates: deliveryCoordinates,
+        },
+        status: "pending",
+      });
+      
+      return {
+        success: true,
+        origin_hub: nearestHub,
+        destination_hub: nearestHub, // Same hub for both
+        is_same_hub: true,
+        is_direct_delivery: false,
+        delivery_type: "single_hub",
+        legs,
+        estimated_days: 2,     // 1-2 days
+      };
+    }
+    
+    // ===== HUB TO HUB: Different regions =====
     // Find origin hub
     const originHub = await findHubForLocation(pickupCity, pickupProvince);
     if (!originHub) {
@@ -96,6 +209,8 @@ export async function calculateRoute(
         origin_hub: null,
         destination_hub: null,
         is_same_hub: false,
+        is_direct_delivery: false,
+        delivery_type: "hub_to_hub",
         legs: [],
         estimated_days: 0,
         error: "No hub found for pickup location",
@@ -110,6 +225,8 @@ export async function calculateRoute(
         origin_hub: originHub,
         destination_hub: null,
         is_same_hub: false,
+        is_direct_delivery: false,
+        delivery_type: "hub_to_hub",
         legs: [],
         estimated_days: 0,
         error: "No hub found for delivery location",
@@ -117,7 +234,6 @@ export async function calculateRoute(
     }
     
     const isSameHub = String(originHub._id) === String(destinationHub._id);
-    const legs: IDeliveryLeg[] = [];
     
     // Leg 1: Pickup (Seller → Origin Hub)
     legs.push({
@@ -176,14 +292,16 @@ export async function calculateRoute(
       status: "pending",
     });
     
-    // Estimate delivery days
-    const estimatedDays = isSameHub ? 2 : 4;
+    // Estimate delivery days based on route
+    const estimatedDays = isSameHub ? 3 : 5;
     
     return {
       success: true,
       origin_hub: originHub,
       destination_hub: destinationHub,
       is_same_hub: isSameHub,
+      is_direct_delivery: false,
+      delivery_type: "hub_to_hub",
       legs,
       estimated_days: estimatedDays,
     };
@@ -194,6 +312,8 @@ export async function calculateRoute(
       origin_hub: null,
       destination_hub: null,
       is_same_hub: false,
+      is_direct_delivery: false,
+      delivery_type: "hub_to_hub",
       legs: [],
       estimated_days: 0,
       error: error.message || "Failed to calculate route",
@@ -301,14 +421,28 @@ export async function findAvailableDrivers(
 }
 
 /**
- * Estimate delivery time based on route
+ * Estimate delivery time based on route and delivery type
  */
 export function estimateDeliveryTime(
-  isSameHub: boolean,
+  deliveryType: DeliveryType,
   pickupTime?: Date
 ): Date {
   const start = pickupTime || new Date();
-  const hoursToAdd = isSameHub ? 24 : 72; // 1 day for same hub, 3 days for different hubs
+  
+  // Hours to add based on delivery type
+  let hoursToAdd: number;
+  switch (deliveryType) {
+    case "direct":
+      hoursToAdd = 12; // Same day to half a day
+      break;
+    case "single_hub":
+      hoursToAdd = 36; // 1.5 days
+      break;
+    case "hub_to_hub":
+    default:
+      hoursToAdd = 72; // 3 days
+      break;
+  }
   
   const estimated = new Date(start);
   estimated.setHours(estimated.getHours() + hoursToAdd);
