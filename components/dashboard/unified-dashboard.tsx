@@ -1166,13 +1166,13 @@ export function UnifiedDashboard({ user }: UnifiedDashboardProps) {
               </div>
 
               {/* Featured Products */}
-              <section className="w-full lg:w-80">
+              <section className="w-full min-w-[320px] lg:w-80 lg:sticky lg:top-4 self-start">
                 <Card className="h-full">
                   <CardHeader>
                     <CardTitle className="font-heading">Featured Products</CardTitle>
                     <CardDescription>Fresh picks from local suppliers</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4 max-h-[600px] overflow-y-auto scrollbar-thin">
+                  <CardContent className="space-y-4 max-h-[calc(100vh-220px)] overflow-y-auto pr-1 scrollbar-thin">
                     {featuredProductsLoading ? (
                       <div className="text-center py-8 text-muted-foreground">Loading products...</div>
                     ) : featuredProducts.length === 0 ? (
